@@ -40,7 +40,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'changeme')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS')
 if ALLOWED_HOSTS_ENV:
     ALLOWED_HOSTS.extend(ALLOWED_HOSTS_ENV.split(','))
@@ -54,8 +54,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'thr_web',
-    'user',
+    'thr_web.apps.ThrWebConfig',
+    'user.apps.UsersConfig',
 ]
 
 MIDDLEWARE = [
@@ -95,8 +95,12 @@ WSGI_APPLICATION = 'thr.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('THR_DB_NAME', 'thr_users'),
+        'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
+        'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
+        'HOST': os.environ.get('THR_HOST', 'mysql_db'),
+        'PORT': os.environ.get('THR_PORT', '3306'),
     }
 }
 
@@ -138,7 +142,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
 
 STATIC_URL = '/static/static/'
-MEDIA_URL = 'static/media/'
+MEDIA_URL = '/static/media/'
 
 STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'

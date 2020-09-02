@@ -17,7 +17,9 @@ from django.contrib.auth.forms import UserCreationForm
 
 
 class CustomUserCreationForm(UserCreationForm):
-    affiliation = forms.CharField(max_length=100, help_text='affiliation')
+    first_name = forms.CharField(max_length=50, help_text='First Name')
+    last_name = forms.CharField(max_length=50, help_text='Last Name')
+    affiliation = forms.CharField(max_length=100, help_text='Affiliation')
 
     class Meta(UserCreationForm.Meta):
-        fields = UserCreationForm.Meta.fields  # + ('email', 'first_name', 'last_name', 'affiliation')
+        fields = UserCreationForm.Meta.fields

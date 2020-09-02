@@ -6,6 +6,15 @@ ENV PATH="/scripts:${PATH}"
 
 COPY ./requirements.txt ./requirements.txt
 
+# required packages to install mysql
+# https://github.com/gliderlabs/docker-alpine/issues/181
+RUN apk add --no-cache mariadb-connector-c-dev ;\
+    apk add --no-cache --virtual .build-deps \
+        build-base \
+        mariadb-dev ;\
+    pip install mysqlclient;\
+    apk del .build-deps
+
 # Required alpine packages to install uWSGI server in order to run django app
 RUN apk add --update --no-cache --virtual .tmp gcc libc-dev linux-headers
 RUN pip install -r /requirements.txt
