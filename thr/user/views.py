@@ -25,15 +25,13 @@ def dashboard(request):
 
 
 def register(request):
-    if request.method == 'GET':
-        return render(
-            request, 'user/register.html',
-            {'form': CustomUserCreationForm}
-        )
-    elif request.method == 'POST':
+    if request.method == "POST":
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
             user = form.save()
             login(request, user)
-            return redirect('dashboard')
-    return render(request, 'user/register.html', {'form': CustomUserCreationForm}, RequestContext(request))
+            return redirect("dashboard")
+    else:
+        form = CustomUserCreationForm
+
+    return render(request, "user/register.html", {"form": form})
