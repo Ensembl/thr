@@ -26,7 +26,8 @@ def test_user_create():
 
 @pytest.mark.django_db
 def test_superuser_create():
-    user = User.objects.create_user('superuser1', 'superuser@mail.com', 'superuserpassword', is_superuser=True)
+    user = User.objects.create_user('superuser1', 'superuser@mail.com',
+                                    'superuserpassword', is_superuser=True, is_staff=True)
     assert user.is_superuser
 
 
@@ -39,6 +40,9 @@ def test_view(client):
 
 @pytest.mark.django_db
 def test_unauthorized(client):
+    """
+    Test unauthorized access to the dashboard if the user isn't logged in
+    """
     url = reverse('dashboard')
     response = client.get(url)
     # 302 Found and redirect to login
@@ -46,7 +50,10 @@ def test_unauthorized(client):
 
 
 @pytest.mark.django_db
-def test_superuser_view(admin_client):
+def test_authorized_view(admin_client):
+    """
+    Test dashboard access if the admin is logged in
+    """
     url = reverse('dashboard')
     response = admin_client.get(url)
     assert response.status_code == 200
@@ -59,6 +66,24 @@ def test_password():
 
 @pytest.fixture
 def create_user(db, django_user_model, test_password):
+    """
+    Create user with a random username and password=test_password,
+    this function calls to local function 'make_user' to pass extra arguments as kwargs,
+    because pytest fixture can’t accept arguments.
+
+    make_user gives us the flexibility to create different types of users by passing the
+    adequate arguments.
+
+    Examples:
+    >>> user = create_user(username='someone')
+    >>> admin_user = create_user(username='superuser', is_staff=True, is_superuser=True)
+
+    :param db: fixture ensuring that the Django database is set up
+    :param django_user_model: pytest-django helper for shortcut to the User model
+    configured for use by the current Django project
+    :param test_password: the test_password fixture
+    :returns: the created user
+    """
     def make_user(**kwargs):
         kwargs['password'] = test_password
         if 'username' not in kwargs:
@@ -70,6 +95,18 @@ def create_user(db, django_user_model, test_password):
 
 @pytest.fixture
 def auto_login_user(db, client, create_user, test_password):
+    """
+    Auto login user takes user as parameter or creates a new one and login it
+    to client fixture. And at the end it returns client and user back for the future actions
+
+    :param db: fixture ensuring that the Django database is set up
+    :param client: the client is an instance of a django.test.Client
+    which acts as a dummy Web browser, allowing us to test our views and interact with
+    our Django-powered application programmatically
+    :param create_user: the created user
+    :param test_password: the test_password fixture
+    :returns: the client and user info
+    """
     def make_auto_login(user=None):
         if user is None:
             user = create_user()
