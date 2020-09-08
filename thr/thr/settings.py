@@ -37,9 +37,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'thr_web',
-    "users",
+    'rest_framework',
+    'rest_framework.authtoken',
+    'api.apps.ApiConfig',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -71,6 +78,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'thr.wsgi.application'
 
+# To uncomment later
+# https://docs.djangoproject.com/en/3.0/topics/auth/customizing/#substituting-a-custom-user-model
+# AUTH_USER_MODEL = 'thr.user'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
