@@ -23,9 +23,9 @@ def registration_view(request):
         data['response'] = 'User registered Successfully!'
         token = Token.objects.get(user=new_user).key
         data['token'] = token
+        return Response(serializer.errors, status=status.HTTP_201_CREATED)
     else:
-        data = serializer.errors
-    return Response(data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
