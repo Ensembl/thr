@@ -1,0 +1,27 @@
+image: python:3.7
+
+services:
+  - name: mysql:5.7
+    alias: mysql_db
+
+before_script:
+  - python -V
+
+variables:
+  # Configure mysql service (https://hub.docker.com/_/mysql/)
+  MYSQL_HOST: "mysql_db"
+  MYSQL_DATABASE: "test_thr_users"
+  MYSQL_USER: "thr_dev"
+  MYSQL_PASSWORD: "password"
+  MYSQL_ROOT_PASSWORD: "password"
+
+stages:
+  - test
+
+test_app:
+  stage: test
+  script:
+    - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
+    - pip install -r requirements.txt
+    - cd thr && pytest
+

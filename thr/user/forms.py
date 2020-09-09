@@ -12,19 +12,16 @@
    limitations under the License.
 """
 
-import os
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
 
-from django.core.wsgi import get_wsgi_application
 
-"""
-WSGI config for thr project.
+class CustomUserCreationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=50, help_text='First Name')
+    last_name = forms.CharField(max_length=50, help_text='Last Name')
+    affiliation = forms.CharField(max_length=100, help_text='Affiliation')
 
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/
-"""
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thr.settings')
-
-application = get_wsgi_application()
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'affiliation', 'username', 'password1', 'password2']
