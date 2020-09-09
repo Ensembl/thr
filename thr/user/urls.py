@@ -12,19 +12,14 @@
    limitations under the License.
 """
 
-import os
+from django.conf.urls import url
+from django.urls import path, include
+from .views import dashboard, register
+from django.contrib.auth import views as auth_views
 
-from django.core.wsgi import get_wsgi_application
 
-"""
-WSGI config for thr project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/
-"""
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thr.settings')
-
-application = get_wsgi_application()
+urlpatterns = [
+    path('accounts/', include('django.contrib.auth.urls')),
+    path('dashboard/', dashboard, name='dashboard'),
+    path('register/', register, name='register'),
+]

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 """
 .. See the NOTICE file distributed with this work for additional information
    regarding copyright ownership.
@@ -13,24 +12,26 @@
    limitations under the License.
 """
 
-import os
-import sys
-
-"""Django's command-line utility for administrative tasks."""
-
-def main():
-    """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thr.settings')
-    try:
-        from django.core.management import execute_from_command_line
-    except ImportError as exc:
-        raise ImportError(
-            "Couldn't import Django. Are you sure it's installed and "
-            "available on your PYTHONPATH environment variable? Did you "
-            "forget to activate a virtual environment?"
-        ) from exc
-    execute_from_command_line(sys.argv)
+from django.contrib.auth import login
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from django.template import RequestContext
+from .forms import CustomUserCreationForm
 
 
-if __name__ == '__main__':
-    main()
+@login_required
+def dashboard(request):
+    return render(request, 'user/dashboard.html')
+
+
+def register(request):
+    if request.method == "POST":
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect("dashboard")
+    else:
+        form = CustomUserCreationForm
+
+    return render(request, "user/register.html", {"form": form})

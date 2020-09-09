@@ -12,19 +12,6 @@
    limitations under the License.
 """
 
-import os
+from django.contrib import admin
 
-from django.core.wsgi import get_wsgi_application
-
-"""
-WSGI config for thr project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/3.1/howto/deployment/wsgi/
-"""
-
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'thr.settings')
-
-application = get_wsgi_application()
+# Register your models here.
