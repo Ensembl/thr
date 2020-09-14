@@ -24,7 +24,7 @@ cd thr
 First, we need to run a DB migration using the command
 
 ```shell script
-docker-compose run web python /thr/manage.py migrate
+docker-compose run web python manage.py migrate
 ```
 
 This will run the database migration and set up all the tables that are required for our project in the new MySQL database
@@ -73,9 +73,10 @@ source thr_env/bin/activate
 pip install -r requirements.txt
 ```
 
-Export the DB Configuration if necessary
+Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
+export DEBUG=1
 export THR_DB_NAME=thr_users  # The DB should already be created
 export THR_DB_USER=user
 export THR_DB_PASSWORD=password
@@ -86,7 +87,7 @@ export THR_PORT=3306
 Run the application
 
 ```shell script
-python thr/manage.py runserver
+python manage.py runserver
 ```
 
 The app will be accessible at: http://127.0.0.1:8000
@@ -94,7 +95,7 @@ The app will be accessible at: http://127.0.0.1:8000
 Create the super user (Optional)
 
 ```shell script
-python thr/manage.py createsuperuser
+python manage.py createsuperuser
 ```
 
 

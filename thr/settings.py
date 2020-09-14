@@ -159,6 +159,10 @@ MEDIA_URL = '/static/media/'
 STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'
 
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
+
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'thr-home'
 LOGIN_URL = 'login'
