@@ -20,7 +20,7 @@ from django.contrib.auth.models import User
 
 @pytest.mark.django_db
 def test_user_create():
-    User.objects.create_user('user1', 'user@mail.com', 'userpassword')
+    User.objects.create_user('user1', 'users@mail.com', 'userpassword')
     assert User.objects.count() == 1
 
 
@@ -41,7 +41,7 @@ def test_view(client):
 @pytest.mark.django_db
 def test_unauthorized(client):
     """
-    Test unauthorized access to the dashboard if the user isn't logged in
+    Test unauthorized access to the dashboard if the users isn't logged in
     """
     url = reverse('dashboard')
     response = client.get(url)
@@ -67,7 +67,7 @@ def test_password():
 @pytest.fixture
 def create_user(db, django_user_model, test_password):
     """
-    Create user with a random username and password=test_password,
+    Create users with a random username and password=test_password,
     this function calls to local function 'make_user' to pass extra arguments as kwargs,
     because pytest fixture can’t accept arguments.
 
@@ -75,14 +75,14 @@ def create_user(db, django_user_model, test_password):
     adequate arguments.
 
     Examples:
-    >>> user = create_user(username='someone')
+    >>> users = create_user(username='someone')
     >>> admin_user = create_user(username='superuser', is_staff=True, is_superuser=True)
 
     :param db: fixture ensuring that the Django database is set up
     :param django_user_model: pytest-django helper for shortcut to the User model
     configured for use by the current Django project
     :param test_password: the test_password fixture
-    :returns: the created user
+    :returns: the created users
     """
     def make_user(**kwargs):
         kwargs['password'] = test_password
@@ -96,16 +96,16 @@ def create_user(db, django_user_model, test_password):
 @pytest.fixture
 def auto_login_user(db, client, create_user, test_password):
     """
-    Auto login user takes user as parameter or creates a new one and login it
-    to client fixture. And at the end it returns client and user back for the future actions
+    Auto login users takes users as parameter or creates a new one and login it
+    to client fixture. And at the end it returns client and users back for the future actions
 
     :param db: fixture ensuring that the Django database is set up
     :param client: the client is an instance of a django.test.Client
     which acts as a dummy Web browser, allowing us to test our views and interact with
     our Django-powered application programmatically
-    :param create_user: the created user
+    :param create_user: the created users
     :param test_password: the test_password fixture
-    :returns: the client and user info
+    :returns: the client and users info
     """
     def make_auto_login(user=None):
         if user is None:
