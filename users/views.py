@@ -21,7 +21,7 @@ from .forms import CustomUserCreationForm
 
 @login_required
 def dashboard(request):
-    return render(request, 'users/dashboard.html')
+    return render(request, 'user/dashboard.html')
 
 
 def register(request):
@@ -34,4 +34,4 @@ def register(request):
     else:
         form = CustomUserCreationForm
 
-    return render(request, "users/register.html", {"form": form})
+    return render(request, "user/register.html", {"form": form})
