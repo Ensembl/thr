@@ -30,7 +30,6 @@ https://docs.djangoproject.com/en/3.1/ref/settings/
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
@@ -56,6 +55,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'thr_web.apps.ThrWebConfig',
     'user.apps.UsersConfig',
+    'trackhubs.apps.TrackhubsConfig',
+    # Django Elasticsearch integration
+    'django_elasticsearch_dsl',
+    # Django REST framework Elasticsearch integration
+    'django_elasticsearch_dsl_drf',
 ]
 
 MIDDLEWARE = [
@@ -99,11 +103,16 @@ DATABASES = {
         'NAME': os.environ.get('THR_DB_NAME', 'thr_users'),
         'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
         'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
-        'HOST': os.environ.get('THR_HOST', 'mysql_db'),
+        'HOST': os.environ.get('THR_HOST', 'mysql'),
         'PORT': os.environ.get('THR_PORT', '3306'),
     }
 }
 
+ELASTICSEARCH_DSL = {
+    'default': {
+        'hosts': os.environ.get('ES_HOST', 'elasticsearch:9200'),
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -123,7 +132,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
 
@@ -136,7 +144,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/3.1/howto/static-files/
