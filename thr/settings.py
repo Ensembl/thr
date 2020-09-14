@@ -58,7 +58,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'api.apps.ApiConfig',
     'thr_web.apps.ThrWebConfig',
-    'user.apps.UsersConfig',
+    'users.apps.UsersConfig',
 ]
 
 REST_FRAMEWORK = {

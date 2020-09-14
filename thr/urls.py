@@ -37,7 +37,7 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('thr_web.urls')),
-    path('', include('user.urls')),
+    path('', include('users.urls')),
 
     # REST Framework URLs
     path('api/v1/', include('api.urls'), name='thr_api'),
