@@ -34,5 +34,5 @@ Including another URLconf
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('thr_web.urls')),
-    path('', include('user.urls')),
+    path('', include('users.urls')),
 ]

@@ -54,7 +54,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'thr_web.apps.ThrWebConfig',
-    'user.apps.UsersConfig',
+    'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
     # Django Elasticsearch integration
     'django_elasticsearch_dsl',

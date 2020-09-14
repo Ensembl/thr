@@ -7,10 +7,11 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./thr:/thr
+      - .:/thr
     command: >
       sh -c "# Build elasticsearch index
              #python manage.py search_index --rebuild -f &&
+             python manage.py makemigrations &&
              python manage.py migrate &&
              # Create the super user automatically using environment variables below
              # || true; is added to ignore the error in case the user exists already

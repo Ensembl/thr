@@ -51,9 +51,9 @@ If we need to rebuild the images again we can use the command:
 docker-compose up --build
 ```
 
-##### Create super user (Optional)
+##### Create Elasticsearch index
 
-Get the container ID 
+Get the container ID (while `docker-compose up` is running)
 
 ```shell script
 docker container ls
@@ -62,7 +62,15 @@ docker container ls
 Then run the command
 
 ```shell script
-docker exec -it <container_id> python manage.py createsuperuser
+docker exec -it <thr_web_container_id> python manage.py search_index --rebuild -f
+```
+
+`--rebuild` will delete the index if it exists.
+
+##### Create super user (Optional)
+
+```shell script
+docker exec -it <thr_web_container_id> python manage.py createsuperuser
 ```
 
 #### Without Docker
