@@ -14,16 +14,13 @@
 
 from django.db import models
 
-import datetime
+import time
 
 
 class Trackdb(models.Model):
 
-    #class Meta:
-        #managed = False
-
     assembly = models.CharField(max_length=100)
-    created = models.DateField(max_length=50, default=datetime.date.today)
+    created = models.IntegerField(default=int(time.time()))
     # choices is an iterable containing (actual value, human readable name) tuples
     file_type = models.CharField(choices=[
         ("bam", "bam"),

@@ -12,6 +12,40 @@
    limitations under the License.
 """
 
-from django.test import TestCase
+from elasticsearch import Elasticsearch
+from thr.settings import ELASTICSEARCH_DSL
 
-# Create your tests here.
+
+def test_connection():
+    es = Elasticsearch(
+        [ELASTICSEARCH_DSL['default']['hosts']],
+        verify_certs=True
+    )
+    # ping() returns whether the cluster is running or not
+    assert es.ping()
+
+
+def test_add_document():
+    es = Elasticsearch(
+        [ELASTICSEARCH_DSL['default']['hosts']],
+        verify_certs=True
+    )
+
+    index = 'test-index'
+    expected_document = {
+        'id': 1,
+        'assembly': 'GRCh37',
+        'created': '1600187202',
+        'file_type': 'bam',
+    }
+
+    # Delete the index if it already exists
+    es.indices.delete(index)
+
+    actual_result = es.index(index=index, doc_type=index, id=1, body=expected_document)['result']
+    assert actual_result == 'created'
+
+    es.indices.refresh(index)
+
+    actual_document = es.get(index=index, doc_type=index, id=1)['_source']
+    assert actual_document == expected_document

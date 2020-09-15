@@ -31,14 +31,18 @@ class TrackdbDocument(Document):
 
         # The fields of the model you want to be indexed in Elasticsearch
         fields = [
+            'id',
             'assembly',
             'created',
             'file_type',
         ]
 
 
+"""
 trackdb = Trackdb(
+    id=1
     assembly="GRCh37",
     file_type="bed"
 )
 trackdb.save()
+"""
