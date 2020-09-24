@@ -3,13 +3,17 @@ attrs==20.2.0
 certifi==2020.6.20
 coverage==5.2.1
 Django==2.2
+django-cors-headers==3.5.0
 django-elasticsearch-dsl>=6.0.0,<7.0.0
 django-elasticsearch-dsl-drf==0.20.8
+django-mysql==3.8.1
 django-nine==0.2.3
 djangorestframework==3.11.1
+ElasticMock==1.5.1
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-dsl>=6.0.0,<7.0.0
 iniconfig==1.0.1
+mock==4.0.2
 more-itertools==8.5.0
 mysqlclient==2.0.1
 packaging==20.4

@@ -13,17 +13,37 @@
 """
 
 from django.db import models
-
-import time
+from django_mysql.models import JSONField
 
 
 class Trackdb(models.Model):
 
-    assembly = models.CharField(max_length=100)
-    created = models.IntegerField(default=int(time.time()))
+    public = models.BooleanField(default=False)
     # choices is an iterable containing (actual value, human readable name) tuples
-    file_type = models.CharField(choices=[
-        ("bam", "bam"),
-        ("bed", "bed"),
-        ("bigBed", "bigBed")
-    ], max_length=100)
+    type = models.CharField(choices=[
+        ("genomics", "genomics"),
+        ("epigenomics", "epigenomics"),
+        ("transcriptomics", "transcriptomics"),
+        ("proteomics", "proteomics")
+    ], default="genomics", max_length=50)
+    hub = JSONField()  # default=default_hub
+    description = models.TextField(null=True)
+    version = models.CharField(default="v1.0", max_length=10)
+
+    '''
+    fields = [
+            'id',
+            'public',
+            'type',
+            #'hub',
+            'description',
+            'version',
+            #'source',
+            #'species',
+            #'assembly',
+            #'data',
+            #'assembly',
+            #'data',
+            #'configuration',
+        ]
+    '''

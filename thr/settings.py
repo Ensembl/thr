@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'django_elasticsearch_dsl',
     # Django REST framework Elasticsearch integration
     'django_elasticsearch_dsl_drf',
+    'django_mysql',
 ]
 
 MIDDLEWARE = [
@@ -105,6 +106,15 @@ DATABASES = {
         'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
         'HOST': os.environ.get('THR_HOST', 'mysql'),
         'PORT': os.environ.get('THR_PORT', '3306'),
+        'OPTIONS': {
+            # Tell MySQLdb to connect with 'utf8mb4' character set
+            'charset': 'utf8mb4',
+        },
+        # Tell Django to build the test database with the 'utf8mb4' character set
+        'TEST': {
+            'CHARSET': 'utf8mb4',
+            'COLLATION': 'utf8mb4_unicode_ci',
+        }
     }
 }
 
