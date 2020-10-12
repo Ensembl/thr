@@ -21,28 +21,20 @@ from .models import Trackdb
 @registry.register_document
 class TrackdbDocument(Document):
 
-    # set hub fields we want to use
-    hub = ObjectField(properties={
+    hub = fields.ObjectField(properties={
         'name': fields.StringField(),
-        'longLabel': fields.StringField(),
-        'shortLabel': fields.StringField(),
+        'short_label': fields.StringField(),
+        'long_label': fields.StringField(),
         'url': fields.StringField(),
-        'assembly': fields.IntegerField(),
-        'browser_links': fields.ObjectField(),
-        'empty_object': fields.ObjectField()
+        'description_url': fields.StringField(),
+        'email': fields.StringField(),
+        # 'species': fields.IntegerField(),
+        # 'data_type': fields.IntegerField(),
     })
 
-    def prepare_hub(self, instance):
-        results = instance.hub
-        return {
-            'name': results['name'],
-            'longLabel': results['longLabel'],
-            'shortLabel': results['shortLabel'],
-            'url': results['url'],
-            'assembly': results['assembly'],
-            'browser_links': results['browser_links'],
-            'empty_object': results['empty_object']
-        }
+    assembly = fields.ObjectField(properties={
+        'accession': fields.StringField(),
+    })
 
     class Index:
         name = 'trackhubs'
@@ -54,44 +46,17 @@ class TrackdbDocument(Document):
     class Django:
         model = Trackdb
 
-        # The fields of the model you want to be indexed in Elasticsearch
+        # The fields of the model we want to be indexed in Elasticsearch
         fields = [
-            'id',
             'public',
-            'type',
-            # 'hub',
             'description',
             'version',
-            # 'source',
-            # 'species',
-            # 'assembly',
-            # 'data',
-            # 'assembly',
-            # 'data',
-            # 'configuration',
+            'created',
+            'updated',
+            # 'configurations',
+            'status_message',
+            'status_last_update',
+            # 'status',
+            'source_url',
+            'source_checksum',
         ]
-
-
-def_hub = {
-    'longLabel': 'TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2018)',
-    'shortLabel': '',
-    'name': 'JASPAR_2018_TFBS',
-    'assembly': 0,
-    'url': '',
-    'empty_object': {},
-    'browser_links': {
-        'ensembl': 'http://grch37.ensembl.org/TrackHub?url=http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/hub.txt;species=Homo_sapiens;name=JASPAR_2018_TFBS;registry=1',
-        'biodalliance': '/biodalliance/view?assembly=hg19&name=JASPAR 2018 TFBS&url=http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/hub.txt',
-        'ucsc': 'http://genome.ucsc.edu/cgi-bin/hgHubConnect?db=hg19&hubUrl=http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/hub.txt&hgHub_do_redirect=on&hgHubConnect.remakeTrackHub=on'
-    }
-}
-
-"""
-trackdb = Trackdb(
-    id=1,
-    public=True,
-    type='genomics',
-    hub=def_hub,
-)
-trackdb.save()
-"""

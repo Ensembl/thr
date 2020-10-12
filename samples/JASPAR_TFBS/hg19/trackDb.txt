@@ -1,0 +1,15 @@
+track JASPAR2020_TFBS_hg19
+shortLabel JASPAR2020 TFBS hg19
+longLabel TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)
+html http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/JASPAR2020_TFBS_help.html
+type bigBed 6 +
+maxItems 100000
+labelFields name
+defaultLabelFields name
+searchIndex name
+visibility pack
+spectrum on
+scoreFilter 400
+scoreFilterRange 0:1000
+bigDataUrl http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg19.bb
+nameFilterText *

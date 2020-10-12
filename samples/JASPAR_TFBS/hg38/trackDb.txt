@@ -1,0 +1,31 @@
+track JASPAR2020_TFBS_hg38
+shortLabel JASPAR2020 TFBS hg38
+longLabel TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)
+html http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/JASPAR2020_TFBS_help.html
+type bigBed 6 +
+maxItems 100000
+labelFields name
+defaultLabelFields name
+searchIndex name
+visibility pack
+spectrum on
+scoreFilter 400
+scoreFilterRange 0:1000
+bigDataUrl http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg38.bb
+nameFilterText *
+
+track JASPAR2018_TFBS_hg38
+shortLabel JASPAR2018 TFBS hg38
+longLabel TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2018)
+html http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/JASPAR2018_TFBS_help.html
+type bigBed 6 +
+maxItems 100000
+labelFields name
+defaultLabelFields name
+searchIndex name
+visibility pack
+spectrum on
+scoreFilter 400
+scoreFilterRange 0:1000
+bigDataUrl http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2018/hg38/JASPAR2018_hg38_all_chr.bb
+nameFilterText *
