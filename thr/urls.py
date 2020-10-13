@@ -41,5 +41,5 @@ urlpatterns = [
     path('', include('users.urls')),
 
     # REST Framework URLs
-    path('api/v1/', include('api.urls'), name='thr_api'),
+    path('api/v1/', include('users.api.urls'), name='thr_api'),
 ]
