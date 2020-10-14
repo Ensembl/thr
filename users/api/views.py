@@ -35,9 +35,9 @@ def registration_view(request):
     if serializer.is_valid():
         new_user = serializer.save()
         data['response'] = 'User registered Successfully!'
-        token = Token.objects.get(user=new_user).key
+        token = Token.objects.create(user=new_user).key
         data['token'] = token
-        return Response(serializer.errors, status=status.HTTP_201_CREATED)
+        return Response(data, status=status.HTTP_201_CREATED)
     else:
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
