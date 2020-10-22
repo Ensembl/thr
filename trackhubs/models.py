@@ -62,11 +62,11 @@ class Hub(models.Model):
 
     hub_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    short_label = models.CharField(max_length=100)
-    long_label = models.CharField(max_length=255)
+    short_label = models.CharField(max_length=255, null=True)
+    long_label = models.CharField(max_length=255, null=True)
     url = models.CharField(max_length=255)
-    description_url = models.URLField()
-    email = models.EmailField()
+    description_url = models.URLField(null=True)
+    email = models.EmailField(null=True)
     species = models.ForeignKey(Species, on_delete=models.CASCADE)
     data_type = models.ForeignKey(DataType, on_delete=models.CASCADE)
 
@@ -77,7 +77,7 @@ class Genome(models.Model):
         db_table = "genome"
 
     genome_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=45)
+    name = models.CharField(max_length=255)
     trackdb_location = models.CharField(max_length=255)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
 
@@ -148,10 +148,10 @@ class Track(models.Model):
         db_table = "track"
 
     track_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=45)
-    short_label = models.CharField(max_length=45, null=True)
+    name = models.CharField(max_length=255)
+    short_label = models.CharField(max_length=255, null=True)
     long_label = models.CharField(max_length=255, null=True)
-    big_data_url = models.CharField(max_length=255)
+    big_data_url = models.CharField(max_length=255, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
     additional_properties = JSONField()

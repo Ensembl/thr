@@ -12,21 +12,13 @@
    limitations under the License.
 """
 
-from django.core.management.base import BaseCommand, CommandError
-from elasticsearch_dsl import connections
+FILE_TYPES = [
+    'altGraphX', 'bam', 'bed', 'bed5FloatScore', 'bedGraph', 'bedRnaElements', 'bigBarChart', 'bigBed',
+    'bigInteract', 'bigLolly', 'bigPsl', 'bigChain', 'bigMaf', 'bigWig', 'broadPeak', 'chain', 'clonePos',
+    'coloredExon', 'ctgPos', 'downloadsOnly', 'encodeFiveC', 'expRatio', 'factorSource', 'genePred', 'gvf',
+    'hic', 'ld2', 'narrowPeak', 'netAlign', 'peptideMapping', 'psl', 'rmsk', 'snake', 'vcfTabix', 'wig', 'wigMaf'
+]
 
-from trackhubs.parser import *
+DATA_TYPES = ['genomics', 'proteomics', 'epigenomics', 'transcriptomics']  # default: 'genomics'
 
-
-# This file will be edited later
-class Command(BaseCommand):
-    help = 'Enrich elasticsearch index based on the data stored in MySQL DB.'
-
-    def _enrich(self):
-        pass
-
-    def handle(self, *args, **options):
-        # Consider when the index doesn't exist
-        # self._enrich()
-        self.stdout.write(self.style.SUCCESS('Successfully updated the index'))
-
+VISIBILITY = ['hide', 'dense', 'squish', 'pack', 'full']  # default: 'hide'
