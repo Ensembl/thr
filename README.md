@@ -104,7 +104,9 @@ Migrate and Rebuild ES index
 
 ```shell script
 python manage.py migrate
-python manage.py search_index --rebuild
+python manage.py search_index --rebuild -f
+# enrich is still work in progress
+# python manage.py enrich 
 ```
 
 The last command will create an index called `trackhubs` (the index schema is still WIP), we can get the list of indices using the command

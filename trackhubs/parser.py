@@ -12,7 +12,6 @@
    limitations under the License.
 """
 
-# from thr.settings import BASE_DIR
 import sys
 import time
 import json
@@ -23,12 +22,11 @@ from elasticsearch_dsl import connections
 from trackhubs.models import Hub, Species, DataType, Trackdb, FileType, Visibility, Genome, Assembly, Track
 from .constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 
-# BDIR = 'samples/SRP066358/'  # samples/JASPAR_TFBS'
-# hub_file = BDIR + 'hub.txt'  # BASE_DIR / 'samples/JASPERT_TFBS/hub.txt'
-hub_url = 'http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt'
+# This hub is quite big
 # hub_url = 'http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/hub.txt'
-# hub_url = 'https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt'
+hub_url = 'https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt'
 # hub_url = 'ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt'
+# hub_url = 'http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt'
 
 
 def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
@@ -88,7 +86,7 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
 
 def save_fake_species():
     """
-    Save fake species, this will be delete later
+    Save fake species, this will be replaced with a proper function later
     """
     # TODO: Replace this with a proper one
     if not Species.objects.filter(taxon_id=9606).exists():
@@ -277,7 +275,8 @@ def save_track(track_dict, trackdb, file_type, visibility):
         return existing_track_obj
     else:
         new_track_obj = Track(
-            name=track_dict['track'],
+            # save name only without 'on' or 'off' settings
+            name=get_first_word(track_dict['track']),
             short_label=track_dict.get('shortLabel'),
             long_label=track_dict.get('longLabel'),
             big_data_url=track_dict.get('bigDataUrl'),
@@ -303,7 +302,7 @@ def update_trackdb_document(trackdb, file_type, trackdb_data, trackdb_configurat
     # TODO: handle exceptions
     """
     print("[INFO] Updating trackdb id: {} \n".format(trackdb.trackdb_id))
-    es = connections.Elasticsearch()
+    es = connections.Elasticsearch(timeout=30)
     es.update(
         index='trackhubs',
         doc_type='doc',
@@ -348,11 +347,38 @@ def add_parent_id(parent_name, current_track):
     :param parent_name: extracted from the track info
     :param current_track: current track object
     """
+    # get the track parent name only without extra configuration
+    # e.g. 'uniformDnasePeaks off' becomes 'uniformDnasePeaks'
     parent_name_only = get_first_word(parent_name).strip()
     # IDEA: DRY create get where function
     parent_track = Track.objects.filter(name=parent_name_only).first()
     current_track.parent_id = parent_track.track_id
     current_track.save()
+    return parent_name_only
+
+
+def get_parents(track):
+    """
+    Get parent and grandparent (if any) of a given track
+    :param track: track object
+    :returns: the parent and grandparent (if any)
+    """
+    # print("track ---> {}".format(track.__dict__))
+
+    try:
+        parent_track_id = track.parent_id
+        parent_track = Track.objects.filter(track_id=parent_track_id).first()
+    except AttributeError:
+        print("[ERROR] Couldn't get the parent of {}".format(track.name))
+        sys.exit(1)
+
+    try:
+        grandparent_track_id = parent_track.parent_id
+        grandparent_track = Track.objects.filter(track_id=grandparent_track_id).first()
+    except AttributeError:
+        grandparent_track = None
+
+    return parent_track, grandparent_track
 
 
 def save_and_update_document(hub_url):
@@ -419,27 +445,39 @@ def save_and_update_document(hub_url):
 
                 # if the track is parent we prepare the configuration object
                 if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
-                    print("[INFO] '{}' is parent".format(track['track']))
+                    # print("[INFO] '{}' is parent".format(track['track']))
                     trackdb_configuration[track['track']] = track
                     trackdb_configuration[track['track']].pop('url', None)
 
                 # if the track is a child, add the parent id and update
                 # the configuration to include the current track
                 if 'parent' in track:
-                    print("track['parent'] ----> {}".format(track['parent']))
                     add_parent_id(track['parent'], track_obj)
+                    parent_track_obj, grandparent_track_obj = get_parents(track_obj)
 
-                    if 'members' not in trackdb_configuration[track['parent']]:
-                        trackdb_configuration[track['parent']].update({
-                            'members': {
+                    if grandparent_track_obj is None:  # Then we are in the first level (subtrack)
+                        if 'members' not in trackdb_configuration[parent_track_obj.name]:
+                            trackdb_configuration[parent_track_obj.name].update({
+                                'members': {
+                                    track['track']: track
+                                }
+                            })
+                        else:
+                            trackdb_configuration[parent_track_obj.name]['members'].update({
                                 track['track']: track
-                            }
-                        })
-                    else:
-                        trackdb_configuration[track['parent']]['members'].update({
+                            })
+
+                    else: # we are in the second level (subsubtrack)
+                        if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
+                            trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
+                                'members': {
+                                    track['track']: track
+                                }
+                            })
+                        else:
+                            trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]['members'].update({
                                 track['track']: track
-                        })
-                    trackdb_configuration[track['parent']]['members'][track['track']].pop('url', None)
+                            })
 
         # update MySQL
         current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
@@ -451,5 +489,5 @@ def save_and_update_document(hub_url):
 
 save_and_update_document(hub_url)
 
-# TODO: add update_hub() etc
+# TODO: add delete_hub() etc
 

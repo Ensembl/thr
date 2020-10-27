@@ -9,10 +9,10 @@ services:
     volumes:
       - .:/thr
     command: >
-      sh -c "# Build elasticsearch index
-             #python manage.py search_index --rebuild -f &&
-             python manage.py makemigrations &&
+      sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
+             # Build elasticsearch index
+             #python manage.py search_index --rebuild -f &&
              # Create the super user automatically using environment variables below
              # || true; is added to ignore the error in case the user exists already
              # It works only with Django 3+
@@ -52,6 +52,11 @@ services:
     environment:
       # https://discuss.elastic.co/t/problems-with-access-to-elasticsearch-form-outside-machine/172450
       - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms4g -Xmx4g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
     networks:
       - stacknet
 

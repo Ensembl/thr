@@ -40,7 +40,10 @@ class TrackdbDocument(Document):
         name = 'trackhubs'
         settings = {
             'number_of_shards': 1,
-            'number_of_replicas': 0
+            'number_of_replicas': 0,
+            # solve: Limit of total fields [1000] in index [trackhubs] has been exceeded
+            # https://stackoverflow.com/a/55373088/4488332
+            'index.mapping.total_fields.limit': 100000
         }
 
     class Django:
