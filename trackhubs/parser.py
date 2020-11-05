@@ -11,16 +11,19 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
-import sys
+import logging
 import time
 import json
 import urllib.request
 
+import django
+import elasticsearch
 from elasticsearch_dsl import connections
 
 from trackhubs.models import Hub, Species, DataType, Trackdb, FileType, Visibility, Genome, Assembly, Track
 from .constants import DATA_TYPES, FILE_TYPES, VISIBILITY
+
+logger = logging.getLogger(__name__)
 
 # This hub is quite big
 # hub_url = 'http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/hub.txt'
@@ -39,7 +42,7 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     :returns: an array of dictionaries, each dictionary contains one object
     either hub, genome or track
     """
-    print("[INFO] Parsing: {}".format(url))
+    logger.info("Parsing '{}'".format(url))
     # dict_info is where key/value of each element (it can be hub, genome or track) is stored
     # e.g. dict_info = {'track': 'JASPAR2020_TFBS_hg19', 'type': 'bigBed 6 +'}
     dict_info = {}
@@ -53,7 +56,11 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
             # dictionary fot the next element otherwise (if there is no new line)
             # we read the next line and we repeat the process
             if line in ['\n', '\r\n', '']:
-                if len(dict_info) > 0:
+                # check if the dictionary contains either 'hub',
+                # 'track', 'genome' before appending it to the list
+                # this prevent the submitter from uploading random text file
+                is_any = any(i in list(dict_info.keys()) for i in ('hub', 'track', 'genome'))
+                if len(dict_info) > 0 and is_any:
                     dict_info.update({'url': url})
                     dict_info_list.append(dict_info)
                     dict_info = {}
@@ -78,10 +85,13 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
             dict_info.update({'url': url})
             dict_info_list.append(dict_info)
 
-    except IOError:
-        print("ERROR: The URL '" + url + "' doesn't exist")
-        sys.exit(1)
-    return dict_info_list
+    except (IOError, urllib.error.HTTPError, urllib.error.URLError, ValueError, AttributeError) as ex:
+        logger.error(ex)
+        return None
+    if dict_info is []:
+        logger.error("Couldn't parse the provided text file, please make sure it well formatted!")
+    else:
+        return dict_info_list
 
 
 def save_fake_species():
@@ -89,12 +99,15 @@ def save_fake_species():
     Save fake species, this will be replaced with a proper function later
     """
     # TODO: Replace this with a proper one
-    if not Species.objects.filter(taxon_id=9606).exists():
-        sp = Species(
-            taxon_id=9606,
-            scientific_name='Homo sapiens'
-        )
-        sp.save()
+    try:
+        if not Species.objects.filter(taxon_id=9606).exists():
+            sp = Species(
+                taxon_id=9606,
+                scientific_name='Homo sapiens'
+            )
+            sp.save()
+    except django.db.utils.OperationalError:
+        logger.exception('Error trying to connect to Elasticsearch')
 
 
 def get_obj(unique_col, object_name, file_type=False):
@@ -269,7 +282,7 @@ def save_track(track_dict, trackdb, file_type, visibility):
     try:
         existing_track_obj = Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
     except KeyError:
-        print("[WARNING] bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
+        logger.warning("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
     if existing_track_obj:
         return existing_track_obj
@@ -301,33 +314,38 @@ def update_trackdb_document(trackdb, file_type, trackdb_data, trackdb_configurat
     :param hub: hub object associated with this trackdb
     # TODO: handle exceptions
     """
-    print("[INFO] Updating trackdb id: {} \n".format(trackdb.trackdb_id))
-    es = connections.Elasticsearch(timeout=30)
-    es.update(
-        index='trackhubs',
-        doc_type='doc',
-        id=trackdb.trackdb_id,
-        refresh=True,
-        body={
-            'doc': {
-                'file_type': {
-                    # TODO: write a proper query/function (e.g get_file_type_count(trackdb))
-                    file_type: FileType.objects.filter(name=file_type).count()
-                },
-                'data': trackdb_data,
-                'updated': int(time.time()),
-                'source': {
-                    'url': trackdb.source_url,
-                    'checksum': ''
-                },
-                # Get the data type based on the hub info
-                'type': Hub.objects.filter(data_type_id=hub.data_type_id)
-                    .values('data_type__name').first()
-                    .get('data_type__name'),
-                'configuration': trackdb_configuration
+    try:
+        es = connections.Elasticsearch(timeout=30)
+        es.update(
+            index='trackhubs',
+            doc_type='doc',
+            id=trackdb.trackdb_id,
+            refresh=True,
+            body={
+                'doc': {
+                    'file_type': {
+                        # TODO: write a proper query/function (e.g get_file_type_count(trackdb))
+                        file_type: FileType.objects.filter(name=file_type).count()
+                    },
+                    'data': trackdb_data,
+                    'updated': int(time.time()),
+                    'source': {
+                        'url': trackdb.source_url,
+                        'checksum': ''
+                    },
+                    # Get the data type based on the hub info
+                    'type': Hub.objects.filter(data_type_id=hub.data_type_id)
+                        .values('data_type__name').first()
+                        .get('data_type__name'),
+                    'configuration': trackdb_configuration
+                }
             }
-        }
-    )
+        )
+        logger.info("Trackdb id {} is updated successfully".format(trackdb.trackdb_id))
+
+    except elasticsearch.exceptions.ConnectionError:
+        logger.exception("There was an error while trying to connect to Elasticsearch. "
+              "Please make sure ES service is running and configured properly!")
 
 
 def get_first_word(tabbed_info):
@@ -363,14 +381,12 @@ def get_parents(track):
     :param track: track object
     :returns: the parent and grandparent (if any)
     """
-    # print("track ---> {}".format(track.__dict__))
 
     try:
         parent_track_id = track.parent_id
         parent_track = Track.objects.filter(track_id=parent_track_id).first()
     except AttributeError:
-        print("[ERROR] Couldn't get the parent of {}".format(track.name))
-        sys.exit(1)
+        logger.error("Couldn't get the parent of {}".format(track.name))
 
     try:
         grandparent_track_id = parent_track.parent_id
@@ -395,16 +411,17 @@ def save_and_update_document(hub_url):
     save_constant_data(VISIBILITY, Visibility)
 
     hub_info = parse_file_from_url(hub_url, is_hub=True)[0]
-    # print("hub_info ---> {}".format(json.dumps(hub_info, indent=4)))
+
+    logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))
 
     data_type = 'epigenomics'
     hub_obj = save_hub(hub_info, data_type)
 
     genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
-    # print("genomes_trackdbs_info ----> {} \n".format(json.dumps(genomes_trackdbs_info, indent=4)))
+    logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
     for genomes_trackdb in genomes_trackdbs_info:
-        # print("genomes_trackdb ----> {} \n".format(json.dumps(genomes_trackdb, indent=4)))
+        # logger.debug("genomes_trackdb: {}".format(json.dumps(genomes_trackdb, indent=4)))
 
         genome_obj = save_genome(genomes_trackdb, hub_obj)
 
@@ -415,12 +432,12 @@ def save_and_update_document(hub_url):
         trackdb_obj = save_trackdb(base_url + '/' + genomes_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
 
         trackdbs_info = parse_file_from_url(base_url + '/' + genomes_trackdb['trackDb'], is_trackdb=True)
-        # print("trackdbs_info ----> {} \n".format(json.dumps(trackdbs_info, indent=4)))
+        # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
         trackdb_data = []
         trackdb_configuration = {}
         for track in trackdbs_info:
-            # print("track ----> {} \n".format(json.dumps(track, indent=4)))
+            # logger.debug("track: {}".format(json.dumps(track, indent=4)))
 
             if 'track' in track:
                 # default value
@@ -445,7 +462,7 @@ def save_and_update_document(hub_url):
 
                 # if the track is parent we prepare the configuration object
                 if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
-                    # print("[INFO] '{}' is parent".format(track['track']))
+                    # logger.debug("'{}' is parent".format(track['track']))
                     trackdb_configuration[track['track']] = track
                     trackdb_configuration[track['track']].pop('url', None)
 
@@ -467,7 +484,7 @@ def save_and_update_document(hub_url):
                                 track['track']: track
                             })
 
-                    else: # we are in the second level (subsubtrack)
+                    else:  # we are in the second level (subsubtrack)
                         if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
                             trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
                                 'members': {
@@ -487,7 +504,7 @@ def save_and_update_document(hub_url):
         update_trackdb_document(trackdb_obj, file_type, trackdb_data, trackdb_configuration, hub_obj)
 
 
-save_and_update_document(hub_url)
+# save_and_update_document(hub_url)
 
 # TODO: add delete_hub() etc
 
