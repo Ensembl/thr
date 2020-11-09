@@ -11,6 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+
 import logging
 import time
 import json
@@ -282,7 +283,7 @@ def save_track(track_dict, trackdb, file_type, visibility):
     try:
         existing_track_obj = Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
     except KeyError:
-        logger.warning("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
+        logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
     if existing_track_obj:
         return existing_track_obj

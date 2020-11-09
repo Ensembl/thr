@@ -43,7 +43,6 @@ def test_fetch_hub_success():
         ('https://invalide.url/hub.txt', None),
         ('', None),
         (15, None),
-        # TODO: Decide whether to return None or empty list when the user provide an unformatted text url
         ('https://www.le.ac.uk/oerresources/bdra/html/resources/example.txt', [])
     ]
 )

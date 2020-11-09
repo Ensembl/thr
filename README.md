@@ -105,14 +105,22 @@ Migrate and Rebuild ES index
 ```shell script
 python manage.py migrate
 python manage.py search_index --rebuild -f
-# enrich is still work in progress
-# python manage.py enrich 
 ```
 
 The last command will create an index called `trackhubs` (the index schema is still WIP), we can get the list of indices using the command
 
 ```shell script
 curl -XGET "http://localhost:9200/_cat/indices"
+```
+
+To enrich the trackhubs indexed in ES and already existed in MySQL DB we can run the command
+```shell script
+python manage.py enrich 
+```
+
+Or if we want to enrich specific trackhub(s) we can provide the hub url (one or many) as follows
+```shell script
+python manage.py enrich --huburl https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt 
 ```
 
 Run the application
