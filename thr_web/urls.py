@@ -13,9 +13,9 @@
 """
 
 from django.urls import path
-from . import views
+from .views import HomeView, AboutView
 
 urlpatterns = [
-    path('', views.home, name='thr-home'),
-    path('about/', views.about, name='thr-about')
+    path('', HomeView.as_view(), name='thr_home'),
+    path('about/', AboutView.as_view(), name='thr_about')
 ]

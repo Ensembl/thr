@@ -163,7 +163,7 @@ STATICFILES_DIRS = [
 ]
 
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'thr-home'
+LOGOUT_REDIRECT_URL = 'thr_home'
 LOGIN_URL = 'login'
 
 EMAIL_HOST = "localhost"
