@@ -25,6 +25,7 @@ cd thr
 
 Fire up docker-compose, it will take some time to download the necessary images and setup the environment
 
+
 ```shell script
 docker-compose up
 ```
@@ -83,7 +84,7 @@ source thr_env/bin/activate
 pip install -r requirements.txt
 ```
 
-Export the DB Configuration if necessary
+Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
 # MySQL
@@ -126,7 +127,7 @@ python manage.py enrich --huburl https://data.broadinstitute.org/compbio1/PhyloC
 Run the application
 
 ```shell script
-python thr/manage.py runserver
+python manage.py runserver
 ```
 
 The app will be accessible at: http://127.0.0.1:8000
@@ -134,7 +135,7 @@ The app will be accessible at: http://127.0.0.1:8000
 Create the super user (Optional)
 
 ```shell script
-python thr/manage.py createsuperuser
+python manage.py createsuperuser
 ```
 
 

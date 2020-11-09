@@ -142,7 +142,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Logging
 # https://docs.djangoproject.com/en/2.2/topics/logging/
 LOGGING = {
@@ -211,4 +210,3 @@ LOGIN_URL = 'login'
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
-
