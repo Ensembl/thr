@@ -28,4 +28,3 @@ class RegistrationView(SuccessMessageMixin, CreateView):
     success_url = reverse_lazy('login')
     form_class = CustomUserCreationForm
     success_message = "Your profile was created successfully"
-
