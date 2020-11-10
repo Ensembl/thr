@@ -24,7 +24,7 @@ def api_client():
 
 
 @pytest.mark.django_db
-def test_login(api_client, django_user_model):
+def test_login_success(api_client, django_user_model):
     """
     Test user login
     :param api_client: the API client
@@ -44,9 +44,31 @@ def test_login(api_client, django_user_model):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'username, password, status_code', [
+        ('', '', 400),
+        ('', 'pass', 400),
+        ('non_existing_user', 'pass', 400),
+    ]
+)
+@pytest.mark.django_db
+def test_login_fail(username, password, status_code, api_client):
+    """
+    Test user login failure when the provided credential aren't correct
+    """
+    url = reverse('login_api')
+    data = {
+        'username': username,
+        'password': password
+    }
+    response = api_client.post(url, data=data)
+    assert response.status_code == status_code
+
+
+@pytest.mark.django_db
 def test_logout(api_client, django_user_model):
     """
-    Log the user in and log him/her out while providing the access token
+    Log the user in and out while providing the access token
     """
     user = django_user_model.objects.create_user(username='user', password='password')
     token, _ = Token.objects.get_or_create(user=user)
@@ -54,6 +76,18 @@ def test_logout(api_client, django_user_model):
     url = reverse('logout_api')
     response = api_client.post(url)
     assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_logout_fail(api_client):
+    """
+    Log the user in and out while providing the access token
+    """
+    token = 'random14token77definitely895invalid'
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+    url = reverse('logout_api')
+    response = api_client.post(url)
+    assert response.status_code == 401
 
 
 @pytest.mark.django_db
@@ -69,7 +103,7 @@ def test_logout(api_client, django_user_model):
 )
 def test_registration(username, email, password, password2, status_code, api_client):
     """
-    Test user registration by providing different scenarios with th expected status_code
+    Test user registration by providing different scenarios with the expected status_code
     """
     url = reverse('register_api')
     data = {

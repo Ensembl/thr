@@ -13,44 +13,47 @@
 """
 
 from django.contrib.auth import logout
-from rest_framework import status
+from rest_framework import status, authentication, permissions
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.views import APIView
+
 from .serializers import RegistrationSerializer
 
 
-@api_view(['POST'])
-def registration_view(request):
+class RegistrationViewAPI(APIView):
     """
     User registration endpoint, if the request is successful,
-    the response is formatted as a JSON object with a response message
-    and an access token
+    an HttpResponse is returned with the access token
     :param request: the request
     :returns: the data if the request was successful otherwise it return an error message
     """
-    serializer = RegistrationSerializer(data=request.data)
-    data = {}
-    if serializer.is_valid():
-        new_user = serializer.save()
-        data['response'] = 'User registered Successfully!'
-        token = Token.objects.create(user=new_user).key
-        data['token'] = token
-        return Response(data, status=status.HTTP_201_CREATED)
-    else:
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        serializer = RegistrationSerializer(data=request.data)
+        data = {}
+        if serializer.is_valid():
+            new_user = serializer.save()
+            data['response'] = 'User registered successfully!'
+            token = Token.objects.create(user=new_user).key
+            data['token'] = token
+            return Response(data, status=status.HTTP_201_CREATED)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
-@permission_classes((IsAuthenticated, ))
-def logout_view(request):
+class LogoutViewAPI(APIView):
     """
-    Log the user out if he/she is already logged in,
+    Log the users out if they are already logged in,
     and delete the access token from the database
-    :param request: the request
-    :returns: the response message
     """
-    request.user.auth_token.delete()
-    logout(request)
-    return Response({"success": "Successfully logged out."}, status.HTTP_200_OK)
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        """
+        Returns the response message 200 or 401 (Invalid token)
+        """
+        request.user.auth_token.delete()
+        logout(request)
+        return Response({"success": "Successfully logged out."}, status.HTTP_200_OK)

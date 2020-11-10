@@ -27,7 +27,7 @@ def create_auth_token(sender, instance=None, created=False, **kwargs):
     https://www.django-rest-framework.org/api-guide/authentication/#tokenauthentication
     https://docs.djangoproject.com/en/3.1/ref/signals/#post-save
     :param sender: The model class
-    :param instance: the actual instance being saved
+    :param instance: the user instance being saved
     :param created: a boolean, True if a new record was created
     """
     if created:
