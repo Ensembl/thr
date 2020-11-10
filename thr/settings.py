@@ -99,7 +99,7 @@ WSGI_APPLICATION = 'thr.wsgi.application'
 
 # To uncomment later
 # https://docs.djangoproject.com/en/3.0/topics/auth/customizing/#substituting-a-custom-user-model
-# AUTH_USER_MODEL = 'thr.user'
+# AUTH_USER_MODEL = 'thr.users'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -107,7 +107,7 @@ WSGI_APPLICATION = 'thr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('THR_DB_NAME', 'thr_users'),
+        'NAME': os.environ.get('THR_DB_NAME', 'thr_db'),
         'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
         'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
         'HOST': os.environ.get('THR_HOST', 'mysql_db'),

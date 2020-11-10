@@ -18,7 +18,7 @@ from .views import DashboardView, RegistrationView
 
 
 urlpatterns = [
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('', include('django.contrib.auth.urls')),
     path('dashboard/', login_required(DashboardView.as_view()), name='dashboard'),
     path('register/', RegistrationView.as_view(), name='register'),
 ]

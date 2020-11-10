@@ -34,12 +34,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('thr_web.urls')),
-    path('', include('users.urls')),
+    path('user/', include('users.urls')),
 
     # REST Framework URLs
-    path('api/v1/', include('users.api.urls'), name='thr_api'),
+    path('api/user/', include('users.api.urls'), name='thr_users_api'),
+    # path('api/trackhub/', include('trackhubs.api.urls'), name='thr_trackhub_api'),
 ]

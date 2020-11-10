@@ -19,7 +19,7 @@ services:
     ports:
       - "3306:3306"
     environment:
-      MYSQL_DATABASE: "thr_users"
+      MYSQL_DATABASE: "thr_db"
       MYSQL_USER: "thr_dev"
       MYSQL_PASSWORD: "password"
       MYSQL_ROOT_PASSWORD: "password"

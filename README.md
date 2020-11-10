@@ -77,7 +77,7 @@ Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
 export DEBUG=1
-export THR_DB_NAME=thr_users  # The DB should already be created
+export THR_DB_NAME=thr_db  # The DB should already be created
 export THR_DB_USER=user
 export THR_DB_PASSWORD=password
 export THR_HOST=localhost

@@ -66,7 +66,7 @@ def test_login_fail(username, password, status_code, api_client):
 
 
 @pytest.mark.django_db
-def test_logout(api_client, django_user_model):
+def test_logout_success(api_client, django_user_model):
     """
     Log the user in and out while providing the access token
     """
@@ -123,4 +123,29 @@ def test_unauthorized_request(api_client):
     """
     url = reverse('logout_api')
     response = api_client.post(url)
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_user_details_success(api_client, django_user_model):
+    """
+    List the user details after providing the access token
+    """
+    user = django_user_model.objects.create_user(username='user', password='password')
+    token, _ = Token.objects.get_or_create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+    url = reverse('user_api')
+    response = api_client.get(url)
+    assert response.status_code == 200
+
+
+@pytest.mark.django_db
+def test_user_details_fail(api_client, django_user_model):
+    """
+    List the user details after providing the access token
+    """
+    token = 'another455random14token77definitely895invalid'
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+    url = reverse('user_api')
+    response = api_client.get(url)
     assert response.status_code == 401
