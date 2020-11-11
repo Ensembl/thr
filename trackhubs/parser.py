@@ -26,12 +26,6 @@ from .constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 
 logger = logging.getLogger(__name__)
 
-# This hub is quite big
-# hub_url = 'http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/hub.txt'
-hub_url = 'https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt'
-# hub_url = 'ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt'
-# hub_url = 'http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt'
-
 
 def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     """
@@ -42,6 +36,11 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     :param is_trackdb: is set to true if we are parsing trackdb
     :returns: an array of dictionaries, each dictionary contains one object
     either hub, genome or track
+    hub_url examples:
+    http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/hub.txt
+    https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt
+    ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt
+    http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt
     """
     logger.info("Parsing '{}'".format(url))
     # dict_info is where key/value of each element (it can be hub, genome or track) is stored
@@ -316,7 +315,8 @@ def update_trackdb_document(trackdb, file_type, trackdb_data, trackdb_configurat
     # TODO: handle exceptions
     """
     try:
-        es = connections.Elasticsearch(timeout=30)
+        es = connections.Elasticsearch()
+
         es.update(
             index='trackhubs',
             doc_type='doc',
@@ -497,15 +497,12 @@ def save_and_update_document(hub_url):
                                 track['track']: track
                             })
 
-        # update MySQL
-        current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
-        current_trackdb.configurations = trackdb_configuration
-        current_trackdb.save()
+        # update MySQL (commented for now)
+        # current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
+        # current_trackdb.configuration = trackdb_configuration
+        # current_trackdb.save()
         # Update Elasticsearch trackdb document
         update_trackdb_document(trackdb_obj, file_type, trackdb_data, trackdb_configuration, hub_obj)
 
 
-# save_and_update_document(hub_url)
-
 # TODO: add delete_hub() etc
-

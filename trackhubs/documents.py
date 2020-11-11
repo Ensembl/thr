@@ -12,8 +12,9 @@
    limitations under the License.
 """
 
-from django_elasticsearch_dsl import Document, ObjectField, fields
+from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
+from elasticsearch_dsl import MetaField
 
 from .models import Trackdb
 
@@ -36,14 +37,19 @@ class TrackdbDocument(Document):
         'accession': fields.StringField(),
     })
 
+    configuration = fields.ObjectField()
+
+    # Meta is used to set dynamic mapping to false to avoid mapping explosion
+    # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings
+    class Meta:
+        all = MetaField(enabled=False)
+        dynamic = MetaField('false')
+
     class Index:
         name = 'trackhubs'
         settings = {
             'number_of_shards': 1,
-            'number_of_replicas': 0,
-            # solve: Limit of total fields [1000] in index [trackhubs] has been exceeded
-            # https://stackoverflow.com/a/55373088/4488332
-            'index.mapping.total_fields.limit': 100000
+            'number_of_replicas': 0
         }
 
     class Django:
@@ -56,7 +62,6 @@ class TrackdbDocument(Document):
             'version',
             'created',
             'updated',
-            # 'configurations',
             'status_message',
             'status_last_update',
             # 'status',

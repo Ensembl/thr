@@ -102,19 +102,11 @@ class Trackdb(models.Model):
 
     trackdb_id = models.AutoField(primary_key=True)
     public = models.BooleanField(default=False)
-    # choices is an iterable containing (actual value, human readable name) tuples
-    # type = models.CharField(choices=[
-    #     ("genomics", "genomics"),
-    #     ("epigenomics", "epigenomics"),
-    #     ("transcriptomics", "transcriptomics"),
-    #     ("proteomics", "proteomics")
-    # ], default="genomics", max_length=50)
-    # hub = JSONField()  # default=default_hub
     description = models.TextField(null=True)
     version = models.CharField(default="v1.0", max_length=10)
     created = models.IntegerField(default=int(time.time()))
     updated = models.IntegerField(null=True)
-    configurations = JSONField()
+    configuration = JSONField()
     status_message = models.CharField(max_length=45, null=True)
     status_last_update = models.CharField(max_length=45, null=True)
     source_url = models.CharField(max_length=255, null=True)
@@ -122,24 +114,6 @@ class Trackdb(models.Model):
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
-
-    '''
-    fields = [
-            'id',
-            'public',
-            'type',
-            #'hub',
-            'description',
-            'version',
-            #'source',
-            #'species',
-            #'assembly',
-            #'data',
-            #'assembly',
-            #'data',
-            #'configuration',
-        ]
-    '''
 
 
 class Track(models.Model):

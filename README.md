@@ -9,8 +9,9 @@ This repository is created to give the project a technology refresh while keepin
 * [Python 3.7+](https://www.python.org/downloads/)
 * [venv](https://docs.python.org/3/library/venv.html)
 * [Elasticsearch 6.3](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-0)
-* [Kibana 6.3](https://www.elastic.co/downloads/past-releases/kibana-6-3-0) (Optional)
 * [Docker and Docker-compose](https://www.docker.com/products/docker-desktop) are required if you want to use docker containers
+
+> [Kibana 6.3](https://www.elastic.co/downloads/past-releases/kibana-6-3-0) is not a prerequisite but recommended to explore and execute Elasticsearch queries.
 
 ### Local deployment
 
