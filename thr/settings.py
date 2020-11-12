@@ -54,9 +54,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
     'thr_web.apps.ThrWebConfig',
     'users.apps.UsersConfig',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -89,6 +97,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'thr.wsgi.application'
 
+# To uncomment later
+# https://docs.djangoproject.com/en/3.0/topics/auth/customizing/#substituting-a-custom-user-model
+# AUTH_USER_MODEL = 'thr.users'
 
 # Database
 # https://docs.djangoproject.com/en/3.1/ref/settings/#databases
@@ -96,7 +107,7 @@ WSGI_APPLICATION = 'thr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('THR_DB_NAME', 'thr_users'),
+        'NAME': os.environ.get('THR_DB_NAME', 'thr_db'),
         'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
         'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
         'HOST': os.environ.get('THR_HOST', 'mysql_db'),
@@ -152,7 +163,7 @@ STATICFILES_DIRS = [
 ]
 
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'thr-home'
+LOGOUT_REDIRECT_URL = 'thr_home'
 LOGIN_URL = 'login'
 
 EMAIL_HOST = "localhost"

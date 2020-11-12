@@ -33,7 +33,7 @@ def test_superuser_create():
 
 @pytest.mark.django_db
 def test_view(client):
-    url = reverse('thr-home')
+    url = reverse('thr_home')
     response = client.get(url)
     assert response.status_code == 200
 
