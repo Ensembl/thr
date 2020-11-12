@@ -10,7 +10,7 @@ before_script:
 variables:
   # Configure mysql service (https://hub.docker.com/_/mysql/)
   MYSQL_HOST: "mysql_db"
-  MYSQL_DATABASE: "test_thr_users"
+  MYSQL_DATABASE: "test_thr_db"
   MYSQL_USER: "thr_dev"
   MYSQL_PASSWORD: "password"
   MYSQL_ROOT_PASSWORD: "password"

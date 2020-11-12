@@ -12,26 +12,19 @@
    limitations under the License.
 """
 
-from django.contrib.auth import login
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
-from django.template import RequestContext
+from django.contrib.messages.views import SuccessMessageMixin
+from django.urls import reverse_lazy
+from django.views.generic import CreateView, TemplateView
+
 from .forms import CustomUserCreationForm
 
 
-@login_required
-def dashboard(request):
-    return render(request, 'user/dashboard.html')
+class DashboardView(TemplateView):
+    template_name = 'user/dashboard.html'
 
 
-def register(request):
-    if request.method == "POST":
-        form = CustomUserCreationForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            login(request, user)
-            return redirect("dashboard")
-    else:
-        form = CustomUserCreationForm
-
-    return render(request, "user/register.html", {"form": form})
+class RegistrationView(SuccessMessageMixin, CreateView):
+    template_name = 'user/register.html'
+    success_url = reverse_lazy('login')
+    form_class = CustomUserCreationForm
+    success_message = "Your profile was created successfully"

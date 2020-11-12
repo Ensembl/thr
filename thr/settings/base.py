@@ -53,6 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
     'thr_web.apps.ThrWebConfig',
     'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
@@ -62,6 +64,12 @@ INSTALLED_APPS = [
     'django_elasticsearch_dsl_drf',
     'django_mysql',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ]
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -78,7 +86,7 @@ ROOT_URLCONF = 'thr.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / '../templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -94,6 +102,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'thr.wsgi.application'
 
+# To uncomment later
+# https://docs.djangoproject.com/en/3.0/topics/auth/customizing/#substituting-a-custom-user-model
+# AUTH_USER_MODEL = 'thr.users'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
@@ -101,7 +112,7 @@ WSGI_APPLICATION = 'thr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('THR_DB_NAME', 'thr_users'),
+        'NAME': os.environ.get('THR_DB_NAME', 'thr_db'),
         'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
         'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
         'HOST': os.environ.get('THR_HOST', 'mysql'),
@@ -205,7 +216,7 @@ STATIC_ROOT = '/vol/web/static'
 MEDIA_ROOT = '/vol/web/media'
 
 LOGIN_REDIRECT_URL = 'dashboard'
-LOGOUT_REDIRECT_URL = 'thr-home'
+LOGOUT_REDIRECT_URL = 'thr_home'
 LOGIN_URL = 'login'
 
 EMAIL_HOST = "localhost"
