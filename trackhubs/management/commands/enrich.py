@@ -58,7 +58,7 @@ class Command(BaseCommand):
                     else:
                         self.stdout.write(self.style.SUCCESS("The Hub '{}' is updated successfully".format(hub_url)))
                 else:
-                    answer = boolean_input("The hub with the url '{}' doesn't exist in the database.\ndo you wnat to add it and proceed with the enrichment? [y/n]".format(hub_url))
+                    answer = boolean_input("The hub with the url '{}' doesn't exist in the database.\ndo you want to add it and proceed with the enrichment? [y/n]".format(hub_url))
                     if answer:
                         save_and_update_document(hub_url)
                         self.stdout.write(self.style.SUCCESS("The Hub '{}' is loaded successfully".format(hub_url)))

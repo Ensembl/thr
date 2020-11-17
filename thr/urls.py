@@ -40,6 +40,7 @@ urlpatterns = [
     path('user/', include('users.urls')),
 
     # REST Framework URLs
-    path('api/user/', include('users.api.urls'), name='thr_users_api'),
-    # path('api/trackhub/', include('trackhubs.api.urls'), name='thr_trackhub_api'),
+    # path('api-auth/', include('rest_framework.urls')),
+    path('api/user/', include('users.api.urls')),
+    path('api/trackhub/', include('trackhubs.api.urls')),
 ]

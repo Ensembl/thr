@@ -18,10 +18,9 @@ import json
 import urllib.request
 
 import django
-import elasticsearch
-from elasticsearch_dsl import connections
+from django.contrib.auth.models import User
 
-from trackhubs.models import Hub, Species, DataType, Trackdb, FileType, Visibility, Genome, Assembly, Track
+import trackhubs.models
 from .constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 
 logger = logging.getLogger(__name__)
@@ -71,9 +70,9 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
             if line.startswith('#'):
                 continue
 
-            splitted_line = line.rstrip('\n').split(' ', 1)
-            key = splitted_line[0].strip()
-            dict_info[key] = splitted_line[1]
+            split_line = line.rstrip('\n').split(' ', 1)
+            key = split_line[0].strip()
+            dict_info[key] = split_line[1]
 
         # This part is ugly, but it's the only way I found to make sure the last
         # element is added to the returned dict_info_list (in case there is no new line
@@ -100,8 +99,8 @@ def save_fake_species():
     """
     # TODO: Replace this with a proper one
     try:
-        if not Species.objects.filter(taxon_id=9606).exists():
-            sp = Species(
+        if not trackhubs.models.Species.objects.filter(taxon_id=9606).exists():
+            sp = trackhubs.models.Species(
                 taxon_id=9606,
                 scientific_name='Homo sapiens'
             )
@@ -110,7 +109,7 @@ def save_fake_species():
         logger.exception('Error trying to connect to Elasticsearch')
 
 
-def get_obj(unique_col, object_name, file_type=False):
+def get_datatype_filetype_visibility(unique_col, object_name, file_type=False):
     """
     Get object (can be DataType, FileType or Visibility) by name
     Create one if it doesn't exist?
@@ -171,33 +170,31 @@ def save_constant_data(name_list, object_name):
     object_name.objects.bulk_create(name_list_obj)
 
 
-def save_hub(hub_dict, data_type, species=00):
+def save_hub(hub_dict, data_type, current_user, species=00):
     """
     Save the hub in MySQL DB if it doesn't exist already
     :param hub_dict: hub dictionary containing all the parsed info
     :param data_type: either specified by the user in the POST request
     or the default one ('genomics')
     :param species: the species associated with this hub
+    :param current_user: the submitter (current user) id
     # TODO: work on adding species
     :returns: either the existing hub or the new created one
     """
-    existing_hub_obj = Hub.objects.filter(url=hub_dict['url']).first()
-    if existing_hub_obj:
-        return existing_hub_obj
-    else:
-        # TODO: Add try expect if the 'hub' or 'url' is empty
-        new_hub_obj = Hub(
-            name=hub_dict['hub'],
-            short_label=hub_dict.get('shortLabel'),
-            long_label=hub_dict.get('longLabel'),
-            url=hub_dict['url'],
-            description_url=hub_dict.get('descriptionUrl'),
-            email=hub_dict.get('email'),
-            data_type=DataType.objects.filter(name=data_type).first(),
-            species_id=1
-        )
-        new_hub_obj.save()
-        return new_hub_obj
+    # TODO: Add try expect if the 'hub' or 'url' is empty
+    new_hub_obj = trackhubs.models.Hub(
+        name=hub_dict['hub'],
+        short_label=hub_dict.get('shortLabel'),
+        long_label=hub_dict.get('longLabel'),
+        url=hub_dict['url'],
+        description_url=hub_dict.get('descriptionUrl'),
+        email=hub_dict.get('email'),
+        data_type=trackhubs.models.DataType.objects.filter(name=data_type).first(),
+        species_id=1,
+        owner_id=current_user.id
+    )
+    new_hub_obj.save()
+    return new_hub_obj
 
 
 def save_genome(genome_dict, hub):
@@ -207,11 +204,11 @@ def save_genome(genome_dict, hub):
     :param hub: hub object associated with this genome
     :returns: either the existing genome or the new created one
     """
-    existing_genome_obj = Genome.objects.filter(name=genome_dict['genome']).first()
+    existing_genome_obj = trackhubs.models.Genome.objects.filter(name=genome_dict['genome']).first()
     if existing_genome_obj:
         return existing_genome_obj
     else:
-        new_genome_obj = Genome(
+        new_genome_obj = trackhubs.models.Genome(
             name=genome_dict['genome'],
             trackdb_location=genome_dict['trackDb'],
             hub=hub
@@ -222,16 +219,16 @@ def save_genome(genome_dict, hub):
 
 def save_assembly(assembly_dict, genome):
     """
-    Save the genome in MySQL DB  if it doesn't exist already
+    Save the assembly in MySQL DB if it doesn't exist already
     :param assembly_dict: assembly dictionary containing all the parsed info
     :param genome: genome object associated with this assembly
     :returns: either the existing assembly or the new created one
     """
-    existing_assembly_obj = Assembly.objects.filter(name=assembly_dict['name']).first()
+    existing_assembly_obj = trackhubs.models.Assembly.objects.filter(name=assembly_dict['name']).first()
     if existing_assembly_obj:
         return existing_assembly_obj
     else:
-        new_assembly_obj = Assembly(
+        new_assembly_obj = trackhubs.models.Assembly(
             accession='accession_goes_here',
             name=assembly_dict['name'],
             long_name='',
@@ -251,11 +248,11 @@ def save_trackdb(url, hub, genome, assembly):
     :param assembly: assembly object associated with this trackdb
     :returns: either the existing trackdb or the new created one
     """
-    existing_trackdb_obj = Trackdb.objects.filter(source_url=url).first()
+    existing_trackdb_obj = trackhubs.models.Trackdb.objects.filter(source_url=url).first()
     if existing_trackdb_obj:
         trackdb_obj = existing_trackdb_obj
     else:
-        trackdb_obj = Trackdb(
+        trackdb_obj = trackhubs.models.Trackdb(
             public=True,
             created=int(time.time()),
             updated=int(time.time()),
@@ -280,14 +277,14 @@ def save_track(track_dict, trackdb, file_type, visibility):
     """
     existing_track_obj = None
     try:
-        existing_track_obj = Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
+        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
     except KeyError:
         logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
     if existing_track_obj:
         return existing_track_obj
     else:
-        new_track_obj = Track(
+        new_track_obj = trackhubs.models.Track(
             # save name only without 'on' or 'off' settings
             name=get_first_word(track_dict['track']),
             short_label=track_dict.get('shortLabel'),
@@ -296,57 +293,11 @@ def save_track(track_dict, trackdb, file_type, visibility):
             html=track_dict.get('html'),
             parent=None,  # track
             trackdb=trackdb,
-            file_type=FileType.objects.filter(name=file_type).first(),
-            visibility=Visibility.objects.filter(name=visibility).first()
+            file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
+            visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
         )
         new_track_obj.save()
         return new_track_obj
-
-
-def update_trackdb_document(trackdb, file_type, trackdb_data, trackdb_configuration, hub):
-    """
-    Update trackdb document in Elascticsearch with the additional data provided
-    :param trackdb: trackdb object to be updated
-    :param file_type: file type string associated with this track
-    # TODO: write the proper query, file_type param will be removed
-    :param trackdb_data: data array that will be added to the trackdb document
-    :param trackdb_configuration: configuration object that will be added to the trackdb document
-    :param hub: hub object associated with this trackdb
-    # TODO: handle exceptions
-    """
-    try:
-        es = connections.Elasticsearch()
-
-        es.update(
-            index='trackhubs',
-            doc_type='doc',
-            id=trackdb.trackdb_id,
-            refresh=True,
-            body={
-                'doc': {
-                    'file_type': {
-                        # TODO: write a proper query/function (e.g get_file_type_count(trackdb))
-                        file_type: FileType.objects.filter(name=file_type).count()
-                    },
-                    'data': trackdb_data,
-                    'updated': int(time.time()),
-                    'source': {
-                        'url': trackdb.source_url,
-                        'checksum': ''
-                    },
-                    # Get the data type based on the hub info
-                    'type': Hub.objects.filter(data_type_id=hub.data_type_id)
-                        .values('data_type__name').first()
-                        .get('data_type__name'),
-                    'configuration': trackdb_configuration
-                }
-            }
-        )
-        logger.info("Trackdb id {} is updated successfully".format(trackdb.trackdb_id))
-
-    except elasticsearch.exceptions.ConnectionError:
-        logger.exception("There was an error while trying to connect to Elasticsearch. "
-              "Please make sure ES service is running and configured properly!")
 
 
 def get_first_word(tabbed_info):
@@ -370,7 +321,7 @@ def add_parent_id(parent_name, current_track):
     # e.g. 'uniformDnasePeaks off' becomes 'uniformDnasePeaks'
     parent_name_only = get_first_word(parent_name).strip()
     # IDEA: DRY create get where function
-    parent_track = Track.objects.filter(name=parent_name_only).first()
+    parent_track = trackhubs.models.Track.objects.filter(name=parent_name_only).first()
     current_track.parent_id = parent_track.track_id
     current_track.save()
     return parent_name_only
@@ -385,38 +336,57 @@ def get_parents(track):
 
     try:
         parent_track_id = track.parent_id
-        parent_track = Track.objects.filter(track_id=parent_track_id).first()
+        parent_track = trackhubs.models.Track.objects.filter(track_id=parent_track_id).first()
     except AttributeError:
         logger.error("Couldn't get the parent of {}".format(track.name))
 
     try:
         grandparent_track_id = parent_track.parent_id
-        grandparent_track = Track.objects.filter(track_id=grandparent_track_id).first()
+        grandparent_track = trackhubs.models.Track.objects.filter(track_id=grandparent_track_id).first()
     except AttributeError:
         grandparent_track = None
 
     return parent_track, grandparent_track
 
 
-def save_and_update_document(hub_url):
+def is_hub_exists(hub_url):
+    existing_hub_obj = trackhubs.models.Hub.objects.filter(url=hub_url).first()
+    if existing_hub_obj:
+        return True
+    return False
+
+
+def save_and_update_document(hub_url, current_user):
     """
     Save everything in MySQL DB then Elasticsearch and
     update both after constructing the required objects
     :param hub_url: the hub url provided by the submitter
+    :param current_user: the submitter (current user) id
+    :returns: the hub information if the submission was successful otherwise it returns an error
     """
     base_url = hub_url[:hub_url.rfind('/')]
     save_fake_species()
 
-    save_constant_data(DATA_TYPES, DataType)
-    save_constant_data(FILE_TYPES, FileType)
-    save_constant_data(VISIBILITY, Visibility)
+    # TODO: this three lines should be moved somewhere else where they are executed only once
+    save_constant_data(DATA_TYPES, trackhubs.models.DataType)
+    save_constant_data(FILE_TYPES, trackhubs.models.FileType)
+    save_constant_data(VISIBILITY, trackhubs.models.Visibility)
+
+    # Verification step
+    # Before we submit the hub we make sure that it doesn't exist already
+    if is_hub_exists(hub_url):
+        original_owner_id = trackhubs.models.Hub.objects.filter(url=hub_url).first().owner_id
+        if original_owner_id == current_user.id:
+            return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
+        original_owner_email = User.objects.filter(id=original_owner_id).first().email
+        return {"error": "This hub is already submitted by a different user (the original submitter's email: {})".format(original_owner_email)}
 
     hub_info = parse_file_from_url(hub_url, is_hub=True)[0]
 
     logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))
 
-    data_type = 'epigenomics'
-    hub_obj = save_hub(hub_info, data_type)
+    data_type = 'genomics'
+    hub_obj = save_hub(hub_info, data_type, current_user)
 
     genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
     logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
@@ -446,11 +416,11 @@ def save_and_update_document(hub_url):
                 # get the file type and visibility
                 # TODO: if file_type in FILE_TYPES Good, Else Error
                 if 'type' in track:
-                    file_type = get_obj(track['type'], FileType, file_type=True).name
+                    file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType, file_type=True).name
                 if 'visibility' in track:
-                    visibility = get_obj(track['visibility'], Visibility).name
+                    visibility = get_datatype_filetype_visibility(track['visibility'], trackhubs.models.Visibility).name
 
-                track_obj = get_obj_if_exist(track['track'], Track)
+                track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
                 if not track_obj:
                     track_obj = save_track(track, trackdb_obj, file_type, visibility)
 
@@ -502,7 +472,8 @@ def save_and_update_document(hub_url):
         # current_trackdb.configuration = trackdb_configuration
         # current_trackdb.save()
         # Update Elasticsearch trackdb document
-        update_trackdb_document(trackdb_obj, file_type, trackdb_data, trackdb_configuration, hub_obj)
+        trackdb_obj.update_trackdb_document(file_type, trackdb_data, trackdb_configuration, hub_obj)
+        return hub_info.update({'success': 'The hub is submitted successfully'})
 
 
 # TODO: add delete_hub() etc
