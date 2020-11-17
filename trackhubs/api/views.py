@@ -38,8 +38,9 @@ class HubList(APIView):
         if 'url' in data:
             hub_url = data['url']
             assemblies = data.get('assemblies')
+            data_type = data.get('type')
             current_user = request.user
-            result = save_and_update_document(hub_url, current_user)
+            result = save_and_update_document(hub_url, data_type, current_user)
             if 'error' in result:
                 return Response(result, status=status.HTTP_400_BAD_REQUEST)
             return Response(result, status=status.HTTP_201_CREATED)

@@ -356,11 +356,12 @@ def is_hub_exists(hub_url):
     return False
 
 
-def save_and_update_document(hub_url, current_user):
+def save_and_update_document(hub_url, data_type, current_user):
     """
     Save everything in MySQL DB then Elasticsearch and
     update both after constructing the required objects
     :param hub_url: the hub url provided by the submitter
+    :param data_type: the data type provided by thee used (if any, default is 'genomics')
     :param current_user: the submitter (current user) id
     :returns: the hub information if the submission was successful otherwise it returns an error
     """
@@ -385,7 +386,14 @@ def save_and_update_document(hub_url, current_user):
 
     logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))
 
-    data_type = 'genomics'
+    # check if the user provides the data type, default is 'genomics'
+    if data_type:
+        data_type = data_type.lower()
+        if data_type not in DATA_TYPES:
+            return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type, ", ".join(DATA_TYPES))}
+    else:
+        data_type = 'genomics'
+
     hub_obj = save_hub(hub_info, data_type, current_user)
 
     genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
@@ -473,7 +481,7 @@ def save_and_update_document(hub_url, current_user):
         # current_trackdb.save()
         # Update Elasticsearch trackdb document
         trackdb_obj.update_trackdb_document(file_type, trackdb_data, trackdb_configuration, hub_obj)
-        return hub_info.update({'success': 'The hub is submitted successfully'})
 
+    return {'success': 'The hub is submitted successfully'}
 
 # TODO: add delete_hub() etc
