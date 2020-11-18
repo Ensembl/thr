@@ -124,14 +124,7 @@ def get_datatype_filetype_visibility(unique_col, object_name, file_type=False):
         unique_col = get_first_word(unique_col)
 
     existing_obj = object_name.objects.filter(name=unique_col).first()
-    if existing_obj:
-        return existing_obj
-    else:
-        new_obj = object_name(
-            name=unique_col
-        )
-        new_obj.save()
-        return new_obj
+    return existing_obj
 
 
 def get_obj_if_exist(unique_col, object_name, file_type=False):
@@ -179,7 +172,7 @@ def save_hub(hub_dict, data_type, current_user, species=00):
     :param species: the species associated with this hub
     :param current_user: the submitter (current user) id
     # TODO: work on adding species
-    :returns: either the existing hub or the new created one
+    :returns: the new created hub
     """
     # TODO: Add try expect if the 'hub' or 'url' is empty
     new_hub_obj = trackhubs.models.Hub(
