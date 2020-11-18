@@ -97,3 +97,11 @@ def test_parse_trackdbs_success():
 def test_parse_url_fail(test_url, expected_result):
     actual_result = parse_file_from_url(test_url, is_hub=True)
     assert actual_result == expected_result
+
+
+@pytest.mark.django_db
+def test_get_datatype_filetype_visibility():
+    actual_visibility_obj = trackhubs.models.Visibility.objects.create(name='genomics')
+    actual_visibility_obj.save()
+    expected_visibility_obj = get_datatype_filetype_visibility('genomics', trackhubs.models.Visibility)
+    assert actual_visibility_obj == expected_visibility_obj

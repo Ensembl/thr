@@ -84,11 +84,12 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
             dict_info.update({'url': url})
             dict_info_list.append(dict_info)
 
-    except (IOError, urllib.error.HTTPError, urllib.error.URLError, ValueError, AttributeError) as ex:
+    except (IOError, urllib.error.HTTPError, urllib.error.URLError, ValueError, AttributeError, TypeError) as ex:
         logger.error(ex)
         return None
     if dict_info is []:
         logger.error("Couldn't parse the provided text file, please make sure it well formatted!")
+        return None
     else:
         return dict_info_list
 
@@ -375,106 +376,110 @@ def save_and_update_document(hub_url, data_type, current_user):
         original_owner_email = User.objects.filter(id=original_owner_id).first().email
         return {"error": "This hub is already submitted by a different user (the original submitter's email: {})".format(original_owner_email)}
 
-    hub_info = parse_file_from_url(hub_url, is_hub=True)[0]
+    hub_info_array = parse_file_from_url(hub_url, is_hub=True)
 
-    logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))
+    if hub_info_array:
+        hub_info = hub_info_array[0]
+        logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))
 
-    # check if the user provides the data type, default is 'genomics'
-    if data_type:
-        data_type = data_type.lower()
-        if data_type not in DATA_TYPES:
-            return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type, ", ".join(DATA_TYPES))}
-    else:
-        data_type = 'genomics'
+        # check if the user provides the data type, default is 'genomics'
+        if data_type:
+            data_type = data_type.lower()
+            if data_type not in DATA_TYPES:
+                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type, ", ".join(DATA_TYPES))}
+        else:
+            data_type = 'genomics'
 
-    hub_obj = save_hub(hub_info, data_type, current_user)
+        hub_obj = save_hub(hub_info, data_type, current_user)
 
-    genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
-    logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
+        genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
+        logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
-    for genomes_trackdb in genomes_trackdbs_info:
-        # logger.debug("genomes_trackdb: {}".format(json.dumps(genomes_trackdb, indent=4)))
+        for genomes_trackdb in genomes_trackdbs_info:
+            # logger.debug("genomes_trackdb: {}".format(json.dumps(genomes_trackdb, indent=4)))
 
-        genome_obj = save_genome(genomes_trackdb, hub_obj)
+            genome_obj = save_genome(genomes_trackdb, hub_obj)
 
-        assembly_info = {'name': genomes_trackdb['genome']}
-        assembly_obj = save_assembly(assembly_info, genome_obj)
+            assembly_info = {'name': genomes_trackdb['genome']}
+            assembly_obj = save_assembly(assembly_info, genome_obj)
 
-        # Save the initial data
-        trackdb_obj = save_trackdb(base_url + '/' + genomes_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
+            # Save the initial data
+            trackdb_obj = save_trackdb(base_url + '/' + genomes_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
 
-        trackdbs_info = parse_file_from_url(base_url + '/' + genomes_trackdb['trackDb'], is_trackdb=True)
-        # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
+            trackdbs_info = parse_file_from_url(base_url + '/' + genomes_trackdb['trackDb'], is_trackdb=True)
+            # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
-        trackdb_data = []
-        trackdb_configuration = {}
-        for track in trackdbs_info:
-            # logger.debug("track: {}".format(json.dumps(track, indent=4)))
+            trackdb_data = []
+            trackdb_configuration = {}
+            for track in trackdbs_info:
+                # logger.debug("track: {}".format(json.dumps(track, indent=4)))
 
-            if 'track' in track:
-                # default value
-                visibility = 'hide'
-                # get the file type and visibility
-                # TODO: if file_type in FILE_TYPES Good, Else Error
-                if 'type' in track:
-                    file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType, file_type=True).name
-                if 'visibility' in track:
-                    visibility = get_datatype_filetype_visibility(track['visibility'], trackhubs.models.Visibility).name
+                if 'track' in track:
+                    # default value
+                    visibility = 'hide'
+                    # get the file type and visibility
+                    # TODO: if file_type in FILE_TYPES Good, Else Error
+                    if 'type' in track:
+                        file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType, file_type=True).name
+                    if 'visibility' in track:
+                        visibility = get_datatype_filetype_visibility(track['visibility'], trackhubs.models.Visibility).name
 
-                track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
-                if not track_obj:
-                    track_obj = save_track(track, trackdb_obj, file_type, visibility)
+                    track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
+                    if not track_obj:
+                        track_obj = save_track(track, trackdb_obj, file_type, visibility)
 
-                trackdb_data.append(
-                    {
-                        'id': track_obj.name,
-                        'name': track_obj.long_label
-                    }
-                )
+                    trackdb_data.append(
+                        {
+                            'id': track_obj.name,
+                            'name': track_obj.long_label
+                        }
+                    )
 
-                # if the track is parent we prepare the configuration object
-                if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
-                    # logger.debug("'{}' is parent".format(track['track']))
-                    trackdb_configuration[track['track']] = track
-                    trackdb_configuration[track['track']].pop('url', None)
+                    # if the track is parent we prepare the configuration object
+                    if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
+                        # logger.debug("'{}' is parent".format(track['track']))
+                        trackdb_configuration[track['track']] = track
+                        trackdb_configuration[track['track']].pop('url', None)
 
-                # if the track is a child, add the parent id and update
-                # the configuration to include the current track
-                if 'parent' in track:
-                    add_parent_id(track['parent'], track_obj)
-                    parent_track_obj, grandparent_track_obj = get_parents(track_obj)
+                    # if the track is a child, add the parent id and update
+                    # the configuration to include the current track
+                    if 'parent' in track:
+                        add_parent_id(track['parent'], track_obj)
+                        parent_track_obj, grandparent_track_obj = get_parents(track_obj)
 
-                    if grandparent_track_obj is None:  # Then we are in the first level (subtrack)
-                        if 'members' not in trackdb_configuration[parent_track_obj.name]:
-                            trackdb_configuration[parent_track_obj.name].update({
-                                'members': {
+                        if grandparent_track_obj is None:  # Then we are in the first level (subtrack)
+                            if 'members' not in trackdb_configuration[parent_track_obj.name]:
+                                trackdb_configuration[parent_track_obj.name].update({
+                                    'members': {
+                                        track['track']: track
+                                    }
+                                })
+                            else:
+                                trackdb_configuration[parent_track_obj.name]['members'].update({
                                     track['track']: track
-                                }
-                            })
-                        else:
-                            trackdb_configuration[parent_track_obj.name]['members'].update({
-                                track['track']: track
-                            })
+                                })
 
-                    else:  # we are in the second level (subsubtrack)
-                        if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
-                            trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
-                                'members': {
+                        else:  # we are in the second level (subsubtrack)
+                            if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
+                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
+                                    'members': {
+                                        track['track']: track
+                                    }
+                                })
+                            else:
+                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]['members'].update({
                                     track['track']: track
-                                }
-                            })
-                        else:
-                            trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]['members'].update({
-                                track['track']: track
-                            })
+                                })
 
-        # update MySQL (commented for now)
-        # current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
-        # current_trackdb.configuration = trackdb_configuration
-        # current_trackdb.save()
-        # Update Elasticsearch trackdb document
-        trackdb_obj.update_trackdb_document(file_type, trackdb_data, trackdb_configuration, hub_obj)
+            # update MySQL (commented for now)
+            # current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
+            # current_trackdb.configuration = trackdb_configuration
+            # current_trackdb.save()
+            # Update Elasticsearch trackdb document
+            trackdb_obj.update_trackdb_document(file_type, trackdb_data, trackdb_configuration, hub_obj)
 
-    return {'success': 'The hub is submitted successfully'}
+        return {'success': 'The hub is submitted successfully'}
+
+    return None
 
 # TODO: add delete_hub() etc

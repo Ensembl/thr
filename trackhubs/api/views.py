@@ -41,7 +41,15 @@ class HubList(APIView):
             data_type = data.get('type')
             current_user = request.user
             result = save_and_update_document(hub_url, data_type, current_user)
+            if not result:
+                return Response(
+                    {'error': 'Something went wrong with the hub submission, please make sure that url is correct'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             if 'error' in result:
                 return Response(result, status=status.HTTP_400_BAD_REQUEST)
             return Response(result, status=status.HTTP_201_CREATED)
-        return Response({"error": "Something went wrong with the hub submission, please make sure that 'url' field exists"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"error": "Something went wrong with the hub submission, please make sure that 'url' field exists"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
