@@ -79,6 +79,24 @@ class Hub(models.Model):
     # TODO: make sure that if the owner is deleted, the hubs are deleted too
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
+    def get_trackdbs_ids(self):
+        """
+        Get all the trackdbs id belonging to the hub
+        This function is used to delete trackdbs document from Elasticsearch
+        since trackdbs in MySQL have the same ids in the Elasticsearch index
+        """
+        all_trackdbs_ids_list = []
+        # look for all the genomes belonging to this hub
+        genomes_list = Genome.objects.filter(hub_id=self.hub_id)
+
+        for genome in genomes_list:
+            # for each genome get the ids of trackdbs that will be deleted
+            trackdbs_list = Trackdb.objects.filter(genome_id=genome.genome_id).values_list('pk', flat=True)
+            all_trackdbs_ids_list.extend(list(trackdbs_list))
+
+        logger.debug("IDs of all the trackdbs that will be deleted: {}".format(all_trackdbs_ids_list))
+        return all_trackdbs_ids_list
+
 
 class Genome(models.Model):
 

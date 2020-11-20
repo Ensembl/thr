@@ -11,13 +11,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+
+import elasticsearch
+from django.http import Http404
+from elasticsearch_dsl import connections
 from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from trackhubs.api.serializers import HubSerializer
 from trackhubs.models import Hub
-from trackhubs.parser import save_and_update_document, parse_file_from_url
+from trackhubs.parser import save_and_update_document
 
 
 class HubList(APIView):
@@ -53,3 +57,48 @@ class HubList(APIView):
             {"error": "Something went wrong with the hub submission, please make sure that 'url' field exists"},
             status=status.HTTP_400_BAD_REQUEST
         )
+
+
+class HubDetail(APIView):
+    """
+    Retrieve or delete a trackhub instance.
+    TODO: add access permissions
+    """
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_hub(self, pk):
+        try:
+            return Hub.objects.get(pk=pk)
+        except Hub.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk):
+        hub = self.get_hub(pk)
+        serializer = HubSerializer(hub)
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        # TODO: Meke sure that only the trackhub owner can delete it
+        hub = self.get_hub(pk)
+        trackdbs_ids_list = hub.get_trackdbs_ids()
+
+        try:
+            es = connections.Elasticsearch()
+        except Exception as e:
+            print(e)
+
+        # delete the trackdb document from Elasticsearch
+        try:
+            for trackdb_id in trackdbs_ids_list:
+                es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
+        except elasticsearch.exceptions.NotFoundError:
+            return Response(
+                {"error": "The hub doesn't exist, please check using 'GET api/trackhub/{}' endpoint".format(pk)},
+                status.HTTP_404_NOT_FOUND
+            )
+
+        # delete the hub from MySQL
+        hub.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

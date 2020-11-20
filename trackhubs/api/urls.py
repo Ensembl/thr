@@ -14,8 +14,10 @@
 
 from django.conf.urls import url
 from django.urls import path
-from .views import HubList
+
+from trackhubs.api import views
 
 urlpatterns = [
-    path('', HubList.as_view(), name='get_trackhub_api'),
+    path('', views.HubList.as_view()),
+    path('<int:pk>/', views.HubDetail.as_view()),
 ]
