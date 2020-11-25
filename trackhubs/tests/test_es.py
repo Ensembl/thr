@@ -11,13 +11,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
-from elasticsearch import Elasticsearch
+import elasticsearch
 from thr.settings import ELASTICSEARCH_DSL
 
 
 def test_connection():
-    es = Elasticsearch(
+    es = elasticsearch.Elasticsearch(
         [ELASTICSEARCH_DSL['default']['hosts']],
         verify_certs=True
     )
@@ -26,7 +25,7 @@ def test_connection():
 
 
 def test_add_document():
-    es = Elasticsearch(
+    es = elasticsearch.Elasticsearch(
         [ELASTICSEARCH_DSL['default']['hosts']],
         verify_certs=True
     )
@@ -40,7 +39,10 @@ def test_add_document():
     }
 
     # Delete the index if it already exists
-    es.indices.delete(index)
+    try:
+        es.indices.delete(index)
+    except elasticsearch.exceptions.NotFoundError:
+        pass
 
     actual_result = es.index(index=index, doc_type=index, id=1, body=expected_document)['result']
     assert actual_result == 'created'
