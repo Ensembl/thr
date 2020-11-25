@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from trackhubs.api.serializers import HubSerializer
 from trackhubs.models import Hub
-from trackhubs.parser import save_and_update_document
+from trackhubs.translator import save_and_update_document
 
 
 class HubList(APIView):
@@ -83,13 +83,9 @@ class HubDetail(APIView):
         hub = self.get_hub(pk)
         trackdbs_ids_list = hub.get_trackdbs_ids()
 
-        try:
-            es = connections.Elasticsearch()
-        except Exception as e:
-            print(e)
-
         # delete the trackdb document from Elasticsearch
         try:
+            es = connections.Elasticsearch()
             for trackdb_id in trackdbs_ids_list:
                 es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
         except elasticsearch.exceptions.NotFoundError:
@@ -97,6 +93,13 @@ class HubDetail(APIView):
                 {"error": "The hub doesn't exist, please check using 'GET api/trackhub/{}' endpoint".format(pk)},
                 status.HTTP_404_NOT_FOUND
             )
+        except elasticsearch.exceptions.ConnectionError:
+            return Response(
+                {"error": "Cannot connect to Elasticsearch"},
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        except Exception as e:
+            return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # delete the hub from MySQL
         hub.delete()
