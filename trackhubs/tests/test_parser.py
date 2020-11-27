@@ -13,16 +13,23 @@
 """
 
 import logging
+
 import pytest
 
+from thr.settings import BASE_DIR
 from trackhubs.parser import parse_file_from_url
 
 # disable logging when running tests
 logging.disable(logging.CRITICAL)
 
 
-def test_parse_hub_success():
-    hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt'
+@pytest.fixture
+def project_dir():
+    return BASE_DIR.parent
+
+
+def test_parse_hub_success(project_dir):
+    fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
 
     expected_hub_info = {
         'hub': 'JASPAR_TFBS',
@@ -31,33 +38,33 @@ def test_parse_hub_success():
         'genomesFile': 'genomes.txt',
         'email': 'wyeth@cmmt.ubc.ca',
         'descriptionUrl': 'http://jaspar.genereg.net/genome-tracks/',
-        'url': hub_url
+        'url': fake_hub_url
     }
-    actual_result = parse_file_from_url(hub_url, is_hub=True)[0]
+    actual_result = parse_file_from_url(fake_hub_url, is_hub=True)[0]
     assert expected_hub_info == actual_result
 
 
-def test_parse_genomes_success():
-    genomes_url = 'https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/genomes.txt'
+def test_parse_genomes_success(project_dir):
+    fake_genomes_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/genomes.txt'
 
     expected_genomes_info = [
         {
             'genome': 'hg19',
             'trackDb': 'hg19/trackDb.txt',
-            'url': genomes_url
+            'url': fake_genomes_url
         },
         {
             'genome': 'hg38',
             'trackDb': 'hg38/trackDb.txt',
-            'url': genomes_url
+            'url': fake_genomes_url
         }
     ]
-    actual_result = parse_file_from_url(genomes_url, is_genome=True)
+    actual_result = parse_file_from_url(fake_genomes_url, is_genome=True)
     assert expected_genomes_info == actual_result
 
 
-def test_parse_trackdbs_success():
-    trackdbs_url = 'https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hg19/trackDb.txt'
+def test_parse_trackdbs_success(project_dir):
+    fake_trackdbs_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hg19/trackDb.txt'
 
     expected_trackdbs_info = [
         {
@@ -76,10 +83,10 @@ def test_parse_trackdbs_success():
             'scoreFilterRange': '0:1000',
             'bigDataUrl': 'http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg19.bb',
             'nameFilterText': '*',
-            'url': trackdbs_url
+            'url': fake_trackdbs_url
         }
     ]
-    actual_result = parse_file_from_url(trackdbs_url, is_trackdb=True)
+    actual_result = parse_file_from_url(fake_trackdbs_url, is_trackdb=True)
     assert expected_trackdbs_info == actual_result
 
 
