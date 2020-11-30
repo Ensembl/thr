@@ -14,7 +14,7 @@
 
 from django.core.management.base import BaseCommand, CommandError
 
-from trackhubs.parser import save_and_update_document
+from trackhubs.translator import save_and_update_document
 from trackhubs.models import Hub
 
 

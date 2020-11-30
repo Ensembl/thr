@@ -79,7 +79,7 @@ def get_obj_if_exist(unique_col, object_name, file_type=False):
         return None
 
 
-def save_constant_data(name_list, object_name):
+def save_datatype_filetype_visibility(name_list, object_name):
     """
     Save all constants rows of DataType, FileType and Visibility
     in their corresponding table
@@ -250,7 +250,7 @@ def add_parent_id(parent_name, current_track):
     parent_track = trackhubs.models.Track.objects.filter(name=parent_name_only).first()
     current_track.parent_id = parent_track.track_id
     current_track.save()
-    return parent_name_only
+    return parent_track
 
 
 def get_parents(track):
@@ -295,9 +295,9 @@ def save_and_update_document(hub_url, data_type, current_user):
     save_fake_species()
 
     # TODO: this three lines should be moved somewhere else where they are executed only once
-    save_constant_data(DATA_TYPES, trackhubs.models.DataType)
-    save_constant_data(FILE_TYPES, trackhubs.models.FileType)
-    save_constant_data(VISIBILITY, trackhubs.models.Visibility)
+    save_datatype_filetype_visibility(DATA_TYPES, trackhubs.models.DataType)
+    save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
+    save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
     # Verification step
     # Before we submit the hub we make sure that it doesn't exist already
