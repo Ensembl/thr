@@ -11,43 +11,105 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+
 import elasticsearch
+from elasticmock import elasticmock
+import pytest
+
+from trackhubs.tests.test_translator import (
+    create_trackdb_resource, create_hub_resource, create_user_resource,
+    create_datatype_resource, create_species_resource, create_genome_resource,
+    create_assembly_resource, create_filetype_resource
+)
+
+import trackhubs
 from thr.settings import ELASTICSEARCH_DSL
 
 
-def test_connection():
+@pytest.fixture
+def es_instance():
     es = elasticsearch.Elasticsearch(
         [ELASTICSEARCH_DSL['default']['hosts']],
         verify_certs=True
     )
+    return es
+
+
+def test_connection(es_instance):
+    """
+    This function test the connection to the actual Elasticsearch
+    """
     # ping() returns whether the cluster is running or not
-    assert es.ping()
+    assert es_instance.ping()
 
 
-def test_add_document():
-    es = elasticsearch.Elasticsearch(
-        [ELASTICSEARCH_DSL['default']['hosts']],
-        verify_certs=True
-    )
-
+def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hub_resource):
+    """
+    Test update_trackdb_document() function
+    :param es_instance: Elasticsearch instance created using es_instance fixture
+    :param create_trackdb_resource: Fixture that creates the trackdb object
+    :param create_hub_resource: Fixture that creates the hub object
+    """
     index = 'test-index'
-    expected_document = {
-        'id': 1,
-        'assembly': 'GRCh37',
-        'created': '1600187202',
-        'file_type': 'bam',
+    doc_type = 'doc'
+
+    trackdb_configuration = {
+        "SAMN08391522": {
+            "description_url": "ftp://ftp.ensemblgenomes.org/pub/misc_data/Track_Hubs/SRP131250/JGI2.0/SAMN08391522.html",
+            "longLabel": "M. brunnea f.sp. Multigermtubi (M.b) treatment ; <a href=\"http://www.ebi.ac.uk/ena/data/view/SAMN08391522\">SAMN08391522</a>",
+            "members": {
+                "SRR6509755": {
+                    "bigDataUrl": "http://ftp.sra.ebi.ac.uk/vol1/ERZ587/ERZ587036/SRR6509755.cram",
+                    "parent": "SAMN08391522",
+                    "visibility": "pack",
+                    "longLabel": "Illumina HiSeq 2000 sequencing; GSM2947191: M. brunnea f.sp. Multigermtubi (M.b) treatment; Populus trichocarpa; RNA-Seq ; <a href=\"http://www.ebi.ac.uk/ena/data/view/SRR6509755\">SRR6509755</a>",
+                    "shortLabel": "ENA Run:SRR6509755",
+                    "track": "SRR6509755",
+                    "type": "cram"
+                }
+            },
+            "shortLabel": "BioSample:SAMN08391522",
+            "superTrack": "on show",
+            "track": "SAMN08391522",
+            "type": "cram"
+        },
     }
 
-    # Delete the index if it already exists
-    try:
-        es.indices.delete(index)
-    except elasticsearch.exceptions.NotFoundError:
-        pass
+    expected_trackdb_document = {
+        'public': True,
+        'source_url': 'http://some.random/url/for/trackDb.txt',
+        'data': [
+            {
+                'id': 'track_obj.fake.id',
+                'name': 'track_obj.fake.name'
+            }
+        ],
+        'file_type': {'bam': 0},
+        'configuration': trackdb_configuration
+    }
 
-    actual_result = es.index(index=index, doc_type=index, id=1, body=expected_document)['result']
-    assert actual_result == 'created'
+    indexed_trackdb_document = es_instance.index(index=index, doc_type=doc_type, id=1, body=expected_trackdb_document)
+    # assert that either the document is created or updated
+    assert indexed_trackdb_document['result'] in ('created', 'updated')
+    assert create_trackdb_resource.source_url == expected_trackdb_document['source_url']
+    assert create_trackdb_resource.public == expected_trackdb_document['public']
 
-    es.indices.refresh(index)
+    create_trackdb_resource.update_trackdb_document(
+        file_type='bam',
+        trackdb_data=expected_trackdb_document['data'],
+        trackdb_configuration=expected_trackdb_document['configuration'],
+        hub=create_hub_resource,
+        index=index,
+        doc_type=doc_type
+    )
 
-    actual_document = es.get(index=index, doc_type=index, id=1)['_source']
-    assert actual_document == expected_document
+    # get the actual trackdb document to compare it with expected data
+    actual_trackdb_document = es_instance.get(
+        index=index,
+        doc_type=doc_type,
+        id=create_trackdb_resource.trackdb_id
+    )['_source']
+
+    assert actual_trackdb_document['data'] == expected_trackdb_document['data']
+    assert actual_trackdb_document['file_type'] == expected_trackdb_document['file_type']
+    assert actual_trackdb_document['configuration'] == expected_trackdb_document['configuration']

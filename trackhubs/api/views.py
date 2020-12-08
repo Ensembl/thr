@@ -21,7 +21,7 @@ from rest_framework.views import APIView
 
 from trackhubs.api.serializers import HubSerializer
 from trackhubs.models import Hub
-from trackhubs.translator import save_and_update_document
+import trackhubs.translator
 
 
 class HubList(APIView):
@@ -44,7 +44,7 @@ class HubList(APIView):
             assemblies = data.get('assemblies')
             data_type = data.get('type')
             current_user = request.user
-            result = save_and_update_document(hub_url, data_type, current_user)
+            result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
             if not result:
                 return Response(
                     {'error': 'Something went wrong with the hub submission, please make sure that url is correct'},
