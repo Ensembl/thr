@@ -21,6 +21,7 @@ from django.contrib.auth.models import User
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
+from trackhubs.models import Trackdb
 from trackhubs.parser import parse_file_from_url
 
 logger = logging.getLogger(__name__)
@@ -287,7 +288,7 @@ def save_and_update_document(hub_url, data_type, current_user):
     Save everything in MySQL DB then Elasticsearch and
     update both after constructing the required objects
     :param hub_url: the hub url provided by the submitter
-    :param data_type: the data type provided by thee used (if any, default is 'genomics')
+    :param data_type: the data type provided by the user (if any, default is 'genomics')
     :param current_user: the submitter (current user) id
     :returns: the hub information if the submission was successful otherwise it returns an error
     """
@@ -403,10 +404,11 @@ def save_and_update_document(hub_url, data_type, current_user):
                                     track['track']: track
                                 })
 
-            # update MySQL (commented for now)
-            # current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
-            # current_trackdb.configuration = trackdb_configuration
-            # current_trackdb.save()
+            # update MySQL
+            current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
+            current_trackdb.configuration = trackdb_configuration
+            current_trackdb.data = trackdb_data
+            current_trackdb.save()
             # Update Elasticsearch trackdb document
             trackdb_obj.update_trackdb_document(file_type, trackdb_data, trackdb_configuration, hub_obj)
 

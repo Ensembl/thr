@@ -19,7 +19,8 @@ import pytest
 from trackhubs.tests.test_translator import (
     create_trackdb_resource, create_hub_resource, create_user_resource,
     create_datatype_resource, create_species_resource, create_genome_resource,
-    create_assembly_resource, create_filetype_resource
+    create_assembly_resource, create_filetype_resource, create_track_resource,
+    create_visibility_resource
 )
 
 import trackhubs
@@ -95,7 +96,6 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     assert create_trackdb_resource.public == expected_trackdb_document['public']
 
     create_trackdb_resource.update_trackdb_document(
-        file_type='bam',
         trackdb_data=expected_trackdb_document['data'],
         trackdb_configuration=expected_trackdb_document['configuration'],
         hub=create_hub_resource,
@@ -113,3 +113,9 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     assert actual_trackdb_document['data'] == expected_trackdb_document['data']
     assert actual_trackdb_document['file_type'] == expected_trackdb_document['file_type']
     assert actual_trackdb_document['configuration'] == expected_trackdb_document['configuration']
+
+
+def test_get_trackdb_file_type_count(create_trackdb_resource, create_track_resource):
+    expected_result = {'bam': 1}
+    actual_result = create_trackdb_resource.get_trackdb_file_type_count()
+    assert actual_result == expected_result

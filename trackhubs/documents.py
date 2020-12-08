@@ -38,6 +38,7 @@ class TrackdbDocument(Document):
     })
 
     configuration = fields.ObjectField()
+    data = fields.NestedField()
 
     # Meta is used to set dynamic mapping to false to avoid mapping explosion
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings

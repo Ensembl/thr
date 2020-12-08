@@ -16,6 +16,7 @@ import time
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Count
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
@@ -134,6 +135,7 @@ class Trackdb(models.Model):
     created = models.IntegerField(default=int(time.time()))
     updated = models.IntegerField(null=True)
     configuration = JSONField()
+    data = JSONField()
     status_message = models.CharField(max_length=45, null=True)
     status_last_update = models.CharField(max_length=45, null=True)
     source_url = models.CharField(max_length=255, null=True)
@@ -142,7 +144,19 @@ class Trackdb(models.Model):
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
-    def update_trackdb_document(self, file_type, trackdb_data, trackdb_configuration, hub):
+    def get_trackdb_file_type_count(self):
+        """
+        For a giving trackdb return the file type + count
+        e.g file_type_counts_dict = {'bigBed': 20, 'bigWig': 1, 'bed': 1}
+        """
+        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(count=Count('file_type'))
+        file_type_counts_dict = {}
+        for ft_count in file_type_counts:
+            file_type_counts_dict.update({ft_count['file_type__name']: ft_count['count']})
+
+        return file_type_counts_dict
+
+    def update_trackdb_document(self, trackdb_data, trackdb_configuration, hub, index='trackhubs', doc_type='doc'):
         """
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
@@ -151,22 +165,21 @@ class Trackdb(models.Model):
         :param trackdb_data: data array that will be added to the trackdb document
         :param trackdb_configuration: configuration object that will be added to the trackdb document
         :param hub: hub object associated with this trackdb
+        :param index: index name (default: 'trackhubs')
+        :param doc_type: document type (default: 'doc')
         # TODO: handle exceptions
         """
         try:
             es = connections.Elasticsearch()
 
             es.update(
-                index='trackhubs',
-                doc_type='doc',
+                index=index,
+                doc_type=doc_type,
                 id=self.trackdb_id,
                 refresh=True,
                 body={
                     'doc': {
-                        'file_type': {
-                            # TODO: write a proper query/function (e.g get_file_type_count(trackdb))
-                            file_type: trackhubs.models.FileType.objects.filter(name=file_type).count()
-                        },
+                        'file_type': self.get_trackdb_file_type_count(),
                         'data': trackdb_data,
                         'updated': int(time.time()),
                         'source': {
