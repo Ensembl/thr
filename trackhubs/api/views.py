@@ -13,6 +13,7 @@
 """
 
 import elasticsearch
+from django.db import transaction
 from django.http import Http404
 from elasticsearch_dsl import connections
 from rest_framework import status, authentication, permissions
@@ -36,6 +37,10 @@ class HubList(APIView):
         serializer = HubSerializer(hubs, many=True)
         return Response(serializer.data)
 
+    # Before calling post function, Django starts a transaction. If the response is produced without problems,
+    # Django commits the transaction. If the view produces an exception, Django rolls back the transaction
+    # https://docs.djangoproject.com/en/2.2/topics/db/transactions/
+    @transaction.atomic
     def post(self, request):
         # the parser is used here
         data = request.data
@@ -78,6 +83,7 @@ class HubDetail(APIView):
         serializer = HubSerializer(hub)
         return Response(serializer.data)
 
+    @transaction.atomic
     def delete(self, request, pk):
         # TODO: Meke sure that only the trackhub owner can delete it
         hub = self.get_hub(pk)
