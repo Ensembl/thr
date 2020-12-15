@@ -11,8 +11,6 @@ This repository is created to give the project a technology refresh while keepin
 * [Elasticsearch 6.3](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-0)
 * [Docker and Docker-compose](https://www.docker.com/products/docker-desktop) are required if you want to use docker containers
 
-> [Kibana 6.3](https://www.elastic.co/downloads/past-releases/kibana-6-3-0) is not a prerequisite but recommended to explore and execute Elasticsearch queries.
-
 ### Local deployment
 
 Clone the project
@@ -33,7 +31,6 @@ docker-compose up
 
 The app will be accessible at: http://127.0.0.1:8000
 Elasticsearch: http://127.0.0.1:9200
-Kibana: http://127.0.0.1:5601
 
 To stop the docker use:
 
@@ -102,8 +99,6 @@ export ES_HOST=localhost:9200
 
 Download and run Elasticsearch (follow the installation steps on [Elasticsearch website](https://www.elastic.co/downloads/elasticsearch))
 
-You can (optional but recommended) download and run Kibana too ([installation steps](https://www.elastic.co/downloads/kibana)).
-
 Migrate and Rebuild ES index
 
 ```shell script
@@ -117,14 +112,10 @@ The last command will create an index called `trackhubs` (the index schema is st
 curl -XGET "http://localhost:9200/_cat/indices"
 ```
 
-To enrich the trackhubs indexed in ES and already existed in MySQL DB we can run the command
+After indexing the initial data, we need to run the `enrich` command that extract configuration, data and file type objects from MySQL DB and store it back in Elasticsearch by updating the documents.
+
 ```shell script
 python manage.py enrich 
-```
-
-Or if we want to enrich specific trackhub(s) we can provide the hub url (one or many) as follows
-```shell script
-python manage.py enrich --huburl https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt 
 ```
 
 Run the application

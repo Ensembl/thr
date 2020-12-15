@@ -85,7 +85,7 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
                 'name': 'track_obj.fake.name'
             }
         ],
-        'file_type': {'bam': 0},
+        'file_type': {'bam': 1},
         'configuration': trackdb_configuration
     }
 
