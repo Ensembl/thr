@@ -15,6 +15,13 @@
 import pytest
 from rest_framework.authtoken.models import Token
 
+from thr.settings import BASE_DIR
+
+
+@pytest.fixture
+def project_dir():
+    return BASE_DIR.parent
+
 
 @pytest.fixture
 def api_client():
@@ -33,28 +40,28 @@ def create_user_resource(django_user_model):
 
 
 @pytest.fixture()
-def create_trackhub_resource(api_client, create_user_resource):
+def create_trackhub_resource(project_dir, api_client, create_user_resource):
     """
     This fixture is used to create a temporary trackhub using POST API
     The created trackhub will be used to test GET API
     """
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
     submitted_hub = {
-        "url": "https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt"
+        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     return response
 
 
-def test_post_trackhub_success(api_client, create_user_resource):
+def test_post_trackhub_success(project_dir, api_client, create_user_resource):
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
     submitted_hub = {
-        "url": "https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt",
-        "assemblies": {
-            "assembly1": "assembly1_value",
-            "assembly2": "assembly2_value"
+        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'assemblies': {
+            'assembly1': 'assembly1_value',
+            'assembly2': 'assembly2_value'
         },
-        "type": "genomics"
+        'type': 'genomics'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     # print("## Response message: {}".format(response.content.decode()))
@@ -64,24 +71,24 @@ def test_post_trackhub_success(api_client, create_user_resource):
 def test_post_trackhub_bad_url(api_client, create_user_resource):
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
     submitted_hub = {
-        "url": "https://some.random/bad/url/hub.txt"
+        'url': 'https://some.random/bad/url/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     assert response.status_code == 400
 
 
-def test_post_trackhub_no_url_field(api_client, create_user_resource):
+def test_post_trackhub_no_url_field(project_dir, api_client, create_user_resource):
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
     submitted_hub = {
-        "wrong_field_name": "https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt"
+        'wrong_field_name': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     assert response.status_code == 400
 
 
-def test_post_trackhub_without_login(api_client):
+def test_post_trackhub_without_login(project_dir, api_client):
     submitted_hub = {
-        "url": "https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt"
+        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     assert response.status_code == 401
@@ -92,19 +99,21 @@ def test_get_trackhub_without_login(api_client):
     assert response.status_code == 401
 
 
-# TODO: This test causes an error, I'll look into it
-# def test_get_trackhub_success(api_client, create_trackhub_resource):
-#     expected_result = [{
-#         "hub_id": 1,
-#         "name": "JASPAR_TFBS",
-#         "short_label": "JASPAR TFBS",
-#         "long_label": "TFBS predictions for profiles in the JASPAR CORE collections",
-#         "url": "https://raw.githubusercontent.com/Ensembl/thr/feat/add_elasticsearch/samples/JASPAR_TFBS/hub.txt",
-#         "description_url": "http://jaspar.genereg.net/genome-tracks/",
-#         "email": "wyeth@cmmt.ubc.ca"
-#     }]
-#
-#     response = api_client.get('/api/trackhub/')
-#     actual_result = response.json()
-#     assert response.status_code == 200
-#     assert actual_result == expected_result
+def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource):
+    expected_result = [{
+        'hub_id': 1,
+        'name': 'JASPAR_TFBS',
+        'short_label': 'JASPAR TFBS',
+        'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
+        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'description_url': 'http://jaspar.genereg.net/genome-tracks/',
+        'email': 'wyeth@cmmt.ubc.ca'
+    }]
+
+    response = api_client.get('/api/trackhub/')
+    actual_result = response.json()
+    assert response.status_code == 200
+    assert actual_result == expected_result
+
+
+# TODO: test delete
