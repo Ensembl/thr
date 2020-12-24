@@ -116,4 +116,38 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
     assert actual_result == expected_result
 
 
-# TODO: test delete
+def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resource):
+    expected_result = {
+        'hub_id': 1,
+        'name': 'JASPAR_TFBS',
+        'short_label': 'JASPAR TFBS',
+        'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
+        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'description_url': 'http://jaspar.genereg.net/genome-tracks/',
+        'email': 'wyeth@cmmt.ubc.ca'
+    }
+
+    response = api_client.get('/api/trackhub/1/')
+    actual_result = response.json()
+    assert response.status_code == 200
+    assert actual_result == expected_result
+
+
+def test_get_one_trackhub_fail(api_client, create_trackhub_resource):
+    expected_result = {'detail': 'Not found.'}
+    response = api_client.get('/api/trackhub/144/')
+    actual_result = response.json()
+    assert response.status_code == 404
+    assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    'hub_id, expected_status_code',
+    [
+        ('1', 204),
+        ('144', 404),
+    ]
+)
+def test_delete_trackhub(api_client, create_trackhub_resource, hub_id, expected_status_code):
+    response = api_client.delete('/api/trackhub/{}/'.format(hub_id))
+    assert response.status_code == expected_status_code
