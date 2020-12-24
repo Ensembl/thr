@@ -12,5 +12,13 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+FILE_TYPES = [
+    'altGraphX', 'bam', 'bed', 'bed5FloatScore', 'bedGraph', 'bedRnaElements', 'bigBarChart', 'bigBed',
+    'bigInteract', 'bigLolly', 'bigPsl', 'bigChain', 'bigMaf', 'bigWig', 'broadPeak', 'chain', 'clonePos',
+    'coloredExon', 'ctgPos', 'downloadsOnly', 'encodeFiveC', 'expRatio', 'factorSource', 'genePred', 'gvf',
+    'hic', 'ld2', 'narrowPeak', 'netAlign', 'peptideMapping', 'psl', 'rmsk', 'snake', 'vcfTabix', 'wig', 'wigMaf'
+]
+
+DATA_TYPES = ['genomics', 'proteomics', 'epigenomics', 'transcriptomics']  # default: 'genomics'
+
+VISIBILITY = ['hide', 'dense', 'squish', 'pack', 'full']  # default: 'hide'

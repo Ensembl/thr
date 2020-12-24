@@ -71,7 +71,7 @@ def create_user(db, django_user_model, test_password):
     this function calls to local function 'make_user' to pass extra arguments as kwargs,
     because pytest fixture can’t accept arguments.
 
-    make_user gives us the flexibility to create different types of user by passing the
+    make_user gives us the flexibility to create different types of users by passing the
     adequate arguments.
 
     Examples:

@@ -12,5 +12,13 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+from rest_framework import serializers
+from trackhubs import models
+
+
+class HubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Hub
+        fields = ['hub_id', 'name', 'short_label', 'long_label', 'url', 'description_url', 'email']
+
+

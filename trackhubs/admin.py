@@ -12,5 +12,6 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+from django.contrib import admin
+
+# Register your models here.

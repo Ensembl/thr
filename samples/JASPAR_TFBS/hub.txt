@@ -1,0 +1,6 @@
+hub JASPAR_TFBS
+shortLabel JASPAR TFBS
+longLabel TFBS predictions for profiles in the JASPAR CORE collections
+genomesFile genomes.txt
+descriptionUrl http://jaspar.genereg.net/genome-tracks/
+email wyeth@cmmt.ubc.ca

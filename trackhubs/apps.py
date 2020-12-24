@@ -12,5 +12,8 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+from django.apps import AppConfig
+
+
+class TrackhubsConfig(AppConfig):
+    name = 'trackhubs'

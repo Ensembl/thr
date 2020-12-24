@@ -12,5 +12,6 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+from django.shortcuts import render
+
+# Create your views here.

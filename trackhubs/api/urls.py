@@ -12,5 +12,12 @@
    limitations under the License.
 """
 
-from .base import *
-DEBUG = False
+from django.conf.urls import url
+from django.urls import path
+
+from trackhubs.api import views
+
+urlpatterns = [
+    path('', views.HubList.as_view()),
+    path('<int:pk>/', views.HubDetail.as_view()),
+]
