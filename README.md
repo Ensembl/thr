@@ -86,7 +86,7 @@ Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
 # MySQL
-export THR_DB_NAME=thr_users  # The DB should already be created
+export THR_DB_NAME=thr_db  # The DB should already be created
 export DEBUG=1
 export THR_DB_NAME=thr_db  # The DB should already be created
 export THR_DB_USER=user
@@ -99,9 +99,10 @@ export ES_HOST=localhost:9200
 
 Download and run Elasticsearch (follow the installation steps on [Elasticsearch website](https://www.elastic.co/downloads/elasticsearch))
 
-Migrate and Rebuild ES index
+Make migrations, migrate and rebuild ES index
 
 ```shell script
+python manage.py makemigrations
 python manage.py migrate
 python manage.py search_index --rebuild -f
 ```
