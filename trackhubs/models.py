@@ -219,3 +219,18 @@ class Track(models.Model):
     trackdb = models.ForeignKey(Trackdb, on_delete=models.CASCADE)
     file_type = models.ForeignKey(FileType, on_delete=models.CASCADE)
     visibility = models.ForeignKey(Visibility, on_delete=models.CASCADE)
+
+
+class GenomeAssemblyDump(models.Model):
+
+    class Meta:
+        db_table = "genome_assembly_dump"
+
+    assembly_pool_id = models.AutoField(primary_key=True)
+    accession = models.CharField(max_length=20, null=False)
+    version = models.IntegerField(null=True)
+    assembly_name = models.CharField(max_length=255, null=False)
+    assembly_title = models.CharField(max_length=255, null=True)
+    tax_id = models.IntegerField(null=False)
+    scientific_name = models.CharField(max_length=255, null=False)
+    api_last_updated = models.CharField(max_length=20, null=True)
