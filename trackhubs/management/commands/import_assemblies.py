@@ -22,6 +22,12 @@ from trackhubs.models import GenomeAssemblyDump
 
 
 def import_ena_dump(filepath):
+    """
+    Parse genome assembly data stored in the JSON file and load it in genome_assembly_dump MySQL table
+    :param filepath: path to JSON file
+    :returns: an integer representing the number of rows added to the database
+    if an error occurred or the file wasn't found it returns None
+    """
     try:
         with open(filepath) as f:
             data_list = json.load(f)
@@ -33,8 +39,9 @@ def import_ena_dump(filepath):
 
             for data in data_list:
                 GenomeAssemblyDump.objects.create(
-                    accession=data.get('accession'),  # data.get('accession') + '.' + accession=data.get('version') ?
+                    accession=data.get('accession'),
                     version=data.get('version'),
+                    accession_with_version=data.get('accession') + '.' + data.get('version'),
                     assembly_name=data.get('assembly_name'),
                     assembly_title=data.get('assembly_title'),
                     tax_id=data.get('tax_id'),
@@ -53,10 +60,15 @@ def import_ena_dump(filepath):
 
 
 def fetch_ena_assembly():
+    """
+    Fetch genome assembly data from ENA using their API
+    and dump it into a JSON file, this file will be used by
+    import_ena_dump(filepath) to import the data to the databases
+    """
     main_url = 'https://www.ebi.ac.uk/ena/portal/api'
     fields = 'accession,version,assembly_name,assembly_title,tax_id,scientific_name,last_updated'
 
-    url = main_url + '/search?dataPortal=ena&fields=' + fields + '&format=json&limit=5&offset=0&result=assembly'
+    url = main_url + '/search?dataPortal=ena&fields=' + fields + '&format=json&limit=0&offset=0&result=assembly'
     headers = {'Accept': 'application/json'}
 
     try:
@@ -112,7 +124,6 @@ class Command(BaseCommand):
         chosen_source = options['fetch'].lower() if options['fetch'] is not None else None
 
         if chosen_source == 'ena':
-            print("options['fetch']  --> {}".format(options['fetch']))
             fetch_ena_assembly()
 
         ena_filepath = 'assemblies_dump/ena_assembly.json'

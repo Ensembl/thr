@@ -229,6 +229,7 @@ class GenomeAssemblyDump(models.Model):
     assembly_pool_id = models.AutoField(primary_key=True)
     accession = models.CharField(max_length=20, null=False)
     version = models.IntegerField(null=True)
+    accession_with_version = models.CharField(max_length=20, null=False)
     assembly_name = models.CharField(max_length=255, null=False)
     assembly_title = models.CharField(max_length=255, null=True)
     tax_id = models.IntegerField(null=False)
