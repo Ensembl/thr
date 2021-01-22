@@ -35,7 +35,7 @@ def import_ena_dump(filepath):
         if data_list:
             # delete everything in genome_assembly_dump table before loading the JSONs
             GenomeAssemblyDump.objects.all().delete()
-            print("All rows are deleted!")
+            print("All rows are deleted! Please wait, the import process will take a while")
 
             for data in data_list:
                 GenomeAssemblyDump.objects.create(
@@ -51,7 +51,7 @@ def import_ena_dump(filepath):
             return len(data_list)
 
     except FileNotFoundError:
-        print("File not found! PLease run 'python manage.py import_assemblies --fetch ena' first")
+        print("File not found! Please run 'python manage.py import_assemblies --fetch ena' first")
 
     except Exception as e:
         print(e)

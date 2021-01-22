@@ -226,7 +226,7 @@ class GenomeAssemblyDump(models.Model):
     class Meta:
         db_table = "genome_assembly_dump"
 
-    assembly_pool_id = models.AutoField(primary_key=True)
+    genome_assembly_dump_id = models.AutoField(primary_key=True)
     accession = models.CharField(max_length=20, null=False)
     version = models.IntegerField(null=True)
     accession_with_version = models.CharField(max_length=20, null=False)
