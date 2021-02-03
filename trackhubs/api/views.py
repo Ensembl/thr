@@ -85,27 +85,39 @@ class HubDetail(APIView):
 
     @transaction.atomic
     def delete(self, request, pk):
-        # TODO: Meke sure that only the trackhub owner can delete it
         hub = self.get_hub(pk)
         trackdbs_ids_list = hub.get_trackdbs_ids()
 
         # delete the trackdb document from Elasticsearch
-        try:
-            es = connections.Elasticsearch()
-            for trackdb_id in trackdbs_ids_list:
-                es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
-        except elasticsearch.exceptions.NotFoundError:
+        # but make sure that only the trackhub owner can delete it
+        current_user_id = request.user.id
+        hub_original_owner_id = hub.owner_id
+        if current_user_id == hub_original_owner_id:
+            try:
+                es = connections.Elasticsearch()
+                for trackdb_id in trackdbs_ids_list:
+                    es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
+            except elasticsearch.exceptions.NotFoundError:
+                return Response(
+                    {"error": "The hub doesn't exist, please check using 'GET api/trackhub/{}' endpoint".format(pk)},
+                    status.HTTP_404_NOT_FOUND
+                )
+            except elasticsearch.exceptions.ConnectionError:
+                return Response(
+                    {"error": "Cannot connect to Elasticsearch"},
+                    status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            except Exception as e:
+                return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
             return Response(
-                {"error": "The hub doesn't exist, please check using 'GET api/trackhub/{}' endpoint".format(pk)},
-                status.HTTP_404_NOT_FOUND
+                {
+                    "error": "You are not the owner of the hub you're willing to delete, "
+                             "please make sure that you entered the correct hub ID. "
+                             "You can use 'GET /api/trackhub' to list your hubs"
+                },
+                status.HTTP_403_FORBIDDEN
             )
-        except elasticsearch.exceptions.ConnectionError:
-            return Response(
-                {"error": "Cannot connect to Elasticsearch"},
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-        except Exception as e:
-            return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         # delete the hub from MySQL
         hub.delete()
