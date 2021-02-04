@@ -253,8 +253,11 @@ def get_assembly_info_from_dump(genome_assembly_name):
     :returns: assembly info object if found or None otherwise
     """
     assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
+    assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
     if assembly_info_from_dump:
         return assembly_info_from_dump
+    elif assembly_info_from_dump_ucsc_synonym:
+        return assembly_info_from_dump_ucsc_synonym
     return None
 
 
@@ -273,10 +276,10 @@ def save_assembly(genome_assembly_name, genome):
         return existing_assembly_obj
     else:
         new_assembly_obj = trackhubs.models.Assembly(
-            accession=assembly_info_from_dump.accession,
+            accession=assembly_info_from_dump.accession_with_version,
             name=assembly_info_from_dump.assembly_name,
             long_name=assembly_info_from_dump.assembly_name,
-            synonyms='',  # TODO: take care of this guy (add it to the dump model and if ENA API provides any)
+            ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
             genome=genome
         )
         new_assembly_obj.save()

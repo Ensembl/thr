@@ -18,15 +18,21 @@ from trackhubs.management.commands.import_assemblies import import_ena_dump
 from trackhubs.models import GenomeAssemblyDump
 
 
-def test_request_response():
+@pytest.mark.parametrize(
+    'test_url, expected_result',
+    [
+        ('https://www.ebi.ac.uk/ena/portal/api/search?format=json&limit=1&result=assembly', True),
+        ('https://api.genome.ucsc.edu/list/ucscGenomes', True)
+    ]
+)
+def test_request_response(test_url, expected_result):
     """
-    Test whether the external API server returns an OK response.
+    Test whether the external ENA and UCSC's APIs server returns an OK response.
     """
-    url = 'https://www.ebi.ac.uk/ena/portal/api/search?format=json&limit=1&result=assembly'
     # Send a request to the API server and store the response.
-    response = requests.get(url)
+    response = requests.get(test_url)
     # Confirm that the request-response cycle completed successfully.
-    assert response.ok is True
+    assert response.ok is expected_result
 
 
 @pytest.mark.django_db

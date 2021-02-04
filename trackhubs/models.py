@@ -119,7 +119,7 @@ class Assembly(models.Model):
     accession = models.CharField(max_length=255)
     name = models.CharField(max_length=255, null=True)
     long_name = models.CharField(max_length=255, null=True)
-    synonyms = models.CharField(max_length=255, null=True)
+    ucsc_synonym = models.CharField(max_length=255, null=True)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
 
@@ -234,4 +234,5 @@ class GenomeAssemblyDump(models.Model):
     assembly_title = models.CharField(max_length=255, null=True)
     tax_id = models.IntegerField(null=False)
     scientific_name = models.CharField(max_length=255, null=False)
+    ucsc_synonym = models.CharField(max_length=255, null=True)
     api_last_updated = models.CharField(max_length=20, null=True)

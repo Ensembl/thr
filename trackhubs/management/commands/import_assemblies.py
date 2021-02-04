@@ -19,6 +19,7 @@ import time
 from django.core.management.base import BaseCommand
 from argparse import RawTextHelpFormatter
 from trackhubs.models import GenomeAssemblyDump
+from trackhubs.constants import INSDC_TO_UCSC
 
 
 def import_ena_dump(filepath):
@@ -38,20 +39,22 @@ def import_ena_dump(filepath):
             print("All rows are deleted! Please wait, the import process will take a while")
 
             for data in data_list:
+                accession_with_version = data.get('accession') + '.' + data.get('version')
                 GenomeAssemblyDump.objects.create(
                     accession=data.get('accession'),
                     version=data.get('version'),
-                    accession_with_version=data.get('accession') + '.' + data.get('version'),
+                    accession_with_version=accession_with_version,
                     assembly_name=data.get('assembly_name'),
                     assembly_title=data.get('assembly_title'),
                     tax_id=data.get('tax_id'),
                     scientific_name=data.get('scientific_name'),
+                    ucsc_synonym=INSDC_TO_UCSC.get(accession_with_version),
                     api_last_updated=data.get('last_updated')
                 )
             return len(data_list)
 
     except FileNotFoundError:
-        print("File not found! Please run 'python manage.py import_assemblies --fetch ena' first")
+        print("File {} not found! Please run 'python manage.py import_assemblies --fetch ena' first".format(filepath))
 
     except Exception as e:
         print(e)
@@ -59,31 +62,49 @@ def import_ena_dump(filepath):
     return None
 
 
-def fetch_ena_assembly():
+def fetch_assembly(assembly_source):
     """
-    Fetch genome assembly data from ENA using their API
-    and dump it into a JSON file, this file will be used by
-    import_ena_dump(filepath) to import the data to the databases
+    Fetch genome assembly data from ENA and/or UCSC using their API
+    and dump it into a JSON file, the file(s) will be used by
+    import_ena_dump(filepath) and import_ucsc_dump(filepath)
+    to import the data to the databases
     """
-    main_url = 'https://www.ebi.ac.uk/ena/portal/api'
-    fields = 'accession,version,assembly_name,assembly_title,tax_id,scientific_name,last_updated'
 
-    url = main_url + '/search?dataPortal=ena&fields=' + fields + '&format=json&limit=0&offset=0&result=assembly'
+    ena_main_url = 'https://www.ebi.ac.uk/ena/portal/api'
+    ena_fields = 'accession,version,assembly_name,assembly_title,tax_id,scientific_name,last_updated'
+    ena_url = ena_main_url + '/search?dataPortal=ena&fields=' + ena_fields + '&format=json&limit=0&offset=0&result=assembly'
+
+    ucsc_url = 'https://api.genome.ucsc.edu/list/ucscGenomes'
     headers = {'Accept': 'application/json'}
 
     try:
-        print("[ENA] Fetching assemblies from ENA, it may take few minutes...")
         start = time.time()
-        response = requests.get(url, headers=headers)
 
-        with open('assemblies_dump/ena_assembly.json', 'wb') as outf:
-            outf.write(response.content)
+        if assembly_source == 'ena':
+            print("[ENA] Fetching assemblies from ENA, it may take few minutes...")
+
+            response = requests.get(ena_url, headers=headers)
+            with open('assemblies_dump/ena_assembly.json', 'w') as outf:
+                # pretty print to JSON file
+                outf.write(json.dumps(response.json(), indent=4))
+
+            fetch_objects_count = len(response.json())
+
+        elif assembly_source == 'ucsc':
+            print("[UCSC] Fetching assemblies from UCSC, it may take few seconds...")
+
+            response = requests.get(ucsc_url, headers=headers)
+            with open('assemblies_dump/ucsc_assembly.json', 'w') as outf:
+                # pretty print to JSON file
+                outf.write(json.dumps(response.json(), indent=4))
+
+            fetch_objects_count = len(response.json()['ucscGenomes'])
 
         end = time.time()
         fetch_elapsed_time = round(end - start, 2)
-        fetch_objects_count = len(response.json())
-        print("[ENA] {} Objects are fetched successfully (took {} seconds)"
-              .format(fetch_objects_count, fetch_elapsed_time))
+
+        print("[{}] {} Objects are fetched successfully (took {} seconds)"
+              .format(assembly_source.upper(), fetch_objects_count, fetch_elapsed_time))
 
     except Exception as e:
         print(e)
@@ -124,18 +145,24 @@ class Command(BaseCommand):
         chosen_source = options['fetch'].lower() if options['fetch'] is not None else None
 
         if chosen_source == 'ena':
-            fetch_ena_assembly()
-
-        ena_filepath = 'assemblies_dump/ena_assembly.json'
-
-        count = import_ena_dump(ena_filepath)
-        if count is not None:
-            end = time.time()
-            self.stdout.write(self.style.SUCCESS(
-                '[ENA] {} objects imported successfully to MySQL DB (took {} seconds)!'.format(count, round(end - start, 2))
-            ))
+            fetch_assembly('ena')
+        elif chosen_source == 'ucsc':
+            # fetching UCSC isn't necessary since INSDC_TO_UCSC imported from constants does the job
+            # but it can be used to check the available genome assemblies provided by UCSC
+            # TODO: keep an eye on any new source that offers INSDC TO UCSC mapping or vice versa
+            fetch_assembly('ucsc')
         else:
-            self.stdout.write(self.style.ERROR("""
-                An unexpected error occurred, please see the exception error above,
-            """
-            ))
+            # just import ENA assembly dump
+            ena_filepath = 'assemblies_dump/ena_assembly.json'
+
+            count = import_ena_dump(ena_filepath)
+            if count is not None:
+                end = time.time()
+                self.stdout.write(self.style.SUCCESS(
+                    '[ENA] {} objects imported successfully to MySQL DB (took {} seconds)!'.format(count, round(end - start, 2))
+                ))
+            else:
+                self.stdout.write(self.style.ERROR("""
+                    An unexpected error occurred, please see the exception error above
+                """
+                ))
