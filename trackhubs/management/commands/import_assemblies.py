@@ -62,49 +62,29 @@ def import_ena_dump(filepath):
     return None
 
 
-def fetch_assembly(assembly_source):
+def fetch_assembly(assembly_source, assembly_url):
     """
     Fetch genome assembly data from ENA and/or UCSC using their API
     and dump it into a JSON file, the file(s) will be used by
     import_ena_dump(filepath) and import_ucsc_dump(filepath)
     to import the data to the databases
+    :param assembly_source: assembly source (e.g. ENA, UCSC etc)
+    :param assembly_url: assembly URL
+    :returns: the json response and how long it took in seconds
     """
-
-    ena_main_url = 'https://www.ebi.ac.uk/ena/portal/api'
-    ena_fields = 'accession,version,assembly_name,assembly_title,tax_id,scientific_name,last_updated'
-    ena_url = ena_main_url + '/search?dataPortal=ena&fields=' + ena_fields + '&format=json&limit=0&offset=0&result=assembly'
-
-    ucsc_url = 'https://api.genome.ucsc.edu/list/ucscGenomes'
-    headers = {'Accept': 'application/json'}
 
     try:
         start = time.time()
 
-        if assembly_source == 'ena':
-            print("[ENA] Fetching assemblies from ENA, it may take few minutes...")
-
-            response = requests.get(ena_url, headers=headers)
-            with open('assemblies_dump/ena_assembly.json', 'w') as outf:
-                # pretty print to JSON file
-                outf.write(json.dumps(response.json(), indent=4))
-
-            fetch_objects_count = len(response.json())
-
-        elif assembly_source == 'ucsc':
-            print("[UCSC] Fetching assemblies from UCSC, it may take few seconds...")
-
-            response = requests.get(ucsc_url, headers=headers)
-            with open('assemblies_dump/ucsc_assembly.json', 'w') as outf:
-                # pretty print to JSON file
-                outf.write(json.dumps(response.json(), indent=4))
-
-            fetch_objects_count = len(response.json()['ucscGenomes'])
+        response = requests.get(assembly_url, headers={'Accept': 'application/json'})
+        with open('assemblies_dump/'+assembly_source.lower()+'_assembly.json', 'w') as outf:
+            # pretty print to JSON file
+            outf.write(json.dumps(response.json(), indent=4))
 
         end = time.time()
-        fetch_elapsed_time = round(end - start, 2)
+        elapsed_time = round(end - start, 2)
 
-        print("[{}] {} Objects are fetched successfully (took {} seconds)"
-              .format(assembly_source.upper(), fetch_objects_count, fetch_elapsed_time))
+        return response.json(), elapsed_time
 
     except Exception as e:
         print(e)
@@ -145,12 +125,30 @@ class Command(BaseCommand):
         chosen_source = options['fetch'].lower() if options['fetch'] is not None else None
 
         if chosen_source == 'ena':
-            fetch_assembly('ena')
+            print("[ENA] Fetching assemblies from ENA, it may take few minutes...")
+            ena_main_url = 'https://www.ebi.ac.uk/ena/portal/api'
+            ena_fields = 'accession,version,assembly_name,assembly_title,tax_id,scientific_name,last_updated'
+            ena_url = ena_main_url + '/search?dataPortal=ena&fields=' + ena_fields + '&format=json&limit=0&offset=0&result=assembly'
+
+            json_response, elapsed_time = fetch_assembly(chosen_source, ena_url)
+            fetch_objects_count = len(json_response)
+
+            print("[{}] {} Objects are fetched successfully (took {} seconds)"
+                  .format(chosen_source.upper(), fetch_objects_count, elapsed_time))
+
         elif chosen_source == 'ucsc':
+            print("[UCSC] Fetching assemblies from UCSC, it may take few seconds...")
             # fetching UCSC isn't necessary since INSDC_TO_UCSC imported from constants does the job
             # but it can be used to check the available genome assemblies provided by UCSC
             # TODO: keep an eye on any new source that offers INSDC TO UCSC mapping or vice versa
-            fetch_assembly('ucsc')
+            ucsc_url = 'https://api.genome.ucsc.edu/list/ucscGenomes'
+
+            json_response, elapsed_time = fetch_assembly(chosen_source, ucsc_url)
+            fetch_objects_count = len(json_response['ucscGenomes'])
+
+            print("[{}] {} Objects are fetched successfully (took {} seconds)"
+                  .format(chosen_source.upper(), fetch_objects_count, elapsed_time))
+
         else:
             # just import ENA assembly dump
             ena_filepath = 'assemblies_dump/ena_assembly.json'

@@ -105,7 +105,7 @@ def create_assembly_resource(create_genome_resource):
         accession='GCA_000001405.1',
         name='GRCh37',
         long_name='',
-        synonyms='',
+        ucsc_synonym='',
         genome=create_genome_resource
     )
 

@@ -12,27 +12,28 @@
    limitations under the License.
 """
 
-import requests
+import os
 import pytest
-from trackhubs.management.commands.import_assemblies import import_ena_dump
+import responses
+
+from trackhubs.management.commands.import_assemblies import import_ena_dump, fetch_assembly
 from trackhubs.models import GenomeAssemblyDump
 
 
-@pytest.mark.parametrize(
-    'test_url, expected_result',
-    [
-        ('https://www.ebi.ac.uk/ena/portal/api/search?format=json&limit=1&result=assembly', True),
-        ('https://api.genome.ucsc.edu/list/ucscGenomes', True)
-    ]
-)
-def test_request_response(test_url, expected_result):
+@responses.activate
+def test_fetch_assembly():
     """
-    Test whether the external ENA and UCSC's APIs server returns an OK response.
+    Mocking fetch assembly by providing a fake API endpoint and making sure
+    the JSON file 'fake_assembly' is created in 'assemblies_dump' directory
     """
-    # Send a request to the API server and store the response.
-    response = requests.get(test_url)
-    # Confirm that the request-response cycle completed successfully.
-    assert response.ok is expected_result
+    fake_url = 'http://a.fake/assembly/api'
+    fake_response = {'test_message': 'This is a fake API response'}
+    fake_assembly_source = 'fake'
+    responses.add(responses.GET, fake_url, json=fake_response, status=404)
+
+    json_response, _ = fetch_assembly(fake_assembly_source, fake_url)
+    assert json_response == fake_response
+    assert os.path.isfile('assemblies_dump/'+fake_assembly_source.lower()+'_assembly.json')
 
 
 @pytest.mark.django_db
