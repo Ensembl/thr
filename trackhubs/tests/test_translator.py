@@ -56,6 +56,34 @@ def create_visibility_resource():
     return trackhubs.models.Visibility.objects.create(name='pack')
 
 
+
+@pytest.fixture()
+def create_genome_assembly_dump_resource():
+    hg19_dump = trackhubs.models.GenomeAssemblyDump(
+        accession='GCA_000001405',
+        version=1,
+        accession_with_version='GCA_000001405.1',
+        assembly_name='GRCh37',
+        assembly_title='Genome Reference Consortium Human Build 37 (GRCh37)',
+        tax_id=9606,
+        scientific_name='Homo sapiens',
+        ucsc_synonym='hg19',
+        api_last_updated='2013-08-08'
+    )
+    hg38_dump = trackhubs.models.GenomeAssemblyDump(
+        accession='GCA_000001405',
+        version=15,
+        accession_with_version='GCA_000001405.15',
+        assembly_name='GRCh38',
+        assembly_title='Genome Reference Consortium Human Build 38',
+        tax_id=9606,
+        scientific_name='Homo sapiens',
+        ucsc_synonym='hg38',
+        api_last_updated='2019-02-28'
+    )
+    return trackhubs.models.GenomeAssemblyDump.objects.bulk_create([hg19_dump, hg38_dump])
+
+
 @pytest.fixture()
 def create_species_resource():
     return trackhubs.models.Species.objects.create(taxon_id=9606, scientific_name='Homo sapiens')
@@ -338,7 +366,7 @@ def test_is_hub_exists(hub_url, expected_result, create_hub_resource):
 
 
 @pytest.mark.django_db
-def test_save_and_update_document_success(project_dir, create_user_resource):
+def test_save_and_update_document_success(project_dir, create_user_resource, create_genome_assembly_dump_resource):
     user, _ = create_user_resource
 
     fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
