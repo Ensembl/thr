@@ -1,0 +1,11 @@
+[
+{"accession":"GCA_000001215","version":"2","assembly_name":"Release 5","assembly_title":"Release 5 assembly for Drosophila melanogaster","tax_id":"7227","scientific_name":"Drosophila melanogaster","last_updated":"2016-11-29"}
+,
+{"accession":"GCA_000001215","version":"3","assembly_name":"Release 6","assembly_title":"Release 6 assembly for Drosophila melanogaster","tax_id":"7227","scientific_name":"Drosophila melanogaster","last_updated":"2016-03-10"}
+,
+{"accession":"GCA_000001215","version":"4","assembly_name":"Release 6 plus ISO1 MT","assembly_title":"Release 6 plus ISO1 mitochondrial genome","tax_id":"7227","scientific_name":"Drosophila melanogaster","last_updated":"2016-03-10"}
+,
+{"accession":"GCA_000001405","version":"1","assembly_name":"GRCh37","assembly_title":"Genome Reference Consortium Human Build 37 (GRCh37)","tax_id":"9606","scientific_name":"Homo sapiens","last_updated":"2013-08-08"}
+,
+{"accession":"GCA_000001405","version":"2","assembly_name":"GRCh37.p1","assembly_title":"Genome Reference Consortium Human Build 37 patch release 1 (GRCh37.p1)","tax_id":"9606","scientific_name":"Homo sapiens","last_updated":"2013-08-08"}
+]

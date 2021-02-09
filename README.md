@@ -1,17 +1,17 @@
-## TrackHub Registry
+# TrackHub Registry
 
 TrackHub Registry (THR) is a global centralised collection of publicly accessible [track hubs](http://genome.ucsc.edu/goldenPath/help/hgTrackHubHelp.html#Intro). The goal of the project is to allow third parties to advertise track hubs, and to make it easier for researchers around the world to discover and use track hubs containing different types of genomic research data.
 
 This repository is created to give the project a technology refresh while keeping the same core functionalities.
 
-### Prerequisites
+## Prerequisites
 
 * [Python 3.7+](https://www.python.org/downloads/)
 * [venv](https://docs.python.org/3/library/venv.html)
 * [Elasticsearch 6.3](https://www.elastic.co/downloads/past-releases/elasticsearch-6-3-0)
 * [Docker and Docker-compose](https://www.docker.com/products/docker-desktop) are required if you want to use docker containers
 
-### Local deployment
+## Local deployment
 
 Clone the project
 
@@ -20,7 +20,7 @@ git clone https://github.com/Ensembl/thr.git
 cd thr
 ```
 
-#### Using Docker
+### Using Docker
 
 Fire up docker-compose, it will take some time to download the necessary images and setup the environment
 
@@ -72,7 +72,9 @@ docker exec -it <thr_web_container_id> python manage.py search_index --rebuild -
 docker exec -it <thr_web_container_id> python manage.py createsuperuser
 ```
 
-#### Without Docker
+### Without Docker
+
+##### Preparing the environment
 
 Create, activate the virtual environment and install the required packages
 
@@ -113,13 +115,22 @@ The last command will create an index called `trackhubs` (the index schema is st
 curl -XGET "http://localhost:9200/_cat/indices"
 ```
 
-After indexing the initial data, we need to run the `enrich` command that extract configuration, data and file type objects from MySQL DB and store it back in Elasticsearch by updating the documents.
+##### Importing genome assembly dump
 
+If it's your first time importing genome assembly information/dump from `ENA` use
 ```shell script
-python manage.py enrich 
+python manage.py import_assemblies --fetch ena
 ```
 
-Run the application
+> `UCSC` and `Ensembl` will also be added later.
+
+So that it creates the JSON file, otherwise you can simply run 
+```shell script
+python manage.py import_assemblies
+```
+And it will use the already existing JSON file(s) (located in `./assemblies_dump` directory)and loads them to MySQL table
+
+##### Running the application
 
 ```shell script
 python manage.py runserver
@@ -127,10 +138,29 @@ python manage.py runserver
 
 The app will be accessible at: http://127.0.0.1:8000
 
-Create the super user (Optional)
+##### Creating superuser (Optional)
 
 ```shell script
 python manage.py createsuperuser
 ```
 
 
+##### Rebuilding and enriching Elasticsearch index (if required)
+
+In case we want to rebuild the ES index with data existing in MySQL, you need to:
+
+1. Rebuild ES index
+```shell script
+python manage.py search_index --rebuild -f
+```
+This will load portion of the data from MySQL to ES
+
+2. Run the `enrich` command that extract `configuration`, `data` and `file type` objects from MySQL DB and store it back in Elasticsearch by updating the documents.
+
+```shell script
+python manage.py enrich 
+```
+
+## APIs Endpoints
+
+See [APIs Endpoints status](apis_endpoints_status.md)

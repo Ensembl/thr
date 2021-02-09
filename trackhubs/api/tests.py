@@ -15,6 +15,7 @@
 import pytest
 from rest_framework.authtoken.models import Token
 
+import trackhubs
 from thr.settings import BASE_DIR
 
 
@@ -40,7 +41,34 @@ def create_user_resource(django_user_model):
 
 
 @pytest.fixture()
-def create_trackhub_resource(project_dir, api_client, create_user_resource):
+def create_genome_assembly_dump_resource():
+    hg19_dump = trackhubs.models.GenomeAssemblyDump(
+        accession='GCA_000001405',
+        version=1,
+        accession_with_version='GCA_000001405.1',
+        assembly_name='GRCh37',
+        assembly_title='Genome Reference Consortium Human Build 37 (GRCh37)',
+        tax_id=9606,
+        scientific_name='Homo sapiens',
+        ucsc_synonym='hg19',
+        api_last_updated='2013-08-08'
+    )
+    hg38_dump = trackhubs.models.GenomeAssemblyDump(
+        accession='GCA_000001405',
+        version=15,
+        accession_with_version='GCA_000001405.15',
+        assembly_name='GRCh38',
+        assembly_title='Genome Reference Consortium Human Build 38',
+        tax_id=9606,
+        scientific_name='Homo sapiens',
+        ucsc_synonym='hg38',
+        api_last_updated='2019-02-28'
+    )
+    return trackhubs.models.GenomeAssemblyDump.objects.bulk_create([hg19_dump, hg38_dump])
+
+
+@pytest.fixture()
+def create_trackhub_resource(project_dir, api_client, create_user_resource, create_genome_assembly_dump_resource):
     """
     This fixture is used to create a temporary trackhub using POST API
     The created trackhub will be used to test GET API
@@ -53,7 +81,7 @@ def create_trackhub_resource(project_dir, api_client, create_user_resource):
     return response
 
 
-def test_post_trackhub_success(project_dir, api_client, create_user_resource):
+def test_post_trackhub_success(project_dir, api_client, create_user_resource, create_genome_assembly_dump_resource):
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
     submitted_hub = {
         'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',

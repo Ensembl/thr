@@ -1,6 +1,7 @@
 asgiref==3.2.10
 attrs==20.2.0
 certifi==2020.6.20
+chardet==4.0.0
 coverage==5.2.1
 Django==2.2.13
 django-cors-headers==3.5.0
@@ -12,6 +13,7 @@ djangorestframework==3.11.1
 ElasticMock==1.5.1
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-dsl>=6.0.0,<7.0.0
+idna==2.10
 iniconfig==1.0.1
 mock==4.0.2
 more-itertools==8.5.0
@@ -25,6 +27,8 @@ pytest-cov==2.10.1
 pytest-django==3.9.0
 python-dateutil==2.8.1
 pytz==2020.1
+requests==2.25.1
+responses==0.12.1
 six==1.15.0
 sqlparse==0.3.1
 toml==0.10.1

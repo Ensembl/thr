@@ -18,29 +18,14 @@ import time
 
 import django
 from django.contrib.auth.models import User
+from django.db import transaction
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
-from trackhubs.models import Trackdb
+from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
 
 logger = logging.getLogger(__name__)
-
-
-def save_fake_species():
-    """
-    Save fake species, this will be replaced with a proper function later
-    """
-    # TODO: Replace this with a proper one
-    try:
-        if not trackhubs.models.Species.objects.filter(taxon_id=9606).exists():
-            sp = trackhubs.models.Species(
-                taxon_id=9606,
-                scientific_name='Homo sapiens'
-            )
-            sp.save()
-    except django.db.utils.OperationalError:
-        logger.exception('Error trying to connect to Elasticsearch')
 
 
 def get_datatype_filetype_visibility(unique_col, object_name, file_type=False):
@@ -97,7 +82,7 @@ def save_datatype_filetype_visibility(name_list, object_name):
     object_name.objects.bulk_create(name_list_obj)
 
 
-def save_hub(hub_dict, data_type, current_user, species=00):
+def save_hub(hub_dict, data_type, current_user, species):
     """
     Save the hub in MySQL DB if it doesn't exist already
     :param hub_dict: hub dictionary containing all the parsed info
@@ -105,7 +90,6 @@ def save_hub(hub_dict, data_type, current_user, species=00):
     or the default one ('genomics')
     :param species: the species associated with this hub
     :param current_user: the submitter (current user) id
-    # TODO: work on adding species
     :returns: the new created hub
     """
     # TODO: Add try expect if the 'hub' or 'url' is empty
@@ -117,7 +101,7 @@ def save_hub(hub_dict, data_type, current_user, species=00):
         description_url=hub_dict.get('descriptionUrl'),
         email=hub_dict.get('email'),
         data_type=trackhubs.models.DataType.objects.filter(name=data_type).first(),
-        species_id=1,
+        species=species,
         owner_id=current_user.id
     )
     new_hub_obj.save()
@@ -142,28 +126,6 @@ def save_genome(genome_dict, hub):
         )
         new_genome_obj.save()
         return new_genome_obj
-
-
-def save_assembly(assembly_dict, genome):
-    """
-    Save the assembly in MySQL DB if it doesn't exist already
-    :param assembly_dict: assembly dictionary containing all the parsed info
-    :param genome: genome object associated with this assembly
-    :returns: either the existing assembly or the new created one
-    """
-    existing_assembly_obj = trackhubs.models.Assembly.objects.filter(name=assembly_dict['name']).first()
-    if existing_assembly_obj:
-        return existing_assembly_obj
-    else:
-        new_assembly_obj = trackhubs.models.Assembly(
-            accession='accession_goes_here',
-            name=assembly_dict['name'],
-            long_name='',
-            synonyms='',
-            genome=genome
-        )
-        new_assembly_obj.save()
-        return new_assembly_obj
 
 
 def save_trackdb(url, hub, genome, assembly):
@@ -283,6 +245,78 @@ def is_hub_exists(hub_url):
     return False
 
 
+def get_assembly_info_from_dump(genome_assembly_name):
+    """
+    Get the assembly information from 'genome_assembly_dump' table
+    based on the assemblies submitted by the user
+    :param genome_assembly_name: genome assembly name extracted from genomes.txt file
+    :returns: assembly info object if found or None otherwise
+    """
+    assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
+    assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
+    if assembly_info_from_dump:
+        return assembly_info_from_dump
+    elif assembly_info_from_dump_ucsc_synonym:
+        return assembly_info_from_dump_ucsc_synonym
+    return None
+
+
+def save_assembly(genome_assembly_name, genome):
+    """
+    Get the assembly information from 'genome_assembly_dump' table
+    based on the assemblies submitted by the user
+    :param genome_assembly_name: genome assembly name extracted from genomes.txt file
+    :param genome: genome object
+    :returns: assembly info object if found or None otherwise
+    """
+    assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
+    existing_assembly_obj = trackhubs.models.Assembly.objects.filter(name=assembly_info_from_dump.assembly_name).first()
+
+    if existing_assembly_obj:
+        return existing_assembly_obj
+    else:
+        new_assembly_obj = trackhubs.models.Assembly(
+            accession=assembly_info_from_dump.accession_with_version,
+            name=assembly_info_from_dump.assembly_name,
+            long_name=assembly_info_from_dump.assembly_name,
+            ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
+            genome=genome
+        )
+        new_assembly_obj.save()
+        return new_assembly_obj
+
+
+def save_species(genomes_info):
+    """
+    Save species using the provided genome assembly information from the submitted hub
+    along with the data stored in 'genome_assembly_dump' table
+    :param genomes_info: genomes information extracted from genomes.txt file
+    :returns: either species object or, if it's not found or/and cannot be created it
+    returns an error message
+    """
+    for genome_info in genomes_info:
+        genome_assembly_name = genome_info['genome']
+        assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
+
+        if assembly_info_from_dump is None:
+            return {"error": "Assembly '{}' doesn't exist".format(genome_assembly_name)}
+
+        try:
+            existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
+            if existing_species_obj:
+                return existing_species_obj
+            else:
+                new_species = trackhubs.models.Species(
+                    taxon_id=assembly_info_from_dump.tax_id,
+                    scientific_name=assembly_info_from_dump.scientific_name
+                )
+                new_species.save()
+                return new_species
+        except django.db.utils.OperationalError:
+            logger.exception('Error trying to connect to the database')
+
+
+# @transaction.atomic
 def save_and_update_document(hub_url, data_type, current_user):
     """
     Save everything in MySQL DB then Elasticsearch and
@@ -293,9 +327,9 @@ def save_and_update_document(hub_url, data_type, current_user):
     :returns: the hub information if the submission was successful otherwise it returns an error
     """
     base_url = hub_url[:hub_url.rfind('/')]
-    save_fake_species()
 
     # TODO: this three lines should be moved somewhere else where they are executed only once
+    # See Providing initial data for models: https://docs.djangoproject.com/en/2.2/howto/initial-data/
     save_datatype_filetype_visibility(DATA_TYPES, trackhubs.models.DataType)
     save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
@@ -323,23 +357,34 @@ def save_and_update_document(hub_url, data_type, current_user):
         else:
             data_type = 'genomics'
 
-        hub_obj = save_hub(hub_info, data_type, current_user)
-
         genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
-        for genomes_trackdb in genomes_trackdbs_info:
-            # logger.debug("genomes_trackdb: {}".format(json.dumps(genomes_trackdb, indent=4)))
+        # based on the relationships in between tables in model,
+        # we need to save data in the following order:
+        # species first, then hub, then genome and finally assembly
+        # the species is extracted using assembly information
+        # and the assembly is extracted from genomes.txt file
+        # this is why when a hub is provided we fetch genome and use the data to get assemblies then species
+        error_or_species_obj = save_species(genomes_trackdbs_info)
+        if not isinstance(error_or_species_obj, trackhubs.models.Species):
+            # An error message is shown if the returned result is not an instance of Species
+            return error_or_species_obj
 
-            genome_obj = save_genome(genomes_trackdb, hub_obj)
+        hub_obj = save_hub(hub_info, data_type, current_user, error_or_species_obj)
 
-            assembly_info = {'name': genomes_trackdb['genome']}
-            assembly_obj = save_assembly(assembly_info, genome_obj)
+        for genome_trackdb in genomes_trackdbs_info:
+            logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
+
+            genome_obj = save_genome(genome_trackdb, hub_obj)
+
+            # we got the assembly_name from genomes_trackdb['genome']
+            assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
 
             # Save the initial data
-            trackdb_obj = save_trackdb(base_url + '/' + genomes_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
+            trackdb_obj = save_trackdb(base_url + '/' + genome_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
 
-            trackdbs_info = parse_file_from_url(base_url + '/' + genomes_trackdb['trackDb'], is_trackdb=True)
+            trackdbs_info = parse_file_from_url(base_url + '/' + genome_trackdb['trackDb'], is_trackdb=True)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
             trackdb_data = []
@@ -417,4 +462,3 @@ def save_and_update_document(hub_url, data_type, current_user):
     return None
 
 
-# TODO: add delete_hub() etc
