@@ -11,12 +11,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import json
 import logging
 import time
 
 from django.conf import settings
 from django.db import models
 from django.db.models import Count
+from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
@@ -144,6 +146,40 @@ class Trackdb(models.Model):
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
+    # # The only trackhub information we're going to need in our document is the data type
+    # @property
+    # def data_type_indexing(self):
+    #     """
+    #     Data type for indexing.
+    #     Used in Elasticsearch indexing.
+    #     """
+    #     return self.hub.data_type.name
+
+    @property
+    def species_indexing(self):
+        """species data (nested) for indexing.
+
+        Example:
+
+        >>> mapping = {
+        >>>     'species': {
+        >>>         'taxon_id': '9823',
+        >>>         'scientific_name': 'Sus scrofa',
+        >>>         'common_name': 'pig',
+        >>>     }
+        >>> }
+
+        :return:
+        """
+        wrapper = dict_to_obj({
+            'taxon_id': self.hub.species.taxon_id,
+            'scientific_name': self.hub.species.scientific_name,
+            'common_name': self.hub.species.common_name,
+        })
+
+        return wrapper
+
+
     def get_trackdb_file_type_count(self):
         """
         For a giving trackdb return the file type + count
@@ -160,8 +196,7 @@ class Trackdb(models.Model):
         """
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
-        :param file_type: file type string associated with this track
-        # TODO: write the proper query, file_type param will be removed
+        :param file_type: file type associated with this track
         :param trackdb_data: data array that will be added to the trackdb document
         :param trackdb_configuration: configuration object that will be added to the trackdb document
         :param hub: hub object associated with this trackdb

@@ -12,11 +12,92 @@
    limitations under the License.
 """
 
+from django.conf import settings
+from django_elasticsearch_dsl import Document, Index, fields
+from elasticsearch_dsl import analyzer
+
+from trackhubs.models import Trackdb
+
+
+# Name of the Elasticsearch index
+INDEX = Index(settings.ELASTICSEARCH_INDEX_NAMES[__name__])
+
+# See Elasticsearch Indices API reference for available settings
+INDEX.settings(
+    number_of_shards=1,
+    number_of_replicas=1
+)
+
+html_strip = analyzer(
+    'html_strip',
+    tokenizer="standard",
+    filter=["standard", "lowercase", "stop", "snowball"],
+    char_filter=["html_strip"]
+)
+
+
+@INDEX.doc_type
+class TrackdbDocument(Document):
+    """Trackdb Elasticsearch document."""
+
+    # id = fields.IntegerField(attr='trackdb_id')
+
+    # description = fields.StringField(
+    #     analyzer=html_strip,
+    #     fields={
+    #         'raw': fields.StringField(analyzer='keyword'),
+    #     }
+    # )
+
+    version = fields.StringField(
+        analyzer=html_strip,
+        fields={
+            'raw': fields.StringField(analyzer='keyword'),
+        }
+    )
+
+    hub = fields.ObjectField(properties={
+        'name': fields.StringField(),
+        'short_label': fields.StringField(),
+        'long_label': fields.StringField(),
+        'url': fields.StringField(),
+        'description_url': fields.StringField(),
+        'email': fields.StringField(),
+        # 'species': fields.IntegerField(),
+        # 'data_type': fields.IntegerField(),
+    })
+
+    # assembly = fields.ObjectField(properties={
+    #     'accession': fields.StringField(),
+    #     'name': fields.StringField(),
+    #     'long_name': fields.StringField(),
+    #     'ucsc_synonym': fields.StringField(),
+    # })
+
+    species = fields.ObjectField(
+        attr='species_indexing',
+        properties={
+            'taxon_id': fields.IntegerField(),
+            'scientific_name': fields.StringField(),
+            'common_name': fields.StringField(),
+    })
+
+    configuration = fields.ObjectField()
+    data = fields.NestedField()
+
+    class Django(object):
+        """Inner nested class Django."""
+
+        model = Trackdb  # The model associate with this Document
+
+
+
+"""
 from django_elasticsearch_dsl import Document, fields
 from django_elasticsearch_dsl.registries import registry
 from elasticsearch_dsl import MetaField
 
-from .models import Trackdb
+from trackhubs.models import Trackdb
 
 
 @registry.register_document
@@ -69,3 +150,4 @@ class TrackdbDocument(Document):
             'source_url',
             'source_checksum',
         ]
+"""

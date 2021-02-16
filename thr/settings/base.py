@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'thr_web.apps.ThrWebConfig',
     'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
+    'search.apps.SearchConfig',
     # Django Elasticsearch integration
     'django_elasticsearch_dsl',
     # Django REST framework Elasticsearch integration
@@ -68,7 +69,11 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-    ]
+    ],
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 100,
+    'ORDERING_PARAM': 'ordering',
 }
 
 MIDDLEWARE = [
@@ -128,6 +133,11 @@ ELASTICSEARCH_DSL = {
     'default': {
         'hosts': os.environ.get('ES_HOST', 'elasticsearch:9200'),
     },
+}
+
+# Name of the Elasticsearch index
+ELASTICSEARCH_INDEX_NAMES = {
+    'search.documents': 'trackhubs',
 }
 
 # Password validation

@@ -12,18 +12,22 @@
    limitations under the License.
 """
 
-from .base import *
+from django.conf.urls import url, include
+from rest_framework.routers import DefaultRouter
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'thr_test_db',
-        # Tell Django to build the test database with the 'utf8mb4' character set
-        'CHARSET': 'utf8mb4',
-        'COLLATION': 'utf8mb4_unicode_ci',
-    }
-}
+from .views import TrackhubDocumentView
 
-ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents': 'test_trackhubs',
-}
+# from search.api import views
+
+# urlpatterns = [
+#     path('', views.TrackhubDocumentView.as_view({'post': 'list'})),
+# ]
+
+router = DefaultRouter()
+books = router.register(r'',
+                        TrackhubDocumentView,
+                        basename='trackdb_document')
+
+urlpatterns = [
+    url(r'^', include(router.urls)),
+]

@@ -12,18 +12,6 @@
    limitations under the License.
 """
 
-from .base import *
+from django.test import TestCase
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'thr_test_db',
-        # Tell Django to build the test database with the 'utf8mb4' character set
-        'CHARSET': 'utf8mb4',
-        'COLLATION': 'utf8mb4_unicode_ci',
-    }
-}
-
-ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents': 'test_trackhubs',
-}
+# Create your tests here.
