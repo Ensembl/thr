@@ -12,9 +12,6 @@
    limitations under the License.
 """
 
-from django_elasticsearch_dsl_drf.constants import (
-    LOOKUP_FILTER_GEO_DISTANCE,
-)
 from django_elasticsearch_dsl_drf.filter_backends import (
     FilteringFilterBackend,
     OrderingFilterBackend,
@@ -22,8 +19,7 @@ from django_elasticsearch_dsl_drf.filter_backends import (
 )
 from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet
 
-# Example app models
-from trackhubs.documents_original import TrackdbDocument
+from search.documents import TrackdbDocument
 from .serializers import TrackdbDocumentSerializer
 
 
@@ -32,7 +28,7 @@ class TrackhubDocumentView(DocumentViewSet):
 
     document = TrackdbDocument
     serializer_class = TrackdbDocumentSerializer
-    lookup_field = 'id'
+    lookup_field = 'trackdb_id'
 
     filter_backends = [
         # FilteringFilterBackend,

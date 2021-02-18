@@ -23,8 +23,6 @@ from search.documents import TrackdbDocument
 class TrackdbDocumentSerializer(DocumentSerializer):
     """Serializer for Trackdb document."""
 
-    description = serializers.CharField(read_only=True)
-
     class Meta(object):
         """Meta options."""
 
@@ -40,7 +38,7 @@ class TrackdbDocumentSerializer(DocumentSerializer):
             'hub',
             'public',
             'description',
-            # 'assembly',
+            'assembly',
             'configuration',
             'data',
             'type',
@@ -54,10 +52,3 @@ class TrackdbDocumentSerializer(DocumentSerializer):
             # 'source_url',
             # 'source_checksum',
         )
-
-    # def get_location(self, obj):
-    #     """Represent location value."""
-    #     try:
-    #         return obj.location.to_dict()
-    #     except:
-    #         return {}

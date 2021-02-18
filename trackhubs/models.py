@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class Species(models.Model):
-
     class Meta:
         db_table = "species"
 
@@ -38,7 +37,6 @@ class Species(models.Model):
 
 
 class DataType(models.Model):
-
     class Meta:
         db_table = "data_type"
 
@@ -47,7 +45,6 @@ class DataType(models.Model):
 
 
 class FileType(models.Model):
-
     class Meta:
         db_table = "file_type"
 
@@ -57,7 +54,6 @@ class FileType(models.Model):
 
 
 class Visibility(models.Model):
-
     class Meta:
         db_table = "visibility"
 
@@ -66,7 +62,6 @@ class Visibility(models.Model):
 
 
 class Hub(models.Model):
-
     class Meta:
         db_table = "hub"
 
@@ -102,7 +97,6 @@ class Hub(models.Model):
 
 
 class Genome(models.Model):
-
     class Meta:
         db_table = "genome"
 
@@ -113,7 +107,6 @@ class Genome(models.Model):
 
 
 class Assembly(models.Model):
-
     class Meta:
         db_table = "assembly"
 
@@ -126,7 +119,6 @@ class Assembly(models.Model):
 
 
 class Trackdb(models.Model):
-
     class Meta:
         db_table = "trackdb"
 
@@ -146,14 +138,13 @@ class Trackdb(models.Model):
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
-    # # The only trackhub information we're going to need in our document is the data type
-    # @property
-    # def data_type_indexing(self):
-    #     """
-    #     Data type for indexing.
-    #     Used in Elasticsearch indexing.
-    #     """
-    #     return self.hub.data_type.name
+    @property
+    def data_type_indexing(self):
+        """
+        Data type for indexing.
+        Used in Elasticsearch indexing.
+        """
+        return self.hub.data_type.name
 
     @property
     def species_indexing(self):
@@ -179,13 +170,39 @@ class Trackdb(models.Model):
 
         return wrapper
 
+    @property
+    def assembly_indexing(self):
+        """assembly data (nested) for indexing.
+
+        Example:
+
+        >>> mapping = {
+        >>>     'assembly': {
+        >>>         'accession': 'GCA_000150955.2',
+        >>>         'name': 'ASM15095v2',
+        >>>         'long_name': 'ASM15095v2 assembly for Phaeodactylum tricornutum CCAP 1055/1',
+        >>>         'ucsc_synonym': null,
+        >>>     }
+        >>> }
+
+        :return:
+        """
+        wrapper = dict_to_obj({
+            'accession': self.assembly.accession,
+            'name': self.assembly.name,
+            'long_name': self.assembly.long_name,
+            'ucsc_synonym': self.assembly.ucsc_synonym,
+        })
+
+        return wrapper
 
     def get_trackdb_file_type_count(self):
         """
         For a giving trackdb return the file type + count
         e.g file_type_counts_dict = {'bigBed': 20, 'bigWig': 1, 'bed': 1}
         """
-        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(count=Count('file_type'))
+        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(
+            count=Count('file_type'))
         file_type_counts_dict = {}
         for ft_count in file_type_counts:
             file_type_counts_dict.update({ft_count['file_type__name']: ft_count['count']})
@@ -237,7 +254,6 @@ class Trackdb(models.Model):
 
 
 class Track(models.Model):
-
     class Meta:
         db_table = "track"
 
@@ -257,7 +273,6 @@ class Track(models.Model):
 
 
 class GenomeAssemblyDump(models.Model):
-
     class Meta:
         db_table = "genome_assembly_dump"
 

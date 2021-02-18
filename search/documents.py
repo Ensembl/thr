@@ -14,7 +14,7 @@
 
 from django.conf import settings
 from django_elasticsearch_dsl import Document, Index, fields
-from elasticsearch_dsl import analyzer
+from elasticsearch_dsl import analyzer, MetaField
 
 from trackhubs.models import Trackdb
 
@@ -38,23 +38,13 @@ html_strip = analyzer(
 
 @INDEX.doc_type
 class TrackdbDocument(Document):
-    """Trackdb Elasticsearch document."""
+    """
+    Trackdb Elasticsearch document.
+    INFO: The TrackdbDocument controls what will be indexed in ES
+    the search.api.serializers controls what will be shown after triggering a search query
+    """
 
-    # id = fields.IntegerField(attr='trackdb_id')
-
-    # description = fields.StringField(
-    #     analyzer=html_strip,
-    #     fields={
-    #         'raw': fields.StringField(analyzer='keyword'),
-    #     }
-    # )
-
-    version = fields.StringField(
-        analyzer=html_strip,
-        fields={
-            'raw': fields.StringField(analyzer='keyword'),
-        }
-    )
+    type = fields.StringField(attr='data_type_indexing')
 
     hub = fields.ObjectField(properties={
         'name': fields.StringField(),
@@ -67,12 +57,14 @@ class TrackdbDocument(Document):
         # 'data_type': fields.IntegerField(),
     })
 
-    # assembly = fields.ObjectField(properties={
-    #     'accession': fields.StringField(),
-    #     'name': fields.StringField(),
-    #     'long_name': fields.StringField(),
-    #     'ucsc_synonym': fields.StringField(),
-    # })
+    assembly = fields.ObjectField(
+        attr='assembly_indexing',
+        properties={
+            'accession': fields.StringField(),
+            'name': fields.StringField(),
+            'long_name': fields.StringField(),
+            'ucsc_synonym': fields.StringField(),
+    })
 
     species = fields.ObjectField(
         attr='species_indexing',
@@ -90,64 +82,23 @@ class TrackdbDocument(Document):
 
         model = Trackdb  # The model associate with this Document
 
-
-
-"""
-from django_elasticsearch_dsl import Document, fields
-from django_elasticsearch_dsl.registries import registry
-from elasticsearch_dsl import MetaField
-
-from trackhubs.models import Trackdb
-
-
-@registry.register_document
-class TrackdbDocument(Document):
-
-    hub = fields.ObjectField(properties={
-        'name': fields.StringField(),
-        'short_label': fields.StringField(),
-        'long_label': fields.StringField(),
-        'url': fields.StringField(),
-        'description_url': fields.StringField(),
-        'email': fields.StringField(),
-        # 'species': fields.IntegerField(),
-        # 'data_type': fields.IntegerField(),
-    })
-
-    assembly = fields.ObjectField(properties={
-        'accession': fields.StringField(),
-    })
-
-    configuration = fields.ObjectField()
-    data = fields.NestedField()
+        # The fields of the model we want to be indexed in Elasticsearch
+        fields = [
+            'trackdb_id',
+            'public',
+            'description',
+            'version',
+            'created',
+            'updated',
+            # 'status_message',
+            # 'status_last_update',
+            # 'status',
+            # 'source_url',
+            # 'source_checksum',
+        ]
 
     # Meta is used to set dynamic mapping to false to avoid mapping explosion
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings
     class Meta:
         all = MetaField(enabled=False)
         dynamic = MetaField('false')
-
-    class Index:
-        name = 'trackhubs'
-        settings = {
-            'number_of_shards': 1,
-            'number_of_replicas': 0
-        }
-
-    class Django:
-        model = Trackdb
-
-        # The fields of the model we want to be indexed in Elasticsearch
-        fields = [
-            'public',
-            'description',
-            'version',
-            'created',
-            'updated',
-            'status_message',
-            'status_last_update',
-            # 'status',
-            'source_url',
-            'source_checksum',
-        ]
-"""
