@@ -23,6 +23,9 @@ from search.documents import TrackdbDocument
 class TrackdbDocumentSerializer(DocumentSerializer):
     """Serializer for Trackdb document."""
 
+    id = serializers.SerializerMethodField()
+    score = serializers.SerializerMethodField()
+
     class Meta(object):
         """Meta options."""
 
@@ -34,7 +37,6 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         # somehow, dynamic serializer doesn't work for you, either extend
         # or declare your serializer explicitly.
         fields = (
-            'trackdb_id',
             'hub',
             'public',
             'description',
@@ -52,3 +54,13 @@ class TrackdbDocumentSerializer(DocumentSerializer):
             # 'source_url',
             # 'source_checksum',
         )
+
+    def get_score(self, obj):
+        if hasattr(obj.meta, 'score'):
+            return obj.meta.score
+        return None
+
+    def get_id(self, obj):
+        if hasattr(obj.meta, 'id'):
+            return obj.meta.id
+        return None

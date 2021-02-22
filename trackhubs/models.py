@@ -103,7 +103,6 @@ class Genome(models.Model):
     genome_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     trackdb_location = models.CharField(max_length=255)
-    hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
 
 
 class Assembly(models.Model):
@@ -209,14 +208,13 @@ class Trackdb(models.Model):
 
         return file_type_counts_dict
 
-    def update_trackdb_document(self, trackdb_data, trackdb_configuration, hub, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, trackdb_data, trackdb_configuration, data_type_id, index='trackhubs', doc_type='doc'):
         """
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track
         :param trackdb_data: data array that will be added to the trackdb document
         :param trackdb_configuration: configuration object that will be added to the trackdb document
-        :param hub: hub object associated with this trackdb
         :param index: index name (default: 'trackhubs')
         :param doc_type: document type (default: 'doc')
         # TODO: handle exceptions
@@ -239,7 +237,7 @@ class Trackdb(models.Model):
                             'checksum': ''
                         },
                         # Get the data type based on the hub info
-                        'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
+                        'type': trackhubs.models.Hub.objects.filter(data_type_id=data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
                         'configuration': trackdb_configuration

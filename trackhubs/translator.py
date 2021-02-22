@@ -108,11 +108,10 @@ def save_hub(hub_dict, data_type, current_user, species):
     return new_hub_obj
 
 
-def save_genome(genome_dict, hub):
+def save_genome(genome_dict):
     """
     Save the genome in MySQL DB  if it doesn't exist already
     :param genome_dict: genome dictionary containing all the parsed info
-    :param hub: hub object associated with this genome
     :returns: either the existing genome or the new created one
     """
     existing_genome_obj = trackhubs.models.Genome.objects.filter(name=genome_dict['genome']).first()
@@ -121,8 +120,7 @@ def save_genome(genome_dict, hub):
     else:
         new_genome_obj = trackhubs.models.Genome(
             name=genome_dict['genome'],
-            trackdb_location=genome_dict['trackDb'],
-            hub=hub
+            trackdb_location=genome_dict['trackDb']
         )
         new_genome_obj.save()
         return new_genome_obj
@@ -376,7 +374,7 @@ def save_and_update_document(hub_url, data_type, current_user):
         for genome_trackdb in genomes_trackdbs_info:
             logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
 
-            genome_obj = save_genome(genome_trackdb, hub_obj)
+            genome_obj = save_genome(genome_trackdb)
 
             # we got the assembly_name from genomes_trackdb['genome']
             assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
