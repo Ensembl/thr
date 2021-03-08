@@ -52,7 +52,7 @@ class HubList(APIView):
             result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
             if not result:
                 return Response(
-                    {'error': 'Something went wrong with the hub submission, please make sure that url is correct'},
+                    {'error': 'Something went wrong with the hub submission, please make sure that url is correct and working'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
             if 'error' in result:

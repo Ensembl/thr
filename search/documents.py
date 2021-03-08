@@ -47,31 +47,29 @@ class TrackdbDocument(Document):
     type = fields.StringField(attr='data_type_indexing')
 
     hub = fields.ObjectField(properties={
-        'name': fields.StringField(),
+        'name': fields.KeywordField(),
         'short_label': fields.StringField(),
         'long_label': fields.StringField(),
         'url': fields.StringField(),
         'description_url': fields.StringField(),
         'email': fields.StringField(),
-        # 'species': fields.IntegerField(),
-        # 'data_type': fields.IntegerField(),
     })
 
     assembly = fields.ObjectField(
         attr='assembly_indexing',
         properties={
-            'accession': fields.StringField(),
-            'name': fields.StringField(),
+            'accession': fields.KeywordField(),
+            'name': fields.KeywordField(),
             'long_name': fields.StringField(),
-            'ucsc_synonym': fields.StringField(),
+            'ucsc_synonym': fields.KeywordField(),
     })
 
     species = fields.ObjectField(
         attr='species_indexing',
         properties={
             'taxon_id': fields.IntegerField(),
-            'scientific_name': fields.StringField(),
-            'common_name': fields.StringField(),
+            'scientific_name': fields.KeywordField(),
+            'common_name': fields.KeywordField(),
     })
 
     configuration = fields.ObjectField()

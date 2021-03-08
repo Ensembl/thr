@@ -13,20 +13,19 @@
 """
 
 from django.conf.urls import url, include
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from .views import TrackhubDocumentView
 
-# from search.api import views
+from search.api import views
 
 # urlpatterns = [
 #     path('', views.TrackhubDocumentView.as_view({'post': 'list'})),
 # ]
 
 router = DefaultRouter()
-books = router.register(r'',
-                        TrackhubDocumentView,
-                        basename='trackdb_document')
+books = router.register(r'', TrackhubDocumentView, basename='trackdb_document')
 
 urlpatterns = [
     url(r'^', include(router.urls)),
