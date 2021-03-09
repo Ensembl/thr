@@ -13,7 +13,6 @@
 """
 
 import elasticsearch
-from elasticmock import elasticmock
 import pytest
 
 from trackhubs.tests.test_translator import (
@@ -23,7 +22,6 @@ from trackhubs.tests.test_translator import (
     create_visibility_resource
 )
 
-import trackhubs
 from thr.settings import ELASTICSEARCH_DSL
 
 
@@ -51,7 +49,7 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     :param create_trackdb_resource: Fixture that creates the trackdb object
     :param create_hub_resource: Fixture that creates the hub object
     """
-    index = 'test-index'
+    index = 'test_trackhubs'
     doc_type = 'doc'
 
     trackdb_configuration = {

@@ -23,6 +23,3 @@ def test_enrich_success():
     out = StringIO()
     call_command('enrich', stdout=out)
     assert 'All documents are updated successfully!\n' == out.getvalue()
-
-
-# TODO: add test that reads the user input

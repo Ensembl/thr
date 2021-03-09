@@ -37,7 +37,7 @@ class TrackdbDocumentListView(APIView):
         accession = request.data.get('accession')
 
         client = connections.Elasticsearch()
-        s = Search(using=client)
+        all_queries = Search(using=client)
 
         if not request.data:
             return Response({"error": "Missing message body in request"}, status=status.HTTP_400_BAD_REQUEST)
@@ -51,7 +51,7 @@ class TrackdbDocumentListView(APIView):
                 'hub.shortLabel', 'hub.longLabel', 'hub.name',
                 'type', 'species.common_name', 'species.scientific_name'
             ]
-            all_queries = s.query("multi_match", query=query, fields=search_fields)
+            all_queries = all_queries.query("multi_match", query=query, fields=search_fields)
 
         if accession:
             all_queries = all_queries.filter('term', assembly__accession=accession)

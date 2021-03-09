@@ -13,19 +13,11 @@
 """
 
 import logging
-
 import pytest
-
-from thr.settings import BASE_DIR
 from trackhubs.parser import parse_file_from_url
 
 # disable logging when running tests
 logging.disable(logging.CRITICAL)
-
-
-@pytest.fixture
-def project_dir():
-    return BASE_DIR.parent
 
 
 def test_parse_hub_success(project_dir):
