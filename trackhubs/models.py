@@ -83,17 +83,9 @@ class Hub(models.Model):
         This function is used to delete trackdbs document from Elasticsearch
         since trackdbs in MySQL have the same ids in the Elasticsearch index
         """
-        all_trackdbs_ids_list = []
-        # look for all the genomes belonging to this hub
-        genomes_list = Genome.objects.filter(hub_id=self.hub_id)
-
-        for genome in genomes_list:
-            # for each genome get the ids of trackdbs that will be deleted
-            trackdbs_list = Trackdb.objects.filter(genome_id=genome.genome_id).values_list('pk', flat=True)
-            all_trackdbs_ids_list.extend(list(trackdbs_list))
-
-        logger.debug("IDs of all the trackdbs that will be deleted: {}".format(all_trackdbs_ids_list))
-        return all_trackdbs_ids_list
+        trackdbs_ids_list = Trackdb.objects.filter(hub_id=self.hub_id).values_list('pk', flat=True)
+        logger.debug("IDs of all the trackdbs that will be deleted: {}".format(trackdbs_ids_list))
+        return trackdbs_ids_list
 
 
 class Genome(models.Model):
@@ -210,6 +202,7 @@ class Trackdb(models.Model):
 
     def update_trackdb_document(self, trackdb_data, trackdb_configuration, data_type_id, index='trackhubs', doc_type='doc'):
         """
+        TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track

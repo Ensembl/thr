@@ -96,8 +96,7 @@ def test_parse_trackdbs_success(project_dir):
         ('https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.ttxt', None),
         ('https://invalide.url/hub.txt', None),
         ('', None),
-        (15, None),
-        ('https://www.le.ac.uk/oerresources/bdra/html/resources/example.txt', [])
+        (15, None)
     ]
 )
 def test_parse_url_fail(test_url, expected_result):

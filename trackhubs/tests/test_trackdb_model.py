@@ -98,7 +98,7 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     create_trackdb_resource.update_trackdb_document(
         trackdb_data=expected_trackdb_document['data'],
         trackdb_configuration=expected_trackdb_document['configuration'],
-        hub=create_hub_resource,
+        data_type_id=create_hub_resource.data_type_id,
         index=index,
         doc_type=doc_type
     )

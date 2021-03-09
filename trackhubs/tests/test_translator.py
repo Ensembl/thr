@@ -118,8 +118,7 @@ def create_genome_resource(create_hub_resource):
     """
     actual_genome_obj = trackhubs.models.Genome.objects.create(
         name='hg19',
-        trackdb_location='hg19/trackDb.txt',
-        hub=create_hub_resource
+        trackdb_location='hg19/trackDb.txt'
     )
     return actual_genome_obj
 

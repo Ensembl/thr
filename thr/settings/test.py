@@ -23,7 +23,3 @@ DATABASES = {
         'COLLATION': 'utf8mb4_unicode_ci',
     }
 }
-
-ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents': 'test_trackhubs',
-}

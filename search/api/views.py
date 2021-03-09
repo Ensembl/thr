@@ -11,19 +11,19 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-from django_elasticsearch_dsl_drf.pagination import PageNumberPagination
-from django_elasticsearch_dsl_drf.viewsets import BaseDocumentViewSet
-from elasticsearch_dsl import connections, Search, MultiSearch
-from elasticsearch_dsl.query import MultiMatch, Q
+import elasticsearch
+from elasticsearch_dsl import connections, Search
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework.viewsets import ViewSet
 
 from search.documents import TrackdbDocument
 from .serializers import TrackdbDocumentSerializer
 
 
-class TrackhubDocumentView(BaseDocumentViewSet):
-    """The TrackhubDocument view."""
+class TrackdbDocumentListView(APIView):
+    """The TrackhubDocumentList view."""
 
     document = TrackdbDocument
     serializer_class = TrackdbDocumentSerializer
@@ -67,3 +67,16 @@ class TrackhubDocumentView(BaseDocumentViewSet):
 
         s_result = all_queries.execute().to_dict()
         return Response(s_result, status=status.HTTP_200_OK)
+
+
+class TrackdbDocumentDetailView(APIView):
+    """The TrackhubDocumentDetail view."""
+
+    def get(self, request, pk):
+        try:
+            trackdb_document = TrackdbDocument.get(id=pk)
+        except elasticsearch.exceptions.NotFoundError:
+            return Response({"error": "TrackDB document not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TrackdbDocumentSerializer(trackdb_document)
+        return Response(serializer.data, status=status.HTTP_200_OK)

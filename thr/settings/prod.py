@@ -14,7 +14,3 @@
 
 from .base import *
 DEBUG = False
-
-ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents': 'prod_trackhubs',
-}

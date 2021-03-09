@@ -12,12 +12,10 @@
    limitations under the License.
 """
 
-import json
-
 from rest_framework import serializers
 from django_elasticsearch_dsl_drf.serializers import DocumentSerializer
 
-from search.documents import TrackdbDocument
+import search.documents
 
 
 class TrackdbDocumentSerializer(DocumentSerializer):
@@ -30,30 +28,26 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         """Meta options."""
 
         # Specify the correspondent document class
-        document = TrackdbDocument
+        document = search.documents.TrackdbDocument
 
-        # Note, that since we're using a dynamic serializer,
-        # we only have to declare fields that we want to be shown. If
-        # somehow, dynamic serializer doesn't work for you, either extend
-        # or declare your serializer explicitly.
-        fields = (
+        fields = [
             'hub',
             'public',
             'description',
             'assembly',
-            'configuration',
-            'data',
             'type',
             'species',
             'version',
             'created',
             'updated',
+            # 'configuration',
+            # 'data',
             # 'status_message',
             # 'status_last_update',
             # 'status',
             # 'source_url',
             # 'source_checksum',
-        )
+        ]
 
     def get_score(self, obj):
         if hasattr(obj.meta, 'score'):
