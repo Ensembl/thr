@@ -15,13 +15,6 @@
 import elasticsearch
 import pytest
 
-from trackhubs.tests.test_translator import (
-    create_trackdb_resource, create_hub_resource, create_user_resource,
-    create_datatype_resource, create_species_resource, create_genome_resource,
-    create_assembly_resource, create_filetype_resource, create_track_resource,
-    create_visibility_resource
-)
-
 from thr.settings import ELASTICSEARCH_DSL
 
 

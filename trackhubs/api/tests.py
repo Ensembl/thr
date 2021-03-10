@@ -16,7 +16,8 @@ import pytest
 
 
 def test_post_trackhub_success(project_dir, api_client, create_user_resource, create_genome_assembly_dump_resource):
-    api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
+    _, token = create_user_resource
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
         'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
         'assemblies': {
@@ -31,7 +32,8 @@ def test_post_trackhub_success(project_dir, api_client, create_user_resource, cr
 
 
 def test_post_trackhub_bad_url(api_client, create_user_resource):
-    api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
+    _, token = create_user_resource
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
         'url': 'https://some.random/bad/url/hub.txt'
     }
@@ -40,7 +42,8 @@ def test_post_trackhub_bad_url(api_client, create_user_resource):
 
 
 def test_post_trackhub_no_url_field(project_dir, api_client, create_user_resource):
-    api_client.credentials(HTTP_AUTHORIZATION='Token ' + create_user_resource.key)
+    _, token = create_user_resource
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
         'wrong_field_name': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     }
