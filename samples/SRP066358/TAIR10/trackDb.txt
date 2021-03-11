@@ -1,0 +1,21 @@
+track SRP066358_composite
+compositeTrack on
+shortLabel SRP066358
+longLabel ENA runs from study SRP066358 aligned to TAIR10
+subGroup1 tissue attribute_tissue leaf=leaf aerial=aerial
+dimensions dimX=tissue
+type bam
+
+	track SAMN04276588
+	parent SRP066358_composite
+	shortLabel SAMN04276588
+	visibility dense
+	type bam
+
+		track SRR2922672
+		parent SAMN04276588 on
+		subGroups tissue=aerial
+		bigDataUrl ftp://ftp.sra.ebi.ac.uk/vol1/ERZ113/ERZ1131357/SRR2922672.cram
+		type bam
+		shortLabel SRR2922672
+		longLabel ENA run SRR2922672 aligned to assembly TAIR10
