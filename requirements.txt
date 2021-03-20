@@ -9,7 +9,7 @@ django-elasticsearch-dsl>=6.0.0,<7.0.0
 django-elasticsearch-dsl-drf==0.20.8
 django-mysql==3.8.1
 django-nine==0.2.3
-djangorestframework==3.11.1
+djangorestframework==3.11.2
 ElasticMock==1.5.1
 elasticsearch>=6.0.0,<7.0.0
 elasticsearch-dsl>=6.0.0,<7.0.0
