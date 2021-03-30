@@ -27,7 +27,7 @@ class Command(BaseCommand):
     def _enrich_docs(self):
         all_trackdbs = trackhubs.models.Trackdb.objects.all()
         for trackdb in all_trackdbs:
-            trackdb.update_trackdb_document(trackdb.data, trackdb.configuration, trackdb.hub.data_type_id)
+            trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration)
 
     def handle(self, *args, **options):
         # the command below will enrich all trackdbs stored in the DB

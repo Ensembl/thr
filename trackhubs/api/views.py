@@ -20,14 +20,14 @@ from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from trackhubs.api.serializers import HubSerializer
-from trackhubs.models import Hub
+from trackhubs.api.serializers import HubSerializer, TrackdbSerializer
+from trackhubs.models import Hub, Trackdb
 import trackhubs.translator
 
 
 class HubList(APIView):
     """
-    List all hubs submitted by the current user, or create a new hubs.
+    List all hubs submitted by the current user, or create a new hub.
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -66,8 +66,7 @@ class HubList(APIView):
 
 class HubDetail(APIView):
     """
-    Retrieve or delete a trackhub instance.
-    TODO: add access permissions
+    Retrieve or delete a hub instance.
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -86,7 +85,7 @@ class HubDetail(APIView):
     @transaction.atomic
     def delete(self, request, pk):
         hub = self.get_hub(pk)
-        trackdbs_ids_list = hub.get_trackdbs_ids()
+        trackdbs_ids_list = hub.get_trackdbs_ids_from_hub()
 
         # delete the trackdb document from Elasticsearch
         # but make sure that only the trackhub owner can delete it
@@ -123,3 +122,19 @@ class HubDetail(APIView):
         hub.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class TrackdbList(APIView):
+    """
+    List all Trackdbs submitted by the current user.
+    """
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # Get all hubs ids submitted by the current user
+        hubs_ids = Hub.objects.filter(owner_id=request.user.id).values_list('hub_id', flat=True)
+        print("hubs_ids --> ", hubs_ids)
+        trackdbs = Trackdb.objects.filter(hub_id__in=hubs_ids)
+        serializer = TrackdbSerializer(trackdbs, many=True)
+        return Response(serializer.data)

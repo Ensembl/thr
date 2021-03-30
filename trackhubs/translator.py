@@ -459,7 +459,7 @@ def save_and_update_document(hub_url, data_type, current_user):
             current_trackdb.data = trackdb_data
             current_trackdb.save()
             # Update Elasticsearch trackdb document
-            trackdb_obj.update_trackdb_document(trackdb_data, trackdb_configuration, hub_obj.data_type_id)
+            trackdb_obj.update_trackdb_document(hub_obj, trackdb_data, trackdb_configuration)
 
         return {'success': 'The hub is submitted successfully'}
 

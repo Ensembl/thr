@@ -17,6 +17,7 @@ import time
 
 from django.conf import settings
 from django.db import models
+from django.contrib.auth.models import User
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
@@ -77,7 +78,28 @@ class Hub(models.Model):
     # TODO: make sure that if the owner is deleted, the hubs are deleted too
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    def get_trackdbs_ids(self):
+    def get_owner(self):
+        # return User.objects.filter(id=self.owner_id)
+        return User.objects.values_list('username', flat=True).get(id=self.owner_id)
+
+    def get_trackdbs_list_from_hub(self):
+        """
+        Create trackdbs list that is used in GET /api/trackhub
+        """
+        trackdbs_obj = Trackdb.objects.filter(hub_id=self.hub_id)
+        trackdbs_list = []
+        for trackdb in trackdbs_obj:
+            trackdbs_list.append(
+                {
+                    # TODO: Link species to Trackdb instead of Hub
+                    'species': 'TODO: Link species to Trackdb instead of Hub',
+                    'assembly': Assembly.objects.values_list('name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
+                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(trackdb.trackdb_id)
+                }
+            )
+        return trackdbs_list
+
+    def get_trackdbs_ids_from_hub(self):
         """
         Get all the trackdbs id belonging to the hub
         This function is used to delete trackdbs document from Elasticsearch
@@ -200,7 +222,7 @@ class Trackdb(models.Model):
 
         return file_type_counts_dict
 
-    def update_trackdb_document(self, trackdb_data, trackdb_configuration, data_type_id, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, index='trackhubs', doc_type='doc'):
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
@@ -222,6 +244,7 @@ class Trackdb(models.Model):
                 refresh=True,
                 body={
                     'doc': {
+                        'owner': hub.get_owner(),
                         'file_type': self.get_trackdb_file_type_count(),
                         'data': trackdb_data,
                         'updated': int(time.time()),
@@ -230,7 +253,7 @@ class Trackdb(models.Model):
                             'checksum': ''
                         },
                         # Get the data type based on the hub info
-                        'type': trackhubs.models.Hub.objects.filter(data_type_id=data_type_id)
+                        'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
                         'configuration': trackdb_configuration
