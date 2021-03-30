@@ -11,15 +11,3 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
-from io import StringIO
-
-import pytest
-from django.core.management import call_command
-
-
-@pytest.mark.django_db
-def test_enrich_success():
-    out = StringIO()
-    call_command('enrich', stdout=out)
-    assert 'All documents are updated successfully!\n' == out.getvalue()

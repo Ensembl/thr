@@ -12,9 +12,6 @@
    limitations under the License.
 """
 
-from django.contrib import admin
-from django.urls import path, include
-
 """thr URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
@@ -43,4 +40,5 @@ urlpatterns = [
     # path('api-auth/', include('rest_framework.urls')),
     path('api/user/', include('users.api.urls')),
     path('api/trackhub/', include('trackhubs.api.urls')),
+    path('api/search/', include('search.api.urls')),
 ]

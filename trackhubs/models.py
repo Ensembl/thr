@@ -11,12 +11,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import json
 import logging
 import time
 
 from django.conf import settings
 from django.db import models
 from django.db.models import Count
+from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
@@ -26,7 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 class Species(models.Model):
-
     class Meta:
         db_table = "species"
 
@@ -36,7 +37,6 @@ class Species(models.Model):
 
 
 class DataType(models.Model):
-
     class Meta:
         db_table = "data_type"
 
@@ -45,7 +45,6 @@ class DataType(models.Model):
 
 
 class FileType(models.Model):
-
     class Meta:
         db_table = "file_type"
 
@@ -55,7 +54,6 @@ class FileType(models.Model):
 
 
 class Visibility(models.Model):
-
     class Meta:
         db_table = "visibility"
 
@@ -64,7 +62,6 @@ class Visibility(models.Model):
 
 
 class Hub(models.Model):
-
     class Meta:
         db_table = "hub"
 
@@ -86,32 +83,21 @@ class Hub(models.Model):
         This function is used to delete trackdbs document from Elasticsearch
         since trackdbs in MySQL have the same ids in the Elasticsearch index
         """
-        all_trackdbs_ids_list = []
-        # look for all the genomes belonging to this hub
-        genomes_list = Genome.objects.filter(hub_id=self.hub_id)
-
-        for genome in genomes_list:
-            # for each genome get the ids of trackdbs that will be deleted
-            trackdbs_list = Trackdb.objects.filter(genome_id=genome.genome_id).values_list('pk', flat=True)
-            all_trackdbs_ids_list.extend(list(trackdbs_list))
-
-        logger.debug("IDs of all the trackdbs that will be deleted: {}".format(all_trackdbs_ids_list))
-        return all_trackdbs_ids_list
+        trackdbs_ids_list = Trackdb.objects.filter(hub_id=self.hub_id).values_list('pk', flat=True)
+        logger.debug("IDs of all the trackdbs that will be deleted: {}".format(trackdbs_ids_list))
+        return trackdbs_ids_list
 
 
 class Genome(models.Model):
-
     class Meta:
         db_table = "genome"
 
     genome_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
     trackdb_location = models.CharField(max_length=255)
-    hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
 
 
 class Assembly(models.Model):
-
     class Meta:
         db_table = "assembly"
 
@@ -124,7 +110,6 @@ class Assembly(models.Model):
 
 
 class Trackdb(models.Model):
-
     class Meta:
         db_table = "trackdb"
 
@@ -144,27 +129,85 @@ class Trackdb(models.Model):
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
+    @property
+    def data_type_indexing(self):
+        """
+        Data type for indexing.
+        Used in Elasticsearch indexing.
+        """
+        return self.hub.data_type.name
+
+    @property
+    def species_indexing(self):
+        """species data (nested) for indexing.
+
+        Example:
+
+        >>> mapping = {
+        >>>     'species': {
+        >>>         'taxon_id': '9823',
+        >>>         'scientific_name': 'Sus scrofa',
+        >>>         'common_name': 'pig',
+        >>>     }
+        >>> }
+
+        :return:
+        """
+        wrapper = dict_to_obj({
+            'taxon_id': self.hub.species.taxon_id,
+            'scientific_name': self.hub.species.scientific_name,
+            'common_name': self.hub.species.common_name,
+        })
+
+        return wrapper
+
+    @property
+    def assembly_indexing(self):
+        """assembly data (nested) for indexing.
+
+        Example:
+
+        >>> mapping = {
+        >>>     'assembly': {
+        >>>         'accession': 'GCA_000150955.2',
+        >>>         'name': 'ASM15095v2',
+        >>>         'long_name': 'ASM15095v2 assembly for Phaeodactylum tricornutum CCAP 1055/1',
+        >>>         'ucsc_synonym': null,
+        >>>     }
+        >>> }
+
+        :return:
+        """
+        wrapper = dict_to_obj({
+            'accession': self.assembly.accession,
+            'name': self.assembly.name,
+            'long_name': self.assembly.long_name,
+            'ucsc_synonym': self.assembly.ucsc_synonym,
+        })
+
+        return wrapper
+
     def get_trackdb_file_type_count(self):
         """
         For a giving trackdb return the file type + count
         e.g file_type_counts_dict = {'bigBed': 20, 'bigWig': 1, 'bed': 1}
         """
-        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(count=Count('file_type'))
+        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(
+            count=Count('file_type'))
         file_type_counts_dict = {}
         for ft_count in file_type_counts:
             file_type_counts_dict.update({ft_count['file_type__name']: ft_count['count']})
 
         return file_type_counts_dict
 
-    def update_trackdb_document(self, trackdb_data, trackdb_configuration, hub, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, trackdb_data, trackdb_configuration, data_type_id, index='trackhubs', doc_type='doc'):
         """
+        TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
-        :param file_type: file type string associated with this track
-        # TODO: write the proper query, file_type param will be removed
+        :param file_type: file type associated with this track
         :param trackdb_data: data array that will be added to the trackdb document
         :param trackdb_configuration: configuration object that will be added to the trackdb document
-        :param hub: hub object associated with this trackdb
         :param index: index name (default: 'trackhubs')
         :param doc_type: document type (default: 'doc')
         # TODO: handle exceptions
@@ -187,7 +230,7 @@ class Trackdb(models.Model):
                             'checksum': ''
                         },
                         # Get the data type based on the hub info
-                        'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
+                        'type': trackhubs.models.Hub.objects.filter(data_type_id=data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
                         'configuration': trackdb_configuration
@@ -202,7 +245,6 @@ class Trackdb(models.Model):
 
 
 class Track(models.Model):
-
     class Meta:
         db_table = "track"
 
@@ -222,7 +264,6 @@ class Track(models.Model):
 
 
 class GenomeAssemblyDump(models.Model):
-
     class Meta:
         db_table = "genome_assembly_dump"
 

@@ -12,14 +12,11 @@
    limitations under the License.
 """
 
-from io import StringIO
-
-import pytest
-from django.core.management import call_command
+from django.urls import path
+from .views import TrackdbDocumentListView, TrackdbDocumentDetailView
 
 
-@pytest.mark.django_db
-def test_enrich_success():
-    out = StringIO()
-    call_command('enrich', stdout=out)
-    assert 'All documents are updated successfully!\n' == out.getvalue()
+urlpatterns = [
+    path('', TrackdbDocumentListView.as_view()),
+    path('trackdb/<int:pk>/', TrackdbDocumentDetailView.as_view()),
+]

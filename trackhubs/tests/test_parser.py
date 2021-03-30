@@ -13,19 +13,11 @@
 """
 
 import logging
-
 import pytest
-
-from thr.settings import BASE_DIR
 from trackhubs.parser import parse_file_from_url
 
 # disable logging when running tests
 logging.disable(logging.CRITICAL)
-
-
-@pytest.fixture
-def project_dir():
-    return BASE_DIR.parent
 
 
 def test_parse_hub_success(project_dir):
@@ -96,8 +88,7 @@ def test_parse_trackdbs_success(project_dir):
         ('https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.ttxt', None),
         ('https://invalide.url/hub.txt', None),
         ('', None),
-        (15, None),
-        ('https://www.le.ac.uk/oerresources/bdra/html/resources/example.txt', [])
+        (15, None)
     ]
 )
 def test_parse_url_fail(test_url, expected_result):

@@ -25,13 +25,9 @@ class Command(BaseCommand):
     """
 
     def _enrich_docs(self):
-        all_hubs = trackhubs.models.Hub.objects.all()
-        for hub in all_hubs:
-            hub_genomes = trackhubs.models.Genome.objects.filter(hub=hub)
-            for genome in hub_genomes:
-                genome_trackdbs = trackhubs.models.Trackdb.objects.filter(genome=genome)
-                for trackdb in genome_trackdbs:
-                    trackdb.update_trackdb_document(trackdb.data, trackdb.configuration, hub)
+        all_trackdbs = trackhubs.models.Trackdb.objects.all()
+        for trackdb in all_trackdbs:
+            trackdb.update_trackdb_document(trackdb.data, trackdb.configuration, trackdb.hub.data_type_id)
 
     def handle(self, *args, **options):
         # the command below will enrich all trackdbs stored in the DB

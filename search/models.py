@@ -12,14 +12,6 @@
    limitations under the License.
 """
 
-from io import StringIO
+from django.db import models
 
-import pytest
-from django.core.management import call_command
-
-
-@pytest.mark.django_db
-def test_enrich_success():
-    out = StringIO()
-    call_command('enrich', stdout=out)
-    assert 'All documents are updated successfully!\n' == out.getvalue()
+# Create your models here.
