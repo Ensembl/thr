@@ -1,0 +1,6 @@
+hub SRP066358
+shortLabel RNASeq-er alignment hub for ENA runs in SRP066358
+longLabel On the Origin and Evolutionary Consequences of Gene Body DNA Methylation; <a href="https://www.ebi.ac.uk/ena/browser/view/SRP066358">SRP066358</a>
+genomesFile genomes.txt
+email helpdesk@ensemblgenomes.org
+descriptionUrl https://www.ebi.ac.uk/fg/rnaseq/api/json/70/getRunsByStudy/SRP066358

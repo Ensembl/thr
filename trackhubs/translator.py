@@ -22,6 +22,7 @@ from django.db import transaction
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
+from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
 
@@ -334,7 +335,12 @@ def save_and_update_document(hub_url, data_type, current_user):
     save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
-    # Verification step
+    # Verification steps
+    # run the USCS hubCheck tool found in kent tools on the submitted hub
+    hub_check_result = hub_check(hub_url)
+    if 'error' in hub_check_result.keys():
+        return hub_check_result
+
     # Before we submit the hub we make sure that it doesn't exist already
     if is_hub_exists(hub_url):
         original_owner_id = trackhubs.models.Hub.objects.filter(url=hub_url).first().owner_id
