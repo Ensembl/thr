@@ -11,6 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from datetime import datetime
 import json
 import logging
 import time
@@ -92,9 +93,45 @@ class Hub(models.Model):
             trackdbs_list.append(
                 {
                     # TODO: Link species to Trackdb instead of Hub
+                    'trackdb_id': trackdb.trackdb_id,
                     'species': 'TODO: Link species to Trackdb instead of Hub',
-                    'assembly': Assembly.objects.values_list('name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
-                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(trackdb.trackdb_id)
+                    'assembly': Assembly.objects.values_list('name', flat=True).get(
+                        assembly_id=trackdb.assembly.assembly_id),
+                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                        trackdb.trackdb_id),
+                    'schema': trackdb.version,
+                    'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
+                }
+            )
+        return trackdbs_list
+
+    def get_trackdbs_full_list_from_hub(self):
+        """
+        Create trackdbs list that is used in GET /api/trackhub/:id
+        it doesn't make much sense to have /api/trackhub and /api/trackhub/:id
+        with different structures but it part of the requirement to keep
+        the current JSON structure as it is
+        """
+        trackdbs_obj = Trackdb.objects.filter(hub_id=self.hub_id)
+        trackdbs_list = []
+        for trackdb in trackdbs_obj:
+            trackdbs_list.append(
+                {
+                    # TODO: Link species to Trackdb instead of Hub
+                    'trackdb_id': trackdb.trackdb_id,
+                    'species': {
+                        'TODO': 'Link species to Trackdb instead of Hub'
+                    },
+                    # TODO: this quries are redendent and costy replace them with one query please
+                    'assembly': {
+                        'name': Assembly.objects.values_list('name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
+                        'long_name': Assembly.objects.values_list('long_name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
+                        'accession': Assembly.objects.values_list('accession', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
+                        'synonyms': Assembly.objects.values_list('ucsc_synonym', flat=True).get(assembly_id=trackdb.assembly.assembly_id)
+                    },
+                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                        trackdb.trackdb_id),
                 }
             )
         return trackdbs_list

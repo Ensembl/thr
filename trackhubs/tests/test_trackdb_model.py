@@ -87,9 +87,9 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     assert create_trackdb_resource.public == expected_trackdb_document['public']
 
     create_trackdb_resource.update_trackdb_document(
+        hub=create_hub_resource,
         trackdb_data=expected_trackdb_document['data'],
         trackdb_configuration=expected_trackdb_document['configuration'],
-        data_type_id=create_hub_resource.data_type_id,
         index=index,
         doc_type=doc_type
     )

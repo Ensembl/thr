@@ -20,12 +20,12 @@ from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from trackhubs.api.serializers import HubSerializer, TrackdbSerializer
+from trackhubs.api.serializers import HubSerializer, TrackdbSerializer, OneHubSerializer
 from trackhubs.models import Hub, Trackdb
 import trackhubs.translator
 
 
-class HubList(APIView):
+class TrackHubList(APIView):
     """
     List all hubs submitted by the current user, or create a new hub.
     """
@@ -33,6 +33,12 @@ class HubList(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        """
+        Return the list of available track data hubs for a given user.
+        Each trackhub is listed with key/value parameters together with
+        a list of URIs of the resources which corresponds to the trackDbs
+        beloning to the track hub
+        """
         hubs = Hub.objects.filter(owner_id=request.user.id)
         serializer = HubSerializer(hubs, many=True)
         return Response(serializer.data)
@@ -64,7 +70,7 @@ class HubList(APIView):
         )
 
 
-class HubDetail(APIView):
+class TrackHubDetail(APIView):
     """
     Retrieve or delete a hub instance.
     """
@@ -79,7 +85,7 @@ class HubDetail(APIView):
 
     def get(self, request, pk):
         hub = self.get_hub(pk)
-        serializer = HubSerializer(hub)
+        serializer = OneHubSerializer(hub)
         return Response(serializer.data)
 
     @transaction.atomic

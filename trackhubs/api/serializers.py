@@ -37,6 +37,24 @@ class HubSerializer(serializers.ModelSerializer):
         return obj.get_trackdbs_list_from_hub()
 
 
+class OneHubSerializer(serializers.ModelSerializer):
+
+    trackdbs = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Hub
+        fields = [
+            'name',
+            'short_label',
+            'long_label',
+            'url',
+            'trackdbs'
+        ]
+
+    def get_trackdbs(self, obj):
+        return obj.get_trackdbs_full_list_from_hub()
+
+
 class TrackdbSerializer(serializers.ModelSerializer):
     hub_name = serializers.SerializerMethodField()
     assembly_name = serializers.SerializerMethodField()

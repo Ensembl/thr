@@ -18,6 +18,6 @@ from django.urls import path
 from trackhubs.api import views
 
 urlpatterns = [
-    path('', views.HubList.as_view()),
-    path('<int:pk>/', views.HubDetail.as_view()),
+    path('', views.TrackHubList.as_view()),
+    path('<int:pk>/', views.TrackHubDetail.as_view()),
 ]
