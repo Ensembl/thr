@@ -74,7 +74,6 @@ class Hub(models.Model):
     url = models.CharField(max_length=255)
     description_url = models.URLField(null=True)
     email = models.EmailField(null=True)
-    species = models.ForeignKey(Species, on_delete=models.CASCADE)
     data_type = models.ForeignKey(DataType, on_delete=models.CASCADE)
     # TODO: make sure that if the owner is deleted, the hubs are deleted too
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
@@ -92,9 +91,9 @@ class Hub(models.Model):
         for trackdb in trackdbs_obj:
             trackdbs_list.append(
                 {
-                    # TODO: Link species to Trackdb instead of Hub
                     'trackdb_id': trackdb.trackdb_id,
-                    'species': 'TODO: Link species to Trackdb instead of Hub',
+                    'species': str(Species.objects.values_list('taxon_id', flat=True).get(
+                        taxon_id=trackdb.species.taxon_id)),
                     'assembly': Assembly.objects.values_list('name', flat=True).get(
                         assembly_id=trackdb.assembly.assembly_id),
                     'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
@@ -118,17 +117,25 @@ class Hub(models.Model):
         for trackdb in trackdbs_obj:
             trackdbs_list.append(
                 {
-                    # TODO: Link species to Trackdb instead of Hub
+                    # TODO: this quries are redendent and costy replace them with one query please
                     'trackdb_id': trackdb.trackdb_id,
                     'species': {
-                        'TODO': 'Link species to Trackdb instead of Hub'
+                        'scientific_name': Species.objects.values_list('scientific_name', flat=True).get(
+                            taxon_id=trackdb.species.taxon_id),
+                        'tax_id': str(Species.objects.values_list('taxon_id', flat=True).get(
+                        taxon_id=trackdb.species.taxon_id)),
+                        'common_name': Species.objects.values_list('common_name', flat=True).get(
+                            taxon_id=trackdb.species.taxon_id),
                     },
-                    # TODO: this quries are redendent and costy replace them with one query please
                     'assembly': {
-                        'name': Assembly.objects.values_list('name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
-                        'long_name': Assembly.objects.values_list('long_name', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
-                        'accession': Assembly.objects.values_list('accession', flat=True).get(assembly_id=trackdb.assembly.assembly_id),
-                        'synonyms': Assembly.objects.values_list('ucsc_synonym', flat=True).get(assembly_id=trackdb.assembly.assembly_id)
+                        'name': Assembly.objects.values_list('name', flat=True).get(
+                            assembly_id=trackdb.assembly.assembly_id),
+                        'long_name': Assembly.objects.values_list('long_name', flat=True).get(
+                            assembly_id=trackdb.assembly.assembly_id),
+                        'accession': Assembly.objects.values_list('accession', flat=True).get(
+                            assembly_id=trackdb.assembly.assembly_id),
+                        'synonyms': Assembly.objects.values_list('ucsc_synonym', flat=True).get(
+                            assembly_id=trackdb.assembly.assembly_id)
                     },
                     'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
                         trackdb.trackdb_id),
@@ -187,6 +194,7 @@ class Trackdb(models.Model):
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
+    species = models.ForeignKey(Species, on_delete=models.CASCADE)
 
     @property
     def data_type_indexing(self):
@@ -213,9 +221,9 @@ class Trackdb(models.Model):
         :return:
         """
         wrapper = dict_to_obj({
-            'taxon_id': self.hub.species.taxon_id,
-            'scientific_name': self.hub.species.scientific_name,
-            'common_name': self.hub.species.common_name,
+            'taxon_id': self.species.taxon_id,
+            'scientific_name': self.species.scientific_name,
+            'common_name': self.species.common_name,
         })
 
         return wrapper
