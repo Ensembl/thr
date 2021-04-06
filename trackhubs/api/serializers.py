@@ -17,9 +17,9 @@ from trackhubs import models
 
 
 class HubSerializer(serializers.ModelSerializer):
-
-    trackdbs = serializers.SerializerMethodField()
-
+    """
+    Generic Hub serializer
+    """
     class Meta:
         model = models.Hub
         fields = [
@@ -29,16 +29,27 @@ class HubSerializer(serializers.ModelSerializer):
             'long_label',
             'url',
             'description_url',
-            'email',
-            'trackdbs'
+            'email'
         ]
+
+
+class CustomHubListSerializer(serializers.ModelSerializer):
+    """
+    Custom Hub structure serializer used for GET trackhub API
+    """
+    trackdbs = serializers.SerializerMethodField()
 
     def get_trackdbs(self, obj):
         return obj.get_trackdbs_list_from_hub()
 
+    class Meta(HubSerializer.Meta):
+        fields = HubSerializer.Meta.fields + ['trackdbs']
 
-class OneHubSerializer(serializers.ModelSerializer):
 
+class CustomOneHubSerializer(serializers.ModelSerializer):
+    """
+    Custom Hub structure serializer used for GET trackhub/:id API
+    """
     trackdbs = serializers.SerializerMethodField()
 
     class Meta:
@@ -53,26 +64,3 @@ class OneHubSerializer(serializers.ModelSerializer):
 
     def get_trackdbs(self, obj):
         return obj.get_trackdbs_full_list_from_hub()
-
-
-class TrackdbSerializer(serializers.ModelSerializer):
-    hub_name = serializers.SerializerMethodField()
-    assembly_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = models.Trackdb
-        fields = [
-            'trackdb_id',
-            'description',
-            'version',
-            'created',
-            'updated',
-            'assembly_name',
-            'hub_name',
-        ]
-
-    def get_hub_name(self, obj):
-        return models.Hub.objects.values_list('name', flat=True).get(hub_id=obj.hub.hub_id)
-
-    def get_assembly_name(self, obj):
-        return models.Assembly.objects.values_list('name', flat=True).get(assembly_id=obj.assembly.assembly_id)

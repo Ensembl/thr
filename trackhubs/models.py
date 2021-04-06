@@ -33,6 +33,7 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
+    # TODO: Rename 'taxon_id' to 'tax_id'
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)
@@ -92,10 +93,8 @@ class Hub(models.Model):
             trackdbs_list.append(
                 {
                     'trackdb_id': trackdb.trackdb_id,
-                    'species': str(Species.objects.values_list('taxon_id', flat=True).get(
-                        taxon_id=trackdb.species.taxon_id)),
-                    'assembly': Assembly.objects.values_list('name', flat=True).get(
-                        assembly_id=trackdb.assembly.assembly_id),
+                    'species': str(Species.objects.get(taxon_id=trackdb.species.taxon_id).taxon_id),
+                    'assembly': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).name,
                     'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
                         trackdb.trackdb_id),
                     'schema': trackdb.version,
@@ -117,25 +116,17 @@ class Hub(models.Model):
         for trackdb in trackdbs_obj:
             trackdbs_list.append(
                 {
-                    # TODO: this quries are redendent and costy replace them with one query please
                     'trackdb_id': trackdb.trackdb_id,
                     'species': {
-                        'scientific_name': Species.objects.values_list('scientific_name', flat=True).get(
-                            taxon_id=trackdb.species.taxon_id),
-                        'tax_id': str(Species.objects.values_list('taxon_id', flat=True).get(
-                        taxon_id=trackdb.species.taxon_id)),
-                        'common_name': Species.objects.values_list('common_name', flat=True).get(
-                            taxon_id=trackdb.species.taxon_id),
+                        'scientific_name': Species.objects.get(taxon_id=trackdb.species.taxon_id).scientific_name,
+                        'tax_id': str(Species.objects.get(taxon_id=trackdb.species.taxon_id).taxon_id),
+                        'common_name': Species.objects.get(taxon_id=trackdb.species.taxon_id).common_name,
                     },
                     'assembly': {
-                        'name': Assembly.objects.values_list('name', flat=True).get(
-                            assembly_id=trackdb.assembly.assembly_id),
-                        'long_name': Assembly.objects.values_list('long_name', flat=True).get(
-                            assembly_id=trackdb.assembly.assembly_id),
-                        'accession': Assembly.objects.values_list('accession', flat=True).get(
-                            assembly_id=trackdb.assembly.assembly_id),
-                        'synonyms': Assembly.objects.values_list('ucsc_synonym', flat=True).get(
-                            assembly_id=trackdb.assembly.assembly_id)
+                        'name': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).name,
+                        'long_name': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).long_name,
+                        'accession': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).accession,
+                        'synonyms': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).ucsc_synonym
                     },
                     'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
                         trackdb.trackdb_id),
@@ -253,6 +244,10 @@ class Trackdb(models.Model):
         })
 
         return wrapper
+
+    def get_hub_owner_id_from_trackdb(self):
+        hub_id = Trackdb.objects.get(trackdb_id=self.trackdb_id).hub_id
+        return Hub.objects.get(hub_id=hub_id).owner_id
 
     def get_trackdb_file_type_count(self):
         """

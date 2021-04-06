@@ -20,7 +20,7 @@ from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from trackhubs.api.serializers import HubSerializer, TrackdbSerializer, OneHubSerializer
+from trackhubs.api.serializers import CustomOneHubSerializer, CustomHubListSerializer
 from trackhubs.models import Hub, Trackdb
 import trackhubs.translator
 
@@ -40,7 +40,7 @@ class TrackHubList(APIView):
         beloning to the track hub
         """
         hubs = Hub.objects.filter(owner_id=request.user.id)
-        serializer = HubSerializer(hubs, many=True)
+        serializer = CustomHubListSerializer(hubs, many=True)
         return Response(serializer.data)
 
     # Before calling post function, Django starts a transaction. If the response is produced without problems,
@@ -85,7 +85,7 @@ class TrackHubDetail(APIView):
 
     def get(self, request, pk):
         hub = self.get_hub(pk)
-        serializer = OneHubSerializer(hub)
+        serializer = CustomOneHubSerializer(hub)
         return Response(serializer.data)
 
     @transaction.atomic
@@ -129,18 +129,3 @@ class TrackHubDetail(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class TrackdbList(APIView):
-    """
-    List all Trackdbs submitted by the current user.
-    """
-    authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get(self, request):
-        # Get all hubs ids submitted by the current user
-        hubs_ids = Hub.objects.filter(owner_id=request.user.id).values_list('hub_id', flat=True)
-        print("hubs_ids --> ", hubs_ids)
-        trackdbs = Trackdb.objects.filter(hub_id__in=hubs_ids)
-        serializer = TrackdbSerializer(trackdbs, many=True)
-        return Response(serializer.data)
