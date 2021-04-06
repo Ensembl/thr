@@ -32,7 +32,7 @@ class TrackdbDetail(APIView):
     def get_trackdb(self, pk):
         try:
             return Trackdb.objects.get(pk=pk)
-        except Hub.DoesNotExist:
+        except Trackdb.DoesNotExist:
             raise Http404
 
     def get(self, request, pk):
