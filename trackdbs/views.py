@@ -47,7 +47,8 @@ class TrackdbDetail(APIView):
         # delete the trackdb document from Elasticsearch
         # but make sure that only the trackhub owner can delete it
         current_user_id = request.user.id
-        hub_original_owner_id = trackdb.get_hub_owner_id_from_trackdb()
+        hub = trackdb.get_hub_from_trackdb()
+        hub_original_owner_id = hub.owner_id
 
         if current_user_id == hub_original_owner_id:
             try:
@@ -76,5 +77,11 @@ class TrackdbDetail(APIView):
 
         # delete the trackdb from MySQL
         trackdb.delete()
+
+        # one last check to do is verifying if the hub is empty (after deleting the last trackdb)
+        count_trackdbs = hub.count_trackdbs_in_hub()
+        # if it's the case delete the hub from MySQL
+        if count_trackdbs == 0:
+            hub.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)

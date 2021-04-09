@@ -25,6 +25,7 @@ from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
+from trackhubs.tracks_status import save_tracks_status, fix_big_data_url
 
 logger = logging.getLogger(__name__)
 
@@ -164,8 +165,9 @@ def save_track(track_dict, trackdb, file_type, visibility):
     :returns: either the existing track or the new created one
     """
     existing_track_obj = None
+    big_data_full_url = fix_big_data_url(track_dict['bigDataUrl'], trackdb.source_url)
     try:
-        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
+        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=big_data_full_url).first()
     except KeyError:
         logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
@@ -179,7 +181,7 @@ def save_track(track_dict, trackdb, file_type, visibility):
             long_label=track_dict.get('longLabel'),
             big_data_url=track_dict.get('bigDataUrl'),
             html=track_dict.get('html'),
-            parent=None,  # track
+            parent=None,  # track id will go here later on using add_parent_id() function
             trackdb=trackdb,
             file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
             visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
@@ -359,7 +361,8 @@ def save_and_update_document(hub_url, data_type, current_user):
         else:
             data_type = 'genomics'
 
-        genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
+        genome_url = base_url + '/' + hub_info['genomesFile']
+        genomes_trackdbs_info = parse_file_from_url(genome_url, is_genome=True)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
         hub_obj = save_hub(hub_info, data_type, current_user)
@@ -380,10 +383,13 @@ def save_and_update_document(hub_url, data_type, current_user):
             assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
 
             # Save the initial data
-            trackdb_obj = save_trackdb(base_url + '/' + genome_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj, error_or_species_obj)
+            trackdb_url = base_url + '/' + genome_trackdb['trackDb']
+            trackdb_obj = save_trackdb(trackdb_url, hub_obj, genome_obj, assembly_obj, error_or_species_obj)
 
-            trackdbs_info = parse_file_from_url(base_url + '/' + genome_trackdb['trackDb'], is_trackdb=True)
+            trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
+
+            tracks_status = save_tracks_status(trackdbs_info, trackdb_url)
 
             trackdb_data = []
             trackdb_configuration = {}
@@ -450,10 +456,11 @@ def save_and_update_document(hub_url, data_type, current_user):
             # update MySQL
             current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
             current_trackdb.configuration = trackdb_configuration
+            current_trackdb.status = tracks_status
             current_trackdb.data = trackdb_data
             current_trackdb.save()
             # Update Elasticsearch trackdb document
-            trackdb_obj.update_trackdb_document(hub_obj, trackdb_data, trackdb_configuration)
+            trackdb_obj.update_trackdb_document(hub_obj, trackdb_data, trackdb_configuration, tracks_status)
 
         return {'success': 'The hub is submitted successfully'}
 

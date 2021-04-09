@@ -83,6 +83,9 @@ class Hub(models.Model):
         # return User.objects.filter(id=self.owner_id)
         return User.objects.values_list('username', flat=True).get(id=self.owner_id)
 
+    def count_trackdbs_in_hub(self):
+        return Trackdb.objects.filter(hub_id=self.hub_id).count()
+
     def get_trackdbs_list_from_hub(self):
         """
         Create trackdbs list that is used in GET /api/trackhub
@@ -100,6 +103,7 @@ class Hub(models.Model):
                     'schema': trackdb.version,
                     'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
                     'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
+                    'status': trackdb.status,
                 }
             )
         return trackdbs_list
@@ -178,8 +182,7 @@ class Trackdb(models.Model):
     updated = models.IntegerField(null=True)
     configuration = JSONField()
     data = JSONField()
-    status_message = models.CharField(max_length=45, null=True)
-    status_last_update = models.CharField(max_length=45, null=True)
+    status = JSONField()
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
@@ -245,9 +248,12 @@ class Trackdb(models.Model):
 
         return wrapper
 
-    def get_hub_owner_id_from_trackdb(self):
+    def count_tracks_in_trackdb(self):
+        return Track.objects.filter(trackdb_id=self.trackdb_id).count()
+
+    def get_hub_from_trackdb(self):
         hub_id = Trackdb.objects.get(trackdb_id=self.trackdb_id).hub_id
-        return Hub.objects.get(hub_id=hub_id).owner_id
+        return Hub.objects.get(hub_id=hub_id)
 
     def get_trackdb_file_type_count(self):
         """
@@ -262,7 +268,7 @@ class Trackdb(models.Model):
 
         return file_type_counts_dict
 
-    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
@@ -296,7 +302,8 @@ class Trackdb(models.Model):
                         'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
-                        'configuration': trackdb_configuration
+                        'configuration': trackdb_configuration,
+                        'status': tracks_status
                     }
                 }
             )

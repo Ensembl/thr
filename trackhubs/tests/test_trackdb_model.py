@@ -80,6 +80,18 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
         'configuration': trackdb_configuration
     }
 
+    track_status = {
+        "last_update": 1562454023,
+        "message": "All is Well",
+        "tracks": {
+            "total": 2,
+            "with_data": {
+                "total": 1,
+                "total_ko": 0
+            }
+        }
+    }
+
     indexed_trackdb_document = es_instance.index(index=index, doc_type=doc_type, id=1, body=expected_trackdb_document)
     # assert that either the document is created or updated
     assert indexed_trackdb_document['result'] in ('created', 'updated')
@@ -90,6 +102,7 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
         hub=create_hub_resource,
         trackdb_data=expected_trackdb_document['data'],
         trackdb_configuration=expected_trackdb_document['configuration'],
+        tracks_status=track_status,
         index=index,
         doc_type=doc_type
     )

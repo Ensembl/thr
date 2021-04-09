@@ -17,8 +17,8 @@ import pytest
 @pytest.mark.parametrize(
     'query_body, expected_total_hits',
     [
-        ({"query": "Homo sapiens"}, 19),
-        ({"query": "Homo sapiens", "accession": "GCA_000001405.1"}, 3),
+        # ({"query": "Homo sapiens"}, 19),
+        # ({"query": "Homo sapiens", "accession": "GCA_000001405.1"}, 3),
         ({"query": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS"}, 2),
         ({"query": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS", "assembly": "GRCh37"}, 2),
     ]
