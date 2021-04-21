@@ -15,3 +15,6 @@
 from .base import *
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
+# (CORS) Cross-Origin Resource Sharing Settings
+CORS_ORIGIN_ALLOW_ALL = True

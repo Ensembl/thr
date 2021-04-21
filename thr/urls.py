@@ -33,14 +33,12 @@ from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('thr_web.urls')),
-    path('user/', include('users.urls')),
 
     # REST Framework URLs
     # path('api-auth/', include('rest_framework.urls')),
-    path('api/user/', include('users.api.urls')),
-    path('api/trackhub/', include('trackhubs.api.urls')),
-    path('api/search/', include('search.api.urls')),
+    path('api/user/', include('users.urls')),
+    path('api/trackhub/', include('trackhubs.urls')),
+    path('api/search/', include('search.urls')),
     # TODO: Restructure the other APIs
     path('api/trackdb/', include('trackdbs.urls')),
 ]

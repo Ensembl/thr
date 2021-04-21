@@ -11,3 +11,12 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+
+from django.urls import path
+from search.views import TrackdbDocumentListView, TrackdbDocumentDetailView
+
+
+urlpatterns = [
+    path('', TrackdbDocumentListView.as_view()),
+    path('trackdb/<int:pk>/', TrackdbDocumentDetailView.as_view()),
+]

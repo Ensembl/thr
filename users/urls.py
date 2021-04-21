@@ -12,13 +12,14 @@
    limitations under the License.
 """
 
-from django.contrib.auth.decorators import login_required
-from django.urls import path, include
-from .views import DashboardView, RegistrationView
+from django.urls import path
+from rest_framework.authtoken.views import obtain_auth_token
 
+from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView
 
 urlpatterns = [
-    path('', include('django.contrib.auth.urls')),
-    path('dashboard/', login_required(DashboardView.as_view()), name='dashboard'),
-    path('register/', RegistrationView.as_view(), name='register'),
+    path('user', UserDetailsView.as_view(), name='user_api'),
+    path('register', RegistrationViewAPI.as_view(), name='register_api'),
+    path('login', obtain_auth_token, name='login_api'),
+    path('logout', LogoutViewAPI.as_view(), name='logout_api'),
 ]
