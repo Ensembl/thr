@@ -11,7 +11,7 @@
 | GET /api/trackhub               | Returns the set of registered track data hubs for the given user| Done   |
 | GET /api/trackhub/:id           | Return a track hub with the given name in the Registry     | Done        |
 | DELETE /api/trackhub/:id        | Delete trackDBs assigned to a given track hub              | Done        |
-| GET /api/trackdb/:id            | Return the trackDb with the given ID in the Registry       | Done        |
+| GET /api/trackdb/:id            | Return the trackDb with the given ID in the Registry       | Todo        |
 | POST /api/trackhub              | Register/Update a remote public track hub with the Registry| Done        |
 | DELETE /api/trackdb/:id         | Delete the trackDb with the given ID from the Registry     | Todo        |
 

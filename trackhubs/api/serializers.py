@@ -17,8 +17,50 @@ from trackhubs import models
 
 
 class HubSerializer(serializers.ModelSerializer):
+    """
+    Generic Hub serializer
+    """
     class Meta:
         model = models.Hub
-        fields = ['hub_id', 'name', 'short_label', 'long_label', 'url', 'description_url', 'email']
+        fields = [
+            'hub_id',
+            'name',
+            'short_label',
+            'long_label',
+            'url',
+            'description_url',
+            'email'
+        ]
 
 
+class CustomHubListSerializer(serializers.ModelSerializer):
+    """
+    Custom Hub structure serializer used for GET trackhub API
+    """
+    trackdbs = serializers.SerializerMethodField()
+
+    def get_trackdbs(self, obj):
+        return obj.get_trackdbs_list_from_hub()
+
+    class Meta(HubSerializer.Meta):
+        fields = HubSerializer.Meta.fields + ['trackdbs']
+
+
+class CustomOneHubSerializer(serializers.ModelSerializer):
+    """
+    Custom Hub structure serializer used for GET trackhub/:id API
+    """
+    trackdbs = serializers.SerializerMethodField()
+
+    class Meta:
+        model = models.Hub
+        fields = [
+            'name',
+            'short_label',
+            'long_label',
+            'url',
+            'trackdbs'
+        ]
+
+    def get_trackdbs(self, obj):
+        return obj.get_trackdbs_full_list_from_hub()

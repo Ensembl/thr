@@ -72,13 +72,35 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
         'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
         'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',
-        'email': 'wyeth@cmmt.ubc.ca'
+        'email': 'wyeth@cmmt.ubc.ca',
+        'trackdbs': [
+            {
+                'trackdb_id': 1,
+                'species': 'TODO: Link species to Trackdb instead of Hub',
+                'assembly': 'GRCh37',
+                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/1',
+                'schema': 'v1.0',
+                'created': 'the date changes',
+                'updated': 'the date changes'
+            },
+            {
+                'trackdb_id': 2,
+                'species': 'TODO: Link species to Trackdb instead of Hub',
+                'assembly': 'GRCh38',
+                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/2',
+                'schema': 'v1.0',
+                'created': 'the date changes',
+                'updated': 'the date changes'
+            }]
     }]
 
     response = api_client.get('/api/trackhub/')
     actual_result = response.json()
     assert response.status_code == 200
-    assert actual_result == expected_result
+    assert actual_result[0]['hub_id'] == expected_result[0]['hub_id']
+    assert actual_result[0]['name'] == expected_result[0]['name']
+    assert actual_result[0]['url'] == expected_result[0]['url']
+    assert len(actual_result[0]['trackdbs']) == len(expected_result[0]['trackdbs'])
 
 
 def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resource):
@@ -89,13 +111,44 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
         'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
         'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',
-        'email': 'wyeth@cmmt.ubc.ca'
+        'email': 'wyeth@cmmt.ubc.ca',
+        'trackdbs': [
+            {
+                'trackdb_id': 1,
+                'species': {
+                    'TODO': 'Link species to Trackdb instead of Hub'
+                },
+                'assembly': {
+                    'name': 'GRCh37',
+                    'long_name': 'GRCh37',
+                    'accession': 'GCA_000001405.1',
+                    'synonyms': 'hg19'
+                },
+                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/1'
+            },
+            {
+                'trackdb_id': 2,
+                'species': {
+                    'TODO': 'Link species to Trackdb instead of Hub'
+                },
+                'assembly': {
+                    'name': 'GRCh38',
+                    'long_name': 'GRCh38',
+                    'accession': 'GCA_000001405.15',
+                    'synonyms': 'hg38'
+                },
+                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/2'
+            }
+        ]
     }
 
     response = api_client.get('/api/trackhub/1/')
     actual_result = response.json()
     assert response.status_code == 200
-    assert actual_result == expected_result
+    # assert actual_result['hub_id'] == expected_result['hub_id']
+    assert actual_result['name'] == expected_result['name']
+    assert actual_result['url'] == expected_result['url']
+    assert len(actual_result['trackdbs']) == len(expected_result['trackdbs'])
 
 
 def test_get_one_trackhub_fail(api_client, create_trackhub_resource):

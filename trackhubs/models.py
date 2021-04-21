@@ -11,12 +11,14 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from datetime import datetime
 import json
 import logging
 import time
 
 from django.conf import settings
 from django.db import models
+from django.contrib.auth.models import User
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
@@ -31,6 +33,7 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
+    # TODO: Rename 'taxon_id' to 'tax_id'
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)
@@ -72,12 +75,70 @@ class Hub(models.Model):
     url = models.CharField(max_length=255)
     description_url = models.URLField(null=True)
     email = models.EmailField(null=True)
-    species = models.ForeignKey(Species, on_delete=models.CASCADE)
     data_type = models.ForeignKey(DataType, on_delete=models.CASCADE)
     # TODO: make sure that if the owner is deleted, the hubs are deleted too
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    def get_trackdbs_ids(self):
+    def get_owner(self):
+        # return User.objects.filter(id=self.owner_id)
+        return User.objects.values_list('username', flat=True).get(id=self.owner_id)
+
+    def count_trackdbs_in_hub(self):
+        return Trackdb.objects.filter(hub_id=self.hub_id).count()
+
+    def get_trackdbs_list_from_hub(self):
+        """
+        Create trackdbs list that is used in GET /api/trackhub
+        """
+        trackdbs_obj = Trackdb.objects.filter(hub_id=self.hub_id)
+        trackdbs_list = []
+        for trackdb in trackdbs_obj:
+            trackdbs_list.append(
+                {
+                    'trackdb_id': trackdb.trackdb_id,
+                    'species': str(Species.objects.get(taxon_id=trackdb.species.taxon_id).taxon_id),
+                    'assembly': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).name,
+                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                        trackdb.trackdb_id),
+                    'schema': trackdb.version,
+                    'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
+                    'status': trackdb.status,
+                }
+            )
+        return trackdbs_list
+
+    def get_trackdbs_full_list_from_hub(self):
+        """
+        Create trackdbs list that is used in GET /api/trackhub/:id
+        it doesn't make much sense to have /api/trackhub and /api/trackhub/:id
+        with different structures but it part of the requirement to keep
+        the current JSON structure as it is
+        """
+        trackdbs_obj = Trackdb.objects.filter(hub_id=self.hub_id)
+        trackdbs_list = []
+        for trackdb in trackdbs_obj:
+            trackdbs_list.append(
+                {
+                    'trackdb_id': trackdb.trackdb_id,
+                    'species': {
+                        'scientific_name': Species.objects.get(taxon_id=trackdb.species.taxon_id).scientific_name,
+                        'tax_id': str(Species.objects.get(taxon_id=trackdb.species.taxon_id).taxon_id),
+                        'common_name': Species.objects.get(taxon_id=trackdb.species.taxon_id).common_name,
+                    },
+                    'assembly': {
+                        'name': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).name,
+                        'long_name': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).long_name,
+                        'accession': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).accession,
+                        'synonyms': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).ucsc_synonym
+                    },
+                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                        trackdb.trackdb_id),
+                }
+            )
+        return trackdbs_list
+
+    def get_trackdbs_ids_from_hub(self):
         """
         Get all the trackdbs id belonging to the hub
         This function is used to delete trackdbs document from Elasticsearch
@@ -121,13 +182,13 @@ class Trackdb(models.Model):
     updated = models.IntegerField(null=True)
     configuration = JSONField()
     data = JSONField()
-    status_message = models.CharField(max_length=45, null=True)
-    status_last_update = models.CharField(max_length=45, null=True)
+    status = JSONField()
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
+    species = models.ForeignKey(Species, on_delete=models.CASCADE)
 
     @property
     def data_type_indexing(self):
@@ -154,9 +215,9 @@ class Trackdb(models.Model):
         :return:
         """
         wrapper = dict_to_obj({
-            'taxon_id': self.hub.species.taxon_id,
-            'scientific_name': self.hub.species.scientific_name,
-            'common_name': self.hub.species.common_name,
+            'taxon_id': self.species.taxon_id,
+            'scientific_name': self.species.scientific_name,
+            'common_name': self.species.common_name,
         })
 
         return wrapper
@@ -187,6 +248,13 @@ class Trackdb(models.Model):
 
         return wrapper
 
+    def count_tracks_in_trackdb(self):
+        return Track.objects.filter(trackdb_id=self.trackdb_id).count()
+
+    def get_hub_from_trackdb(self):
+        hub_id = Trackdb.objects.get(trackdb_id=self.trackdb_id).hub_id
+        return Hub.objects.get(hub_id=hub_id)
+
     def get_trackdb_file_type_count(self):
         """
         For a giving trackdb return the file type + count
@@ -200,7 +268,7 @@ class Trackdb(models.Model):
 
         return file_type_counts_dict
 
-    def update_trackdb_document(self, trackdb_data, trackdb_configuration, data_type_id, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
@@ -222,6 +290,7 @@ class Trackdb(models.Model):
                 refresh=True,
                 body={
                     'doc': {
+                        'owner': hub.get_owner(),
                         'file_type': self.get_trackdb_file_type_count(),
                         'data': trackdb_data,
                         'updated': int(time.time()),
@@ -230,10 +299,11 @@ class Trackdb(models.Model):
                             'checksum': ''
                         },
                         # Get the data type based on the hub info
-                        'type': trackhubs.models.Hub.objects.filter(data_type_id=data_type_id)
+                        'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
-                        'configuration': trackdb_configuration
+                        'configuration': trackdb_configuration,
+                        'status': tracks_status
                     }
                 }
             )

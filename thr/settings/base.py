@@ -55,10 +55,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'corsheaders',
     'thr_web.apps.ThrWebConfig',
     'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
     'search.apps.SearchConfig',
+    'trackdbs.apps.TrackdbsConfig',
     # Django Elasticsearch integration
     'django_elasticsearch_dsl',
     # Django REST framework Elasticsearch integration
@@ -77,6 +79,7 @@ REST_FRAMEWORK = {
 }
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -103,7 +106,6 @@ TEMPLATES = [
         },
     },
 ]
-
 
 WSGI_APPLICATION = 'thr.wsgi.application'
 

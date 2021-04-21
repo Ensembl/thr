@@ -32,6 +32,7 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt
     ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt
     http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt
+    TODO: Remove is_XYZ from params
     """
     logger.info("Parsing '{}'".format(url))
     # dict_info is where key/value of each element (it can be hub, genome or track) is stored

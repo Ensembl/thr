@@ -108,7 +108,7 @@ def create_trackhub_resource(project_dir, api_client, create_user_resource, crea
 
 
 @pytest.fixture()
-def create_hub_resource(create_user_resource, create_datatype_resource, create_species_resource):
+def create_hub_resource(create_user_resource, create_datatype_resource):
     """
     Create a temporary hub object
     """
@@ -121,7 +121,6 @@ def create_hub_resource(create_user_resource, create_datatype_resource, create_s
         description_url='http://jaspar.genereg.net/genome-tracks/',
         email='wyeth@cmmt.ubc.ca',
         data_type=trackhubs.models.DataType.objects.filter(name=create_datatype_resource.name).first(),
-        species=create_species_resource,
         owner=user
     )
     return actual_hub_obj
@@ -156,7 +155,7 @@ def create_assembly_resource(create_genome_resource):
 
 
 @pytest.fixture()
-def create_trackdb_resource(create_hub_resource, create_genome_resource, create_assembly_resource):
+def create_trackdb_resource(create_hub_resource, create_genome_resource, create_assembly_resource, create_species_resource):
     """
     Create a temporary trackdb object
     """
@@ -169,6 +168,7 @@ def create_trackdb_resource(create_hub_resource, create_genome_resource, create_
         assembly=create_assembly_resource,
         hub=create_hub_resource,
         genome=create_genome_resource,
+        species=create_species_resource,
         source_url=trackdb_url
     )
     return actual_trackdb_obj

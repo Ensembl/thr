@@ -24,7 +24,8 @@ def hub_check(hub_url):
     :returns: the hub information if the submission was successful otherwise it returns an error
     TODO: group 'translator.py', 'hub_check.py', 'constants' and 'parser.py' in 'utils' directory
     """
-
+    # replacing 'file:///' by 'local:' to avoid 'Unrecognized protocol file in udcProtNew' error
+    hub_url = hub_url.replace('file:///', 'local:')
     # Download hubCheck if it doesn't exist in 'tools' directory (in the project root dir) and make it executable
     hubcheck = Path("tools/hubCheck")
     if not Path(hubcheck).exists():

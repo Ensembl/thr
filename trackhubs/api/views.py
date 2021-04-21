@@ -20,21 +20,27 @@ from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from trackhubs.api.serializers import HubSerializer
-from trackhubs.models import Hub
+from trackhubs.api.serializers import CustomOneHubSerializer, CustomHubListSerializer
+from trackhubs.models import Hub, Trackdb
 import trackhubs.translator
 
 
-class HubList(APIView):
+class TrackHubList(APIView):
     """
-    List all hubs submitted by the current user, or create a new hubs.
+    List all hubs submitted by the current user, or create a new hub.
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        """
+        Return the list of available track data hubs for a given user.
+        Each trackhub is listed with key/value parameters together with
+        a list of URIs of the resources which corresponds to the trackDbs
+        beloning to the track hub
+        """
         hubs = Hub.objects.filter(owner_id=request.user.id)
-        serializer = HubSerializer(hubs, many=True)
+        serializer = CustomHubListSerializer(hubs, many=True)
         return Response(serializer.data)
 
     # Before calling post function, Django starts a transaction. If the response is produced without problems,
@@ -64,10 +70,9 @@ class HubList(APIView):
         )
 
 
-class HubDetail(APIView):
+class TrackHubDetail(APIView):
     """
-    Retrieve or delete a trackhub instance.
-    TODO: add access permissions
+    Retrieve or delete a hub instance.
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -80,13 +85,13 @@ class HubDetail(APIView):
 
     def get(self, request, pk):
         hub = self.get_hub(pk)
-        serializer = HubSerializer(hub)
+        serializer = CustomOneHubSerializer(hub)
         return Response(serializer.data)
 
     @transaction.atomic
     def delete(self, request, pk):
         hub = self.get_hub(pk)
-        trackdbs_ids_list = hub.get_trackdbs_ids()
+        trackdbs_ids_list = hub.get_trackdbs_ids_from_hub()
 
         # delete the trackdb document from Elasticsearch
         # but make sure that only the trackhub owner can delete it
@@ -123,3 +128,4 @@ class HubDetail(APIView):
         hub.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+

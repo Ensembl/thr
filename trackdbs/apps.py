@@ -12,12 +12,8 @@
    limitations under the License.
 """
 
-from django.conf.urls import url
-from django.urls import path
+from django.apps import AppConfig
 
-from trackhubs.api import views
 
-urlpatterns = [
-    path('', views.TrackHubList.as_view()),
-    path('<int:pk>/', views.TrackHubDetail.as_view()),
-]
+class TrackdbsConfig(AppConfig):
+    name = 'trackdbs'

@@ -25,6 +25,7 @@ from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
+from trackhubs.tracks_status import save_tracks_status, fix_big_data_url
 
 logger = logging.getLogger(__name__)
 
@@ -83,13 +84,12 @@ def save_datatype_filetype_visibility(name_list, object_name):
     object_name.objects.bulk_create(name_list_obj)
 
 
-def save_hub(hub_dict, data_type, current_user, species):
+def save_hub(hub_dict, data_type, current_user):
     """
     Save the hub in MySQL DB if it doesn't exist already
     :param hub_dict: hub dictionary containing all the parsed info
     :param data_type: either specified by the user in the POST request
     or the default one ('genomics')
-    :param species: the species associated with this hub
     :param current_user: the submitter (current user) id
     :returns: the new created hub
     """
@@ -102,7 +102,6 @@ def save_hub(hub_dict, data_type, current_user, species):
         description_url=hub_dict.get('descriptionUrl'),
         email=hub_dict.get('email'),
         data_type=trackhubs.models.DataType.objects.filter(name=data_type).first(),
-        species=species,
         owner_id=current_user.id
     )
     new_hub_obj.save()
@@ -127,13 +126,14 @@ def save_genome(genome_dict):
         return new_genome_obj
 
 
-def save_trackdb(url, hub, genome, assembly):
+def save_trackdb(url, hub, genome, assembly, species):
     """
     Save the genome in MySQL DB  if it doesn't exist already
     :param url: trackdb url
     :param hub: hub object associated with this trackdb
     :param genome: genome object associated with this trackdb
     :param assembly: assembly object associated with this trackdb
+    :param species: the species associated with this trackdb
     :returns: either the existing trackdb or the new created one
     """
     existing_trackdb_obj = trackhubs.models.Trackdb.objects.filter(source_url=url).first()
@@ -147,6 +147,7 @@ def save_trackdb(url, hub, genome, assembly):
             assembly=assembly,
             hub=hub,
             genome=genome,
+            species=species,
             source_url=url
         )
         trackdb_obj.save()
@@ -164,8 +165,9 @@ def save_track(track_dict, trackdb, file_type, visibility):
     :returns: either the existing track or the new created one
     """
     existing_track_obj = None
+    big_data_full_url = fix_big_data_url(track_dict['bigDataUrl'], trackdb.source_url)
     try:
-        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=track_dict['bigDataUrl']).first()
+        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=big_data_full_url).first()
     except KeyError:
         logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
@@ -179,7 +181,7 @@ def save_track(track_dict, trackdb, file_type, visibility):
             long_label=track_dict.get('longLabel'),
             big_data_url=track_dict.get('bigDataUrl'),
             html=track_dict.get('html'),
-            parent=None,  # track
+            parent=None,  # track id will go here later on using add_parent_id() function
             trackdb=trackdb,
             file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
             visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
@@ -285,37 +287,35 @@ def save_assembly(genome_assembly_name, genome):
         return new_assembly_obj
 
 
-def save_species(genomes_info):
+def save_species(genome_assembly_name):
     """
     Save species using the provided genome assembly information from the submitted hub
     along with the data stored in 'genome_assembly_dump' table
     :param genomes_info: genomes information extracted from genomes.txt file
     :returns: either species object or, if it's not found or/and cannot be created it
     returns an error message
+    TODO: make sure it loops through all species in genome.txt
     """
-    for genome_info in genomes_info:
-        genome_assembly_name = genome_info['genome']
-        assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
+    assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
 
-        if assembly_info_from_dump is None:
-            return {"error": "Assembly '{}' doesn't exist".format(genome_assembly_name)}
+    if assembly_info_from_dump is None:
+        return {"error": "Assembly '{}' doesn't exist".format(genome_assembly_name)}
 
-        try:
-            existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
-            if existing_species_obj:
-                return existing_species_obj
-            else:
-                new_species = trackhubs.models.Species(
-                    taxon_id=assembly_info_from_dump.tax_id,
-                    scientific_name=assembly_info_from_dump.scientific_name
-                )
-                new_species.save()
-                return new_species
-        except django.db.utils.OperationalError:
-            logger.exception('Error trying to connect to the database')
+    try:
+        existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
+        if existing_species_obj:
+            return existing_species_obj
+        else:
+            new_species = trackhubs.models.Species(
+                taxon_id=assembly_info_from_dump.tax_id,
+                scientific_name=assembly_info_from_dump.scientific_name
+            )
+            new_species.save()
+            return new_species
+    except django.db.utils.OperationalError:
+        logger.exception('Error trying to connect to the database')
 
 
-# @transaction.atomic
 def save_and_update_document(hub_url, data_type, current_user):
     """
     Save everything in MySQL DB then Elasticsearch and
@@ -334,11 +334,6 @@ def save_and_update_document(hub_url, data_type, current_user):
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
     # Verification steps
-    # run the USCS hubCheck tool found in kent tools on the submitted hub
-    hub_check_result = hub_check(hub_url)
-    if 'error' in hub_check_result.keys():
-        return hub_check_result
-
     # Before we submit the hub we make sure that it doesn't exist already
     if is_hub_exists(hub_url):
         original_owner_id = trackhubs.models.Hub.objects.filter(url=hub_url).first().owner_id
@@ -346,6 +341,11 @@ def save_and_update_document(hub_url, data_type, current_user):
             return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
         original_owner_email = User.objects.filter(id=original_owner_id).first().email
         return {"error": "This hub is already submitted by a different user (the original submitter's email: {})".format(original_owner_email)}
+
+    # run the USCS hubCheck tool found in kent tools on the submitted hub
+    hub_check_result = hub_check(hub_url)
+    if 'error' in hub_check_result.keys():
+        return hub_check_result
 
     hub_info_array = parse_file_from_url(hub_url, is_hub=True)
 
@@ -361,35 +361,35 @@ def save_and_update_document(hub_url, data_type, current_user):
         else:
             data_type = 'genomics'
 
-        genomes_trackdbs_info = parse_file_from_url(base_url + '/' + hub_info['genomesFile'], is_genome=True)
+        genome_url = base_url + '/' + hub_info['genomesFile']
+        genomes_trackdbs_info = parse_file_from_url(genome_url, is_genome=True)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
-        # based on the relationships in between tables in model,
-        # we need to save data in the following order:
-        # species first, then hub, then genome and finally assembly
-        # the species is extracted using assembly information
-        # and the assembly is extracted from genomes.txt file
-        # this is why when a hub is provided we fetch genome and use the data to get assemblies then species
-        error_or_species_obj = save_species(genomes_trackdbs_info)
-        if not isinstance(error_or_species_obj, trackhubs.models.Species):
-            # An error message is shown if the returned result is not an instance of Species
-            return error_or_species_obj
-
-        hub_obj = save_hub(hub_info, data_type, current_user, error_or_species_obj)
+        hub_obj = save_hub(hub_info, data_type, current_user)
 
         for genome_trackdb in genomes_trackdbs_info:
             logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
 
             genome_obj = save_genome(genome_trackdb)
 
+            error_or_species_obj = save_species(genome_trackdb['genome'])
+            if not isinstance(error_or_species_obj, trackhubs.models.Species):
+                # delete the hub from MySQL
+                hub_obj.delete()
+                # An error message is shown if the returned result is not an instance of Species
+                return error_or_species_obj
+
             # we got the assembly_name from genomes_trackdb['genome']
             assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
 
             # Save the initial data
-            trackdb_obj = save_trackdb(base_url + '/' + genome_trackdb['trackDb'], hub_obj, genome_obj, assembly_obj)
+            trackdb_url = base_url + '/' + genome_trackdb['trackDb']
+            trackdb_obj = save_trackdb(trackdb_url, hub_obj, genome_obj, assembly_obj, error_or_species_obj)
 
-            trackdbs_info = parse_file_from_url(base_url + '/' + genome_trackdb['trackDb'], is_trackdb=True)
+            trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
+
+            tracks_status = save_tracks_status(trackdbs_info, trackdb_url)
 
             trackdb_data = []
             trackdb_configuration = {}
@@ -456,10 +456,11 @@ def save_and_update_document(hub_url, data_type, current_user):
             # update MySQL
             current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
             current_trackdb.configuration = trackdb_configuration
+            current_trackdb.status = tracks_status
             current_trackdb.data = trackdb_data
             current_trackdb.save()
             # Update Elasticsearch trackdb document
-            trackdb_obj.update_trackdb_document(trackdb_data, trackdb_configuration, hub_obj.data_type_id)
+            trackdb_obj.update_trackdb_document(hub_obj, trackdb_data, trackdb_configuration, tracks_status)
 
         return {'success': 'The hub is submitted successfully'}
 

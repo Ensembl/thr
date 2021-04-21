@@ -41,4 +41,6 @@ urlpatterns = [
     path('api/user/', include('users.api.urls')),
     path('api/trackhub/', include('trackhubs.api.urls')),
     path('api/search/', include('search.api.urls')),
+    # TODO: Restructure the other APIs
+    path('api/trackdb/', include('trackdbs.urls')),
 ]

@@ -173,16 +173,15 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
 
 
 @pytest.mark.parametrize(
-    'hub_url, expected_result',
+    'hub_url, expected_error_key_result',
     [
-        ('https://url/to/non/existing/hub.txt', None),
-        ('https://url/to/the/hub.txt', {'error': 'The Hub is already submitted, please delete it before resubmitting '
-                                                 'it again'}),
+        ('https://url/to/non/existing/hub.txt', 'error'),
+        ('https://url/to/the/hub.txt', 'error'),
     ]
 )
 @pytest.mark.django_db
-def test_save_and_update_document_fail(hub_url, expected_result, create_user_resource, create_hub_resource):
+def test_save_and_update_document_fail(hub_url, expected_error_key_result, create_user_resource, create_hub_resource):
     user, _ = create_user_resource
 
     actual_result = trackhubs.translator.save_and_update_document(hub_url, data_type='genomics', current_user=user)
-    assert actual_result == expected_result
+    assert expected_error_key_result in actual_result
