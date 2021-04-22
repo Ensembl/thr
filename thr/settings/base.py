@@ -56,7 +56,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    'thr_web.apps.ThrWebConfig',
     'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
     'search.apps.SearchConfig',
@@ -74,7 +73,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100,
+    'PAGE_SIZE': 10,
     'ORDERING_PARAM': 'ordering',
 }
 
@@ -94,6 +93,7 @@ ROOT_URLCONF = 'thr.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        # TODO: change later after adding react frontend
         'DIRS': [BASE_DIR / '../templates'],
         'APP_DIRS': True,
         'OPTIONS': {

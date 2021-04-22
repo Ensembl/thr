@@ -11,7 +11,52 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import pytest
 
-from django.test import TestCase
 
-# Create your tests here.
+@pytest.mark.parametrize(
+    'query_body, expected_total_hits',
+    [
+        # ({"query": "Homo sapiens"}, 19),
+        # ({"query": "Homo sapiens", "accession": "GCA_000001405.1"}, 3),
+        ({"query": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS"}, 2),
+        ({"query": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS", "assembly": "GRCh37"}, 2),
+    ]
+)
+def test_post_search_success(api_client, query_body, expected_total_hits):
+    response = api_client.post('/api/search/', query_body, format='json')
+    actual_total_hits = response.json()['hits']['total']
+
+    assert actual_total_hits == expected_total_hits
+    assert response.status_code == 200
+
+
+@pytest.mark.parametrize(
+    'query_body, expected_error_message',
+    [
+        ({"query": ""}, {'error': 'Missing query field'}),
+        ({"random_name": "Homo sapiens"}, {'error': 'Missing query field'}),
+        ({"random_name": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS"}, {'error': 'Missing query field'}),
+        ({}, {'error': 'Missing message body in request'}),
+    ]
+)
+def test_post_search_fail(api_client, query_body, expected_error_message):
+    response = api_client.post('/api/search/', query_body, format='json')
+    actual_error_message = response.json()
+    assert actual_error_message == expected_error_message
+    assert response.status_code == 400
+
+
+def test_get_one_trackdb_success(api_client):
+    response = api_client.get('/api/search/trackdb/1/')
+    actual_result = response.json()
+    assert actual_result['id'] == '1'
+    assert response.status_code == 200
+
+
+def test_get_one_trackdb_fail(api_client):
+    expected_result = {'error': 'TrackDB document not found.'}
+    response = api_client.get('/api/search/trackdb/144/')
+    actual_result = response.json()
+    assert response.status_code == 404
+    assert actual_result == expected_result

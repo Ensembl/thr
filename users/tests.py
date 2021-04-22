@@ -11,115 +11,141 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-import uuid
 
 import pytest
 from django.urls import reverse
-from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
+
+
+@pytest.fixture
+def api_client():
+    from rest_framework.test import APIClient
+    return APIClient()
 
 
 @pytest.mark.django_db
-def test_user_create():
-    User.objects.create_user('user1', 'user@mail.com', 'userpassword')
-    assert User.objects.count() == 1
-
-
-@pytest.mark.django_db
-def test_superuser_create():
-    user = User.objects.create_user('superuser1', 'superuser@mail.com',
-                                    'superuserpassword', is_superuser=True, is_staff=True)
-    assert user.is_superuser
-
-
-@pytest.mark.django_db
-def test_view(client):
-    url = reverse('thr_home')
-    response = client.get(url)
+def test_login_success(api_client, django_user_model):
+    """
+    Test user login
+    :param api_client: the API client
+    :param django_user_model: a shortcut to the User model configured for use by the
+    current Django project
+    """
+    username = 'user'
+    password = 'password'
+    django_user_model.objects.create_user(username=username, password=password)
+    url = reverse('login_api')
+    data = {
+        'username': username,
+        'password': password
+    }
+    response = api_client.post(url, data=data)
     assert response.status_code == 200
 
 
 @pytest.mark.django_db
-def test_unauthorized(client):
+@pytest.mark.parametrize(
+    'username, password, status_code', [
+        ('', '', 400),
+        ('', 'pass', 400),
+        ('non_existing_user', 'pass', 400),
+    ]
+)
+@pytest.mark.django_db
+def test_login_fail(username, password, status_code, api_client):
     """
-    Test unauthorized access to the dashboard if the user isn't logged in
+    Test user login failure when the provided credential aren't correct
     """
-    url = reverse('dashboard')
-    response = client.get(url)
-    # 302 Found and redirect to login
-    assert response.status_code == 302
+    url = reverse('login_api')
+    data = {
+        'username': username,
+        'password': password
+    }
+    response = api_client.post(url, data=data)
+    assert response.status_code == status_code
 
 
 @pytest.mark.django_db
-def test_authorized_view(admin_client):
+def test_logout_success(api_client, django_user_model):
     """
-    Test dashboard access if the admin is logged in
+    Log the user in and out while providing the access token
     """
-    url = reverse('dashboard')
-    response = admin_client.get(url)
+    user = django_user_model.objects.create_user(username='user', password='password')
+    token, _ = Token.objects.get_or_create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+    url = reverse('logout_api')
+    response = api_client.post(url)
     assert response.status_code == 200
-
-
-@pytest.fixture
-def test_password():
-    return 'strong-test-pass'
-
-
-@pytest.fixture
-def create_user(db, django_user_model, test_password):
-    """
-    Create user with a random username and password=test_password,
-    this function calls to local function 'make_user' to pass extra arguments as kwargs,
-    because pytest fixture can’t accept arguments.
-
-    make_user gives us the flexibility to create different types of users by passing the
-    adequate arguments.
-
-    Examples:
-    >>> user = create_user(username='someone')
-    >>> admin_user = create_user(username='superuser', is_staff=True, is_superuser=True)
-
-    :param db: fixture ensuring that the Django database is set up
-    :param django_user_model: pytest-django helper for shortcut to the User model
-    configured for use by the current Django project
-    :param test_password: the test_password fixture
-    :returns: the created user
-    """
-    def make_user(**kwargs):
-        kwargs['password'] = test_password
-        if 'username' not in kwargs:
-            kwargs['username'] = str(uuid.uuid4())
-        return django_user_model.objects.create_user(**kwargs)
-
-    return make_user
-
-
-@pytest.fixture
-def auto_login_user(db, client, create_user, test_password):
-    """
-    Auto login user takes user as parameter or creates a new one and login it
-    to client fixture. And at the end it returns client and user back for the future actions
-
-    :param db: fixture ensuring that the Django database is set up
-    :param client: the client is an instance of a django.test.Client
-    which acts as a dummy Web browser, allowing us to test our views and interact with
-    our Django-powered application programmatically
-    :param create_user: the created user
-    :param test_password: the test_password fixture
-    :returns: the client and user info
-    """
-    def make_auto_login(user=None):
-        if user is None:
-            user = create_user()
-        client.login(username=user.username, password=test_password)
-        return client, user
-
-    return make_auto_login
 
 
 @pytest.mark.django_db
-def test_auth_view(auto_login_user):
-    client, user = auto_login_user()
-    url = reverse('login')
-    response = client.get(url)
+def test_logout_fail(api_client):
+    """
+    Log the user in and out while providing the access token
+    """
+    token = 'random14token77definitely895invalid'
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+    url = reverse('logout_api')
+    response = api_client.post(url)
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'username, email, password, password2, status_code', [
+        ('', '', '', '', 400),
+        ('', '', 'test-pass', 'test-pass', 400),
+        ('', 'user@example.com', '', '', 400),
+        ('', 'user@example.com', 'pass', 'diff_pass', 400),
+        ('user', 'invalid_email.com', 'test-pass', 'test-pass', 400),
+        ('user', 'user@example.com', 'test-pass', 'test-pass', 201),
+    ]
+)
+def test_registration(username, email, password, password2, status_code, api_client):
+    """
+    Test user registration by providing different scenarios with the expected status_code
+    """
+    url = reverse('register_api')
+    data = {
+        'email': email,
+        'username': username,
+        'password': password,
+        'password2': password2
+    }
+    response = api_client.post(url, data=data)
+    assert response.status_code == status_code
+
+
+@pytest.mark.django_db
+def test_unauthorized_request(api_client):
+    """
+    Test unauthorized request, the user can't logout if he isn't logged in already
+    """
+    url = reverse('logout_api')
+    response = api_client.post(url)
+    assert response.status_code == 401
+
+
+@pytest.mark.django_db
+def test_user_details_success(api_client, django_user_model):
+    """
+    List the user details after providing the access token
+    """
+    user = django_user_model.objects.create_user(username='user', password='password')
+    token, _ = Token.objects.get_or_create(user=user)
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token.key)
+    url = reverse('user_api')
+    response = api_client.get(url)
     assert response.status_code == 200
 
+
+@pytest.mark.django_db
+def test_user_details_fail(api_client, django_user_model):
+    """
+    List the user details after providing the access token
+    """
+    token = 'another455random14token77definitely895invalid'
+    api_client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+    url = reverse('user_api')
+    response = api_client.get(url)
+    assert response.status_code == 401
