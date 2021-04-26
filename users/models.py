@@ -13,5 +13,15 @@
 """
 
 from django.db import models
+from django.contrib.auth.models import AbstractUser
 
-# Create your models here.
+
+class CustomUser(AbstractUser):
+    """
+    Custom User Model from AbstractUser
+    """
+    first_name = models.CharField(max_length=50, blank=True, null=True)
+    last_name = models.CharField(max_length=50, blank=True, null=True)
+    affiliation = models.CharField(max_length=100, blank=True, null=True)
+    check_interval = models.CharField(max_length=100, default='automatic')
+    continuous_alert = models.BooleanField(default=0)
