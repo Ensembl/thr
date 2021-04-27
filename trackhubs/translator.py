@@ -17,7 +17,7 @@ import logging
 import time
 
 import django
-from django.contrib.auth.models import User
+from users.models import CustomUser as User
 from django.db import transaction
 
 import trackhubs
