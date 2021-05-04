@@ -63,6 +63,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
     https://www.trackhubregistry.org/docs/api/registration/reference#get_trackdb
     """
     owner = serializers.SerializerMethodField()
+    file_type = serializers.SerializerMethodField()
     created = serializers.SerializerMethodField()
     updated = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
@@ -75,6 +76,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
         model = models.Trackdb
         fields = [
             'owner',
+            'file_type',
             'created',
             'updated',
             'version',
@@ -85,6 +87,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
             'assembly',
             # 'data',
             'configuration',
+            'status'
         ]
 
     def get_owner(self, obj):
@@ -117,4 +120,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
     def get_assembly(self, obj):
         assembly = models.Assembly.objects.filter(assembly_id=obj.assembly.assembly_id).first()
         return TrackdbAssemblySerializer(assembly).data
+
+    def get_file_type(self, obj):
+        return obj.get_trackdb_file_type_count()
 

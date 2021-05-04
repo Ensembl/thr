@@ -108,8 +108,7 @@ def test_registration(api_client, data, status_code):
     """
     url = reverse('register_api')
     response = api_client.post(url, data)
-    print("response.json() ---> {}".format(response.json()))
-    # assert response.status_code == status_code
+    assert response.status_code == status_code
 
 
 @pytest.mark.django_db

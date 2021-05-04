@@ -165,11 +165,14 @@ def save_track(track_dict, trackdb, file_type, visibility):
     :returns: either the existing track or the new created one
     """
     existing_track_obj = None
-    big_data_full_url = fix_big_data_url(track_dict['bigDataUrl'], trackdb.source_url)
-    try:
-        existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=big_data_full_url).first()
-    except KeyError:
-        logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
+    big_data_url = track_dict.get('bigDataUrl')
+    # fix bigDataUrl if it exists
+    if big_data_url:
+        big_data_full_url = fix_big_data_url(big_data_url, trackdb.source_url)
+        try:
+            existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=big_data_full_url).first()
+        except KeyError:
+            logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
     if existing_track_obj:
         return existing_track_obj

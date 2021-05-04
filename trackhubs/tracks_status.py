@@ -89,7 +89,7 @@ def save_tracks_status(trackdb_dict, trackdb_url):
             big_data_exists = check_response(big_data_full_url)
             logger.error("Response of {}: {} ".format(big_data_full_url, big_data_exists))
             # if it's not the case
-            if big_data_exists != 200 or big_data_exists is not None:
+            if big_data_exists != 200 and big_data_exists is not None:
                 total_tracks_with_data_ko += 1
                 # fill broken tracks info with the required data
                 broken_tracks_info[track['track']] = [big_data_full_url, big_data_exists]
