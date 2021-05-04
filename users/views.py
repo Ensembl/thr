@@ -13,12 +13,13 @@
 """
 
 from django.contrib.auth import logout
-from rest_framework import status, authentication, permissions
+from rest_framework import status, authentication, permissions, generics
 from rest_framework.authtoken.models import Token
+from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from users.serializers import RegistrationSerializer
+from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer
 
 
 class RegistrationViewAPI(APIView):
@@ -34,7 +35,7 @@ class RegistrationViewAPI(APIView):
         data = {}
         if serializer.is_valid():
             new_user = serializer.save()
-            data['response'] = 'User registered successfully!'
+            data['success'] = 'User registered successfully!'
             token = Token.objects.create(user=new_user).key
             data['token'] = token
             return Response(data, status=status.HTTP_201_CREATED)
@@ -72,5 +73,46 @@ class UserDetailsView(APIView):
             'username': user.username,
             'email': user.email,
             'first_name': user.first_name,
-            'last_name': user.last_name
+            'last_name': user.last_name,
+            'affiliation': user.affiliation,
+            'check_interval': user.check_interval,
+            'continuous_alert': user.continuous_alert
         })
+
+    def post(self, request):
+        serializer = CustomUserSerializer(data=request.data)
+        current_user = request.user
+
+        if not request.data:
+            return Response({"error": "Missing message body in request"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if serializer.is_valid():
+            serializer.update(current_user)
+            return Response({'success': 'User profile updated successfully!'}, status=status.HTTP_200_OK)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ChangePasswordView(UpdateAPIView):
+    """
+    Log the users out if they are already logged in,
+    and delete the access token from the database
+    """
+    authentication_classes = [authentication.TokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    serializer_class = ChangePasswordSerializer
+
+    def update(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        # if using drf authtoken, create a new token
+        if hasattr(user, 'auth_token'):
+            user.auth_token.delete()
+        token, created = Token.objects.get_or_create(user=user)
+        # return a success message with the new token
+        return Response(
+            {'success': 'Your password is updated successfully!', 'token': token.key},
+            status=status.HTTP_200_OK
+        )

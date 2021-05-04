@@ -18,7 +18,7 @@ import time
 
 from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User
+from users.models import CustomUser as User
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField

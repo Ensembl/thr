@@ -109,9 +109,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'thr.wsgi.application'
 
-# To uncomment later
 # https://docs.djangoproject.com/en/3.0/topics/auth/customizing/#substituting-a-custom-user-model
-# AUTH_USER_MODEL = 'thr.users'
+AUTH_USER_MODEL = 'users.CustomUser'
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
