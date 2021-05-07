@@ -13,10 +13,11 @@
 """
 
 from django.urls import path
-from search.views import TrackdbDocumentListView, TrackdbDocumentDetailView
+from search.views import TrackdbDocumentListView, TrackdbDocumentDetailView, TrackdbDocumentView
 
 
 urlpatterns = [
-    path('', TrackdbDocumentListView.as_view()),
+    path('', TrackdbDocumentView.as_view({'get': 'list'})),
+    # path('', TrackdbDocumentListView.as_view()),
     path('trackdb/<int:pk>/', TrackdbDocumentDetailView.as_view()),
 ]

@@ -23,6 +23,8 @@ class TrackdbDocumentSerializer(DocumentSerializer):
 
     id = serializers.SerializerMethodField()
     score = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta(object):
         """Meta options."""
@@ -31,23 +33,33 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         document = search.documents.TrackdbDocument
 
         fields = [
-            'hub',
-            'public',
-            'description',
-            'assembly',
-            'type',
-            'species',
+            'score',
+            'id',
             'version',
-            'created',
-            'updated',
-            # 'configuration',
-            # 'data',
-            # 'status_message',
-            # 'status_last_update',
-            # 'status',
-            # 'source_url',
-            # 'source_checksum',
+            'type',
+            'status',
+            'hub',
+            'species',
+            'assembly',
         ]
+
+    def get_type(self, obj):
+        """Represent data type value."""
+        try:
+            return obj.type
+        except Exception:
+            return ''
+
+    def get_status(self, obj):
+        """Represent status value."""
+        try:
+            minimal_status_info = {
+                "last_update": obj.status.last_update,
+                "message": obj.status.message
+            }
+            return minimal_status_info
+        except Exception:
+            return None
 
     def get_score(self, obj):
         if hasattr(obj.meta, 'score'):

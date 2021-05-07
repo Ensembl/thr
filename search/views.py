@@ -20,6 +20,45 @@ from rest_framework.views import APIView
 from search.documents import TrackdbDocument
 from search.serializers import TrackdbDocumentSerializer
 
+from django_elasticsearch_dsl_drf.filter_backends import (
+    FilteringFilterBackend,
+    OrderingFilterBackend,
+    SearchFilterBackend,
+    DefaultOrderingFilterBackend,
+)
+from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet
+
+
+class TrackdbDocumentView(DocumentViewSet):
+    """The TrackdbDocument view."""
+
+    document = TrackdbDocument
+    serializer_class = TrackdbDocumentSerializer
+    lookup_field = 'id'
+    filter_backends = [
+        FilteringFilterBackend,
+        OrderingFilterBackend,
+        DefaultOrderingFilterBackend,
+        SearchFilterBackend,
+    ]
+    # Define search fields
+    search_fields = (
+        'hub.shortLabel', 'hub.longLabel', 'hub.name',
+        'type', 'species.common_name', 'species.scientific_name'
+    )
+    # Define filtering fields
+    filter_fields = {
+        'id': None,
+        'hub.name': 'hub.name.raw',
+    }
+    # Define ordering fields
+    ordering_fields = {
+        'id': None,
+        'hub.name': None,
+    }
+    # Specify default ordering
+    ordering = ('_id', 'hub.name',)
+
 
 class TrackdbDocumentListView(APIView):
     """The TrackhubDocumentList view."""

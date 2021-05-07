@@ -72,6 +72,7 @@ class TrackdbDocument(Document):
             'common_name': fields.KeywordField(),
     })
 
+    status = fields.ObjectField()
     configuration = fields.ObjectField()
     data = fields.NestedField()
 
@@ -88,9 +89,6 @@ class TrackdbDocument(Document):
             'version',
             'created',
             'updated',
-            # 'status_message',
-            # 'status_last_update',
-            # 'status',
             # 'source_url',
             # 'source_checksum',
         ]
@@ -98,5 +96,6 @@ class TrackdbDocument(Document):
     # Meta is used to set dynamic mapping to false to avoid mapping explosion
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings
     class Meta:
+        model = Trackdb
         all = MetaField(enabled=False)
         dynamic = MetaField('false')
