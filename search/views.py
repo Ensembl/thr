@@ -23,88 +23,111 @@ from search.serializers import TrackdbDocumentSerializer
 from django_elasticsearch_dsl_drf.filter_backends import (
     FilteringFilterBackend,
     OrderingFilterBackend,
-    SearchFilterBackend,
+    CompoundSearchFilterBackend,
     DefaultOrderingFilterBackend,
 )
 from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet
 
 
-class TrackdbDocumentView(DocumentViewSet):
+# We're overriding some methods since we need to stick with POST /search/
+class CustomCompoundSearchFilterBackend(CompoundSearchFilterBackend):
+
+    def get_search_query_params(self, request):
+        # show all the results if the query is empty or doesn't exist
+        user_query = request.data.get('query')
+        if not user_query or user_query == "":
+            return []
+        return [user_query]
+
+
+class CustomFilteringFilterBackend(FilteringFilterBackend):
+
+    def get_filter_query_params(self, request, view):
+        user_filter = {}
+        user_accession_filter = request.data.get('accession')
+        user_hub_filter = request.data.get('hub')
+        user_species_filter = request.data.get('species')
+        user_assembly_filter = request.data.get('assembly')
+
+        if user_accession_filter:
+            user_filter.update({
+                # the '__term' is for filtering using AND
+                # https://django-elasticsearch-dsl-drf.readthedocs.io/en/latest/advanced_usage_examples.html#filtering
+                'accession__term': {
+                    'lookup': None,
+                    'values': [user_accession_filter],
+                    'field': 'assembly.accession',
+                    'type': 'doc'
+                }
+            })
+
+        if user_hub_filter:
+            user_filter.update({
+                'hub__term': {
+                    'lookup': None,
+                    'values': [user_hub_filter],
+                    'field': 'hub.name',
+                    'type': 'doc'
+                }
+            })
+
+        if user_species_filter:
+            user_filter.update({
+                'species__term': {
+                    'lookup': None,
+                    'values': [user_species_filter],
+                    'field': 'species.scientific_name',
+                    'type': 'doc'
+                }
+            })
+
+        if user_assembly_filter:
+            user_filter.update({
+                'assembly__term': {
+                    'lookup': None,
+                    'values': [user_assembly_filter],
+                    'field': 'assembly.name',
+                    'type': 'doc'
+                }
+            })
+
+        # print("user_filter ---> ", user_filter)
+        return user_filter
+
+
+class TrackdbDocumentListView(DocumentViewSet):
     """The TrackdbDocument view."""
 
     document = TrackdbDocument
     serializer_class = TrackdbDocumentSerializer
     lookup_field = 'id'
     filter_backends = [
-        FilteringFilterBackend,
+        # FilteringFilterBackend,
+        CustomFilteringFilterBackend,
         OrderingFilterBackend,
         DefaultOrderingFilterBackend,
-        SearchFilterBackend,
+        CustomCompoundSearchFilterBackend,
     ]
     # Define search fields
     search_fields = (
         'hub.shortLabel', 'hub.longLabel', 'hub.name',
-        'type', 'species.common_name', 'species.scientific_name'
+        'type', 'species.common_name', 'species.scientific_name',
+        'assembly.name', 'assembly.ucsc_synonym', 'assembly.accession'
     )
     # Define filtering fields
     filter_fields = {
         'id': None,
-        'hub.name': 'hub.name.raw',
+        # TODO: Add raw analyzer
+        'accession': 'assembly.accession',
+        'hub': 'hub.name'
     }
     # Define ordering fields
     ordering_fields = {
         'id': None,
         'hub.name': None,
     }
-    # Specify default ordering
-    ordering = ('_id', 'hub.name',)
-
-
-class TrackdbDocumentListView(APIView):
-    """The TrackhubDocumentList view."""
-
-    document = TrackdbDocument
-    serializer_class = TrackdbDocumentSerializer
-    # lookup_field = 'trackdb_id'
-
-    def post(self, request):
-        query = request.data.get('query')
-        species = request.data.get('species')
-        assembly = request.data.get('assembly')
-        hub = request.data.get('hub')
-        accession = request.data.get('accession')
-
-        client = connections.Elasticsearch()
-        all_queries = Search(using=client)
-
-        if not request.data:
-            return Response({"error": "Missing message body in request"}, status=status.HTTP_400_BAD_REQUEST)
-            # in case we want to show all the data:
-            # all_results = s.execute().to_dict()
-            # return Response(all_results, status=status.HTTP_200_OK)
-        elif not query:
-            return Response({"error": "Missing query field"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            search_fields = [
-                'hub.shortLabel', 'hub.longLabel', 'hub.name',
-                'type', 'species.common_name', 'species.scientific_name'
-            ]
-            all_queries = all_queries.query("multi_match", query=query, fields=search_fields)
-
-        if accession:
-            all_queries = all_queries.filter('term', assembly__accession=accession)
-
-        if species:
-            all_queries = all_queries.filter('term', species__scientific_name=species)
-
-        if hub:
-            all_queries = all_queries.filter('term', hub__name=hub)
-
-        if assembly:
-            all_queries = all_queries.filter('term', assembly__name=assembly)
-
-        s_result = all_queries.execute().to_dict()
-        return Response(s_result, status=status.HTTP_200_OK)
+    # Order by `_score` first.
+    ordering = ('_score', '_id', 'hub.name',)
 
 
 class TrackdbDocumentDetailView(APIView):

@@ -21,10 +21,14 @@ import search.documents
 class TrackdbDocumentSerializer(DocumentSerializer):
     """Serializer for Trackdb document."""
 
-    id = serializers.SerializerMethodField()
-    score = serializers.SerializerMethodField()
+    # TODO: find a way to add score if needed
+    # score = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    created = serializers.SerializerMethodField()
+    configuration = serializers.SerializerMethodField()
 
     class Meta(object):
         """Meta options."""
@@ -33,14 +37,17 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         document = search.documents.TrackdbDocument
 
         fields = [
-            'score',
-            'id',
+            'trackdb_id',
             'version',
             'type',
             'status',
             'hub',
             'species',
             'assembly',
+            'source',
+            'owner',
+            'created',
+            'configuration',
         ]
 
     def get_type(self, obj):
@@ -61,12 +68,30 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         except Exception:
             return None
 
-    def get_score(self, obj):
-        if hasattr(obj.meta, 'score'):
-            return obj.meta.score
-        return None
+    def get_source(self, obj):
+        """Represent source object."""
+        try:
+            return obj.source.to_dict()
+        except Exception:
+            return {}
 
-    def get_id(self, obj):
-        if hasattr(obj.meta, 'id'):
-            return obj.meta.id
-        return None
+    def get_owner(self, obj):
+        """Represent the owner value."""
+        try:
+            return obj.owner
+        except Exception:
+            return ''
+
+    def get_created(self, obj):
+        """Represent created value."""
+        try:
+            return obj.created
+        except Exception:
+            return ''
+
+    def get_configuration(self, obj):
+        """Represent configuration value."""
+        try:
+            return obj.configuration.to_dict()
+        except Exception:
+            return {}
