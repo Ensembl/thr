@@ -21,14 +21,12 @@ import search.documents
 class TrackdbDocumentSerializer(DocumentSerializer):
     """Serializer for Trackdb document."""
 
-    # TODO: find a way to add score if needed
+    # TODO: find a way to add the score if needed
     # score = serializers.SerializerMethodField()
-    type = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
-    created = serializers.SerializerMethodField()
-    configuration = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
 
     class Meta(object):
         """Meta options."""
@@ -38,24 +36,17 @@ class TrackdbDocumentSerializer(DocumentSerializer):
 
         fields = [
             'trackdb_id',
-            'version',
-            'type',
-            'status',
+            'source',
             'hub',
+            'version',
+            'owner',
+            'status',
             'species',
             'assembly',
-            'source',
-            'owner',
             'created',
+            'type',
             'configuration',
         ]
-
-    def get_type(self, obj):
-        """Represent data type value."""
-        try:
-            return obj.type
-        except Exception:
-            return ''
 
     def get_status(self, obj):
         """Represent status value."""
@@ -82,16 +73,9 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         except Exception:
             return ''
 
-    def get_created(self, obj):
-        """Represent created value."""
+    def get_type(self, obj):
+        """Represent type value."""
         try:
-            return obj.created
+            return obj.type
         except Exception:
             return ''
-
-    def get_configuration(self, obj):
-        """Represent configuration value."""
-        try:
-            return obj.configuration.to_dict()
-        except Exception:
-            return {}

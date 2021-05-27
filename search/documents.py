@@ -44,32 +44,98 @@ class TrackdbDocument(Document):
     the search.api.serializers controls what will be shown after triggering a search query
     """
 
-    type = fields.StringField(attr='data_type_indexing')
+    type = fields.StringField(
+        attr='data_type_indexing',
+        analyzer=html_strip,
+        fields={
+            'raw': fields.KeywordField(),
+        }
+    )
 
     hub = fields.ObjectField(properties={
-        'name': fields.KeywordField(),
-        'short_label': fields.StringField(),
-        'long_label': fields.StringField(),
-        'url': fields.StringField(),
-        'description_url': fields.StringField(),
-        'email': fields.StringField(),
+        'name': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'short_label': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'long_label': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'url': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'description_url': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'email': fields.StringField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
     })
 
     assembly = fields.ObjectField(
         attr='assembly_indexing',
         properties={
-            'accession': fields.KeywordField(),
-            'name': fields.KeywordField(),
-            'long_name': fields.StringField(),
-            'ucsc_synonym': fields.KeywordField(),
+            'accession': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'name': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'long_name': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'ucsc_synonym': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
     })
 
     species = fields.ObjectField(
         attr='species_indexing',
         properties={
             'taxon_id': fields.IntegerField(),
-            'scientific_name': fields.KeywordField(),
-            'common_name': fields.KeywordField(),
+            'scientific_name': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'common_name': fields.StringField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
     })
 
     status = fields.ObjectField()
@@ -89,8 +155,6 @@ class TrackdbDocument(Document):
             'version',
             'created',
             'updated',
-            # 'source_url',
-            # 'source_checksum',
         ]
 
     # Meta is used to set dynamic mapping to false to avoid mapping explosion
