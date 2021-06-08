@@ -11,7 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
+import django
 import elasticsearch
 
 from rest_framework.views import APIView
@@ -63,9 +63,14 @@ class SpeciesInfoView(APIView):
         Returns the set of species the track hubs registered in the Registry contain data for.
         If the request is successful, the response is an array containing the scientific names of the species.
         """
-        species_list = Species.objects.values_list('scientific_name', flat=True)
-        print(type(species_list))
-        return Response(species_list, status=status.HTTP_200_OK)
+        try:
+            species_list = Species.objects.values_list('scientific_name', flat=True)
+            return Response(species_list, status=status.HTTP_200_OK)
+        except django.db.OperationalError:
+            return Response(
+                {'message': 'Error: Failed to connect to the database'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class AssembliesInfoView(APIView):
@@ -83,22 +88,28 @@ class AssembliesInfoView(APIView):
                           {'synonyms': ['hg38'], 'name': 'GRCh38', 'accession': 'GCA_000001405.15'}]}
         """
         assemblies_set = {}
-        # TODO: decide either to keep the id as the primary key or use just taxon_id instead
-        species_ids_list = Species.objects.values_list('id', 'scientific_name')
+        try:
+            # TODO: decide either to keep the id as the primary key or use just taxon_id instead
+            species_ids_list = Species.objects.values_list('id', 'scientific_name')
+            # based on the ER diagram, in order to get species and assemblies info we need to cross the trackdb table
+            # species -> trackdb -> assembly
+            for species_id, sci_name in species_ids_list:
+                assemblies_set[sci_name] = []
+                # get the assembly_ids that are linked to trackdbs associated to this species_id and remove redundant ones
+                assembly_ids = set(Trackdb.objects.filter(species_id=species_id).values_list('assembly_id', flat=True))
 
-        # based on the ER diagram, in order to get species and assemblies info we need to cross the trackdb table
-        # species -> trackdb -> assembly
-        for species_id, sci_name in species_ids_list:
-            assemblies_set[sci_name] = []
-            # get the assembly_ids that are linked to trackdbs associated to this species_id and remove redundant ones
-            assembly_ids = set(Trackdb.objects.filter(species_id=species_id).values_list('assembly_id', flat=True))
+                for assembly_id in assembly_ids:
+                    assembly = Assembly.objects.get(assembly_id=assembly_id)
+                    serializer = AssemblyInfoSerializer(assembly)
+                    assemblies_set[sci_name].append(serializer.data)
 
-            for assembly_id in assembly_ids:
-                assembly = Assembly.objects.get(assembly_id=assembly_id)
-                serializer = AssemblyInfoSerializer(assembly)
-                assemblies_set[sci_name].append(serializer.data)
+            return Response(assemblies_set, status=status.HTTP_200_OK)
 
-        return Response(assemblies_set, status=status.HTTP_200_OK)
+        except django.db.OperationalError:
+            return Response(
+                {'message': 'Error: Failed to connect to the database'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class HubPerAssemblyInfoView(APIView):
@@ -109,14 +120,20 @@ class HubPerAssemblyInfoView(APIView):
         If the request is successful, the response is a hash with a key "tot", whose value is
         the total number of hubs which contains data for the specified assembly.
         """
-        # term_field = 'accession' if assembly.startswith('GCA') else 'name'
-        if assembly.startswith('GCA'):
-            assembly_id = Assembly.objects.filter(accession=assembly).values_list('assembly_id', flat=True).first()
-        else:
-            assembly_id = Assembly.objects.filter(name=assembly).values_list('assembly_id', flat=True).first()
+        try:
+            # term_field = 'accession' if assembly.startswith('GCA') else 'name'
+            if assembly.startswith('GCA'):
+                assembly_id = Assembly.objects.filter(accession=assembly).values_list('assembly_id', flat=True).first()
+            else:
+                assembly_id = Assembly.objects.filter(name=assembly).values_list('assembly_id', flat=True).first()
 
-        hub_count = Trackdb.objects.filter(assembly_id=assembly_id).count()
-        return Response({'tot': hub_count}, status=status.HTTP_200_OK)
+            hub_count = Trackdb.objects.filter(assembly_id=assembly_id).count()
+            return Response({'tot': hub_count}, status=status.HTTP_200_OK)
+        except django.db.OperationalError:
+            return Response(
+                {'message': 'Error: Failed to connect to the database'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TracksPerAssemblyInfoView(APIView):
@@ -127,21 +144,28 @@ class TracksPerAssemblyInfoView(APIView):
         If the request is successful, the response is a hash with a key "tot", whose value is the
         total number of tracks which contains data for the specified assembly.
         """
-        if assembly.startswith('GCA'):
-            assembly_id = Assembly.objects.filter(accession=assembly).values_list('assembly_id', flat=True).first()
-        else:
-            assembly_id = Assembly.objects.filter(name=assembly).values_list('assembly_id', flat=True).first()
+        try:
+            if assembly.startswith('GCA'):
+                assembly_id = Assembly.objects.filter(accession=assembly).values_list('assembly_id', flat=True).first()
+            else:
+                assembly_id = Assembly.objects.filter(name=assembly).values_list('assembly_id', flat=True).first()
 
-        trackdb_ids = Trackdb.objects.filter(assembly_id=assembly_id).values_list('trackdb_id', flat=True)
+            trackdb_ids = Trackdb.objects.filter(assembly_id=assembly_id).values_list('trackdb_id', flat=True)
 
-        # TODO: check if this can be done in one shot using in_bulk
-        track_count = 0
-        for trackdb_id in trackdb_ids:
-            # count how many tracks belong to this specific assembly
-            this_track_count = Track.objects.filter(trackdb_id=trackdb_id).count()
-            track_count += this_track_count
+            # TODO: check if this can be done in one shot using in_bulk
+            track_count = 0
+            for trackdb_id in trackdb_ids:
+                # count how many tracks belong to this specific assembly
+                this_track_count = Track.objects.filter(trackdb_id=trackdb_id).count()
+                track_count += this_track_count
 
-        return Response({'tot': track_count}, status=status.HTTP_200_OK)
+            return Response({'tot': track_count}, status=status.HTTP_200_OK)
+
+        except django.db.OperationalError:
+            return Response(
+                {'message': 'Error: Failed to connect to the database'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class TrackhubsInfoView(APIView):
@@ -174,9 +198,16 @@ class TrackhubsInfoView(APIView):
         }
         """
         trackhubs_info = {}
-        all_trackhubs = Hub.objects.all()
-        for trackhub in all_trackhubs:
-            serializer = TrackhubInfoSerializer(trackhub)
-            trackhubs_info.update(serializer.data)
+        try:
+            all_trackhubs = Hub.objects.all()
+            for trackhub in all_trackhubs:
+                serializer = TrackhubInfoSerializer(trackhub)
+                trackhubs_info.update(serializer.data)
 
-        return Response(trackhubs_info, status=status.HTTP_200_OK)
+            return Response(trackhubs_info, status=status.HTTP_200_OK)
+
+        except django.db.OperationalError:
+            return Response(
+                {'message': 'Error: Failed to connect to the database'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
