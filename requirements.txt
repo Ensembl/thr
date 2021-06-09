@@ -3,7 +3,7 @@ attrs==20.2.0
 certifi==2020.6.20
 chardet==4.0.0
 coverage==5.2.1
-Django==2.2.21
+Django==2.2.22
 django-cors-headers==3.5.0
 django-elasticsearch-dsl>=6.0.0,<7.0.0
 django-elasticsearch-dsl-drf==0.20.8
