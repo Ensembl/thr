@@ -11,11 +11,15 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import re
+import sys
 from datetime import datetime
 import json
 import logging
 import time
+import hashlib
 
+import requests
 from django.conf import settings
 from django.db import models
 from users.models import CustomUser as User
@@ -183,6 +187,7 @@ class Trackdb(models.Model):
     configuration = JSONField()
     data = JSONField()
     status = JSONField()
+    browser_links = JSONField()
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
@@ -268,6 +273,193 @@ class Trackdb(models.Model):
 
         return file_type_counts_dict
 
+    def generate_browser_links(self):
+        """
+        Generate browser links in UCSC, Ensembl and VectorBase for the current trackdb
+        """
+        browser_links = {}
+        division = None
+
+        # Get the hub url and short label using hub id in trackdb object
+        hub_url_and_short_label = Hub.objects.filter(hub_id=self.hub_id).values('url', 'short_label').first()
+        hub_url = hub_url_and_short_label['url']
+        hub_short_label = hub_url_and_short_label['short_label']
+
+        # Get the assembly name and ucsc synonym using assembly id in trackdb object
+        assembly_name_synonym_accession = Assembly.objects.filter(assembly_id=self.assembly_id).values('name',
+                                                                                                          'ucsc_synonym',
+                                                                                                          'accession').first()
+        assembly_name = assembly_name_synonym_accession['name']
+        assembly_ucsc_synonym = assembly_name_synonym_accession['ucsc_synonym']
+        assembly_accession = assembly_name_synonym_accession['accession']
+
+        # TODO: add the assembly hub case
+        #  see: http://genome.ucsc.edu/goldenPath/help/hubQuickStartAssembly.html
+        is_assembly_hub = 0
+
+        # UCSC browser link
+        # Provide different links in case it's an assembly hub or an assembly supported by UCSC
+        if is_assembly_hub:
+            # see http://genome.ucsc.edu/goldenPath/help/hubQuickStartAssembly.html
+            browser_links['ucsc'] = "http://genome.ucsc.edu/cgi-bin/hgHubConnect?hgHub_do_redirect=on&hgHubConnect" \
+                                    ".remakeTrackHub=on&hgHub_do_firstDb=1&hubUrl={}".format(hub_url)
+        elif assembly_ucsc_synonym:
+            # assembly supported by UCSC
+            browser_links['ucsc'] = "http://genome.ucsc.edu/cgi-bin/hgHubConnect?db={}&hubUrl={" \
+                                    "}&hgHub_do_redirect=on&hgHubConnect.remakeTrackHub=on".format(
+                assembly_ucsc_synonym,
+                hub_url);
+
+        # Biodalliance embeddable browser link
+        # NOTE: support for only human assemblies, i.e. those for which we can
+        # fetch 2bit assembly data from the biodalliance server
+        if assembly_ucsc_synonym in ['hg19', 'hg38', 'mm10'] and not hub_url.startswith('ftp'):
+            browser_links['biodalliance'] = "/biodalliance/view?assembly={}&name={}&url={}" \
+                .format(assembly_ucsc_synonym, hub_short_label.strip(), hub_url)
+
+        # EnsEMBL browser link
+        domain = 'http://### DIVISION ###.ensembl.org'
+        # Get the species scientific name using species id in trackdb object
+        species_scientific_name = Species.objects.filter(id=self.species_id).values('scientific_name').first().get(
+            'scientific_name')
+        species_scientific_name = species_scientific_name.replace(' ', '_')
+
+        # First the special cases:
+        # - human (grch38.* -> www, grch37.* -> grch37)
+        # - mouse (only grcm38.* supported -> www)
+        # - fruitfly (Release 6 up-to-date, Release 5 from Dec 2014 backward)
+        # - rat (Rnor_6.0 up-to-date, Rnor_5.0 from Mar 2015 backward)
+        # - zebrafish (GRCz10 up-to-date, Zv9 from Mar 2015 backward)
+        # - Triticum aestivum (IWGSC1+popseq/TGACv1, archive plant)
+        # - Zea mays (AGPv3, archive plant)
+
+        # if it's human assembly
+        # only GRCh38.* and GRCh37.* assemblies are supported,
+        # domain is different in the two cases
+        if species_scientific_name.lower() == 'homo_sapiens':
+            if assembly_name.lower() == 'grch38':
+                division = 'www'
+            elif assembly_name.lower() == 'grch37':
+                division = 'grch37'
+            # other human assemblies are not supported
+
+        # if it's mouse assembly
+        # any GRCm38 patch is supported, other assemblies are not
+        elif species_scientific_name.lower() == 'mus_musculus':
+            if assembly_name.lower() == 'grcm38':
+                division = 'www'
+
+        # if it's rat assembly must take archive into account
+        elif species_scientific_name.lower() == 'rattus_norvegicus':
+            if assembly_name.lower() == 'rnor_6':
+                division = 'www'
+            elif assembly_name.lower() == 'rnor_5':
+                division = 'mar2015.archive'
+
+        # if it's zebrafish assembly must take archive into account
+        elif species_scientific_name.lower() == 'danio_rerio':
+            if assembly_name.lower() == 'grcz10':
+                division = 'www'
+            elif assembly_name.lower() == 'zv9':
+                division = 'mar2015.archive'
+
+        # if it's fruitfly assembly must take archive into account
+        elif species_scientific_name.lower() == 'drosophila_melanogaster':
+            if assembly_name.lower() == 'release_6':
+                division = 'www'
+            elif assembly_name.lower() == 'release_5':
+                division = 'dec2014.archive'
+
+        # Handle old maize assembly
+        elif species_scientific_name.lower() == 'zea mays':
+            if assembly_name.lower() == 'b73_refgen_v3':
+                division = 'archive.plants'
+            elif assembly_name.lower() == 'agpv4':
+                # AGPv4 is new assembly but doesn't have accession
+                division = 'plants'
+
+        # Handle old wheat assembly, but also new since EG interface doesn't work here
+        elif species_scientific_name.lower() == 'triticum_aestivum':
+            if assembly_name.lower() == 'iwgsc1+popseq':
+                division = 'archive.plants'
+            # TGACv1 is the 'newest' old assembly
+            elif assembly_name.lower() == 'tgac':
+                division = 'oct2017-plants'
+            # IWGSC is new assembly and has accession, but
+            # as said above EG interface cannot fetch entry from genome shared db
+            # this is weird as same code elsewhere using EG interface works
+            elif assembly_name.lower() == 'iwgsc':
+                division = 'plants'
+
+        else:
+            # Normal cases are here
+            # see Translator.pm line 1231 onward
+
+            # Look up division using Ensembl Rest API by using providing the assembly accession
+            assembly_info_url = 'https://rest.ensembl.org/info/genomes/assembly/' + assembly_accession + ''
+            response = requests.get(assembly_info_url, headers={'Accept': 'application/json'}, verify=True)
+            if not response.ok:
+                print("Couldn't get division for assembly '{}', reason: {} [{}]"
+                      .format(assembly_accession, response.text, response.status_code))
+                sys.exit
+
+            # genome_division can be: 'EnsemblVertebrates', 'EnsemblProtists', 'EnsemblMetazoa',
+            # 'EnsemblPlants', 'EnsemblFungi' or 'EnsemblBacteria'
+            # See: https://rest.ensembl.org/documentation/info/info_divisions
+            genome_division = response.json()['division'].lower()
+
+            if genome_division == 'ensemblvertebrates':
+                division = 'www'
+            else:
+                # if genome_division.startswith('ensembl'):
+                # remove 'ensembl' string
+                division = genome_division[len('ensembl'):]
+
+        if division:
+            domain = domain.replace('### DIVISION ###', division)
+
+            # if division contains the string 'archive' but not followed by '.plants'
+            if re.search("archive(?!\.plants)", division):
+                # link to plant archive site should be the current one
+                browser_links[
+                    'ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
+                    domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
+            else:
+                browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
+                                                                                                     species_scientific_name,
+                                                                                                     hub_short_label.strip().replace(' ', '%20'))
+
+        # VectorBase browser links
+        vectorbase_domain = "https://www.vectorbase.org"
+
+        # handle special case: Anopheles stephensi strain Indian (Anopheles_stephensiI in VB)
+        # cannot use species scientific name as it does not have strain
+        if assembly_accession == 'GCA_000300775.2':
+            species_scientific_name = 'Anopheles_stephensi_indian'
+
+        # and similarly for other species, even if it's not planned to have track hubs for them at the moment
+        if assembly_accession == 'GCA_000150785.1':
+            species_scientific_name = 'Anopheles_gambiae_pimperena'
+        if assembly_accession == 'GCA_000441895.2':
+            species_scientific_name = 'Anopheles_sinensis_china'
+
+        # handle another special case: ENA uses Anopheles gambiae M as main species name instead of Anopheles coluzzii
+        if assembly_accession == 'GCA_000150765.1':
+            species_scientific_name = 'Anopheles_coluzzii'
+
+        # updates on Aeges aegypti assemblies
+        if assembly_accession == 'GCA_000004015.1':
+            species_scientific_name = 'Aedes_aegypti_lvp'  # was Aedes_aegypti
+
+        if assembly_accession == 'GCA_002204515.1':
+            species_scientific_name = 'Aedes_aegypti_lvpagwg'  # new separate assembly
+
+        browser_links['vectorbase'] = "{}/TrackHub?url={};species={};name={};registry=1".format(vectorbase_domain,
+                                                                                                hub_url,
+                                                                                                species_scientific_name,
+                                                                                                hub_short_label.strip().replace(' ', '%20'))
+        return browser_links
+
     def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
@@ -278,7 +470,6 @@ class Trackdb(models.Model):
         :param trackdb_configuration: configuration object that will be added to the trackdb document
         :param index: index name (default: 'trackhubs')
         :param doc_type: document type (default: 'doc')
-        # TODO: handle exceptions
         """
         try:
             es = connections.Elasticsearch()
@@ -293,10 +484,12 @@ class Trackdb(models.Model):
                         'owner': hub.get_owner(),
                         'file_type': self.get_trackdb_file_type_count(),
                         'data': trackdb_data,
+                        'browser_links': self.generate_browser_links(),
                         'updated': int(time.time()),
                         'source': {
                             'url': self.source_url,
-                            'checksum': ''
+                            # Compute checksum
+                            'checksum': hashlib.md5(self.source_url.encode('utf-8')).hexdigest()
                         },
                         # Get the data type based on the hub info
                         'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)

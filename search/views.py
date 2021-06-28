@@ -35,7 +35,15 @@ class TrackdbDocumentListView(APIView):
         hub = request.data.get('hub')
         accession = request.data.get('accession')
 
-        client = connections.Elasticsearch()
+        try:
+            client = connections.Elasticsearch()
+
+        except elasticsearch.exceptions.ConnectionError:
+            return Response(
+                {"error": "Cannot connect to Elasticsearch"},
+                status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
         all_queries = Search(using=client)
 
         if not request.data:
