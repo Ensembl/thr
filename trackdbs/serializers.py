@@ -69,6 +69,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
     type = serializers.SerializerMethodField()
     source = serializers.SerializerMethodField()
     hub = serializers.SerializerMethodField()
+    browser_links = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
     assembly = serializers.SerializerMethodField()
 
@@ -83,6 +84,7 @@ class TrackdbSerializer(serializers.ModelSerializer):
             'type',
             'source',
             'hub',
+            'browser_links',
             'species',
             'assembly',
             # 'data',
@@ -112,6 +114,9 @@ class TrackdbSerializer(serializers.ModelSerializer):
     def get_hub(self, obj):
         hub = models.Hub.objects.filter(hub_id=obj.hub.hub_id).first()
         return TrackdbHubSerializer(hub).data
+
+    def get_browser_links(self, obj):
+        return obj.generate_browser_links()
 
     def get_species(self, obj):
         species = models.Species.objects.filter(taxon_id=obj.species.taxon_id).first()
