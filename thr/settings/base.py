@@ -28,6 +28,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
+# BASE_DIR her is 'thr/thr'
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
 # Quick-start development settings - unsuitable for production
@@ -65,6 +66,7 @@ INSTALLED_APPS = [
     # Django REST framework Elasticsearch integration
     'django_elasticsearch_dsl_drf',
     'django_mysql',
+    'django_crontab',
 ]
 
 REST_FRAMEWORK = {
@@ -198,6 +200,14 @@ LOGGING = {
         }
     }
 }
+
+# cron job scheduled to be run at 00:00 every Sunday
+CRONJOBS = [
+    ('0 0 * * SUN', 'thr.trackdbs.update_status.update_trackdb_status', '>> ../../thr.log')
+]
+
+# redirect errors to stdout
+CRONTAB_COMMAND_SUFFIX = '2>&1'
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
