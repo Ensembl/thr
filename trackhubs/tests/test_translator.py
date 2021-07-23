@@ -16,7 +16,6 @@ import time
 import pytest
 import trackhubs
 from trackhubs.constants import FILE_TYPES, DATA_TYPES, VISIBILITY
-from trackhubs import translator, models
 
 
 @pytest.mark.django_db

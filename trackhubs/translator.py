@@ -17,7 +17,6 @@ import logging
 import time
 
 import django
-from django.db import transaction
 from users.models import CustomUser as User
 
 import trackhubs
@@ -260,7 +259,7 @@ def get_assembly_info_from_dump(genome_assembly_name):
     assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
     if assembly_info_from_dump:
         return assembly_info_from_dump
-    elif assembly_info_from_dump_ucsc_synonym:
+    if assembly_info_from_dump_ucsc_synonym:
         return assembly_info_from_dump_ucsc_synonym
     return None
 

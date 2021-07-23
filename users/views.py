@@ -13,7 +13,7 @@
 """
 
 from django.contrib.auth import logout
-from rest_framework import status, authentication, permissions, generics
+from rest_framework import status, authentication, permissions
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
@@ -39,8 +39,8 @@ class RegistrationViewAPI(APIView):
             token = Token.objects.create(user=new_user).key
             data['token'] = token
             return Response(data, status=status.HTTP_201_CREATED)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutViewAPI(APIView):
@@ -89,8 +89,8 @@ class UserDetailsView(APIView):
         if serializer.is_valid():
             serializer.update(current_user)
             return Response({'success': 'User profile updated successfully!'}, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ChangePasswordView(UpdateAPIView):
@@ -110,7 +110,7 @@ class ChangePasswordView(UpdateAPIView):
         # if using drf authtoken, create a new token
         if hasattr(user, 'auth_token'):
             user.auth_token.delete()
-        token, created = Token.objects.get_or_create(user=user)
+        token, _ = Token.objects.get_or_create(user=user)
         # return a success message with the new token
         return Response(
             {'success': 'Your password is updated successfully!', 'token': token.key},

@@ -6,10 +6,12 @@ services:
 
   - name: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
     alias: elasticsearch
-    command: ["bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node"]
+    command: [ "bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node" ]
 
 before_script:
   - python -V
+  - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
+  - pip install -r requirements.txt
 
 variables:
   # Configure mysql service (https://hub.docker.com/_/mysql/)
@@ -21,13 +23,17 @@ variables:
   ELASTICSEARCH_URL: "http://elasticsearch:9200"
 
 stages:
-  - test
+  - Static Analysis
+  - Test
 
-test_app:
-  stage: test
+pylint:
+  stage: Static Analysis
   script:
-    - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
-    - pip install -r requirements.txt
+    - pylint --fail-under=9 $(git ls-files '*.py')
+
+pytest:
+  stage: Test
+  script:
     - echo "Sleeping for 15 seconds.."; sleep 15;
     - curl http://elasticsearch:9200
     - pytest -v
