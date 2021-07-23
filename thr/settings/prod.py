@@ -12,5 +12,6 @@
    limitations under the License.
 """
 
+# pylint: disable=wildcard-import
 from .base import *
 DEBUG = False

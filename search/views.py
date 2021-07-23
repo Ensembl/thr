@@ -43,14 +43,14 @@ class TrackdbDocumentListView(APIView):
             # in case we want to show all the data:
             # all_results = s.execute().to_dict()
             # return Response(all_results, status=status.HTTP_200_OK)
-        elif not query:
+        if not query:
             return Response({"error": "Missing query field"}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            search_fields = [
-                'hub.shortLabel', 'hub.longLabel', 'hub.name',
-                'type', 'species.common_name', 'species.scientific_name'
-            ]
-            all_queries = all_queries.query("multi_match", query=query, fields=search_fields)
+
+        search_fields = [
+            'hub.shortLabel', 'hub.longLabel', 'hub.name',
+            'type', 'species.common_name', 'species.scientific_name'
+        ]
+        all_queries = all_queries.query("multi_match", query=query, fields=search_fields)
 
         if accession:
             all_queries = all_queries.filter('term', assembly__accession=accession)
@@ -71,9 +71,9 @@ class TrackdbDocumentListView(APIView):
 class TrackdbDocumentDetailView(APIView):
     """The TrackhubDocumentDetail view."""
 
-    def get(self, request, pk):
+    def get(self, request, primary_key):
         try:
-            trackdb_document = TrackdbDocument.get(id=pk)
+            trackdb_document = TrackdbDocument.get(id=primary_key)
         except elasticsearch.exceptions.NotFoundError:
             return Response({"error": "TrackDB document not found."}, status=status.HTTP_404_NOT_FOUND)
 

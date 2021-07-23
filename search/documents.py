@@ -44,15 +44,15 @@ class TrackdbDocument(Document):
     the search.api.serializers controls what will be shown after triggering a search query
     """
 
-    type = fields.StringField(attr='data_type_indexing')
+    type = fields.TextField(attr='data_type_indexing')
 
     hub = fields.ObjectField(properties={
         'name': fields.KeywordField(),
-        'short_label': fields.StringField(),
-        'long_label': fields.StringField(),
-        'url': fields.StringField(),
-        'description_url': fields.StringField(),
-        'email': fields.StringField(),
+        'short_label': fields.TextField(),
+        'long_label': fields.TextField(),
+        'url': fields.TextField(),
+        'description_url': fields.TextField(),
+        'email': fields.TextField(),
     })
 
     assembly = fields.ObjectField(
@@ -60,7 +60,7 @@ class TrackdbDocument(Document):
         properties={
             'accession': fields.KeywordField(),
             'name': fields.KeywordField(),
-            'long_name': fields.StringField(),
+            'long_name': fields.TextField(),
             'ucsc_synonym': fields.KeywordField(),
     })
 
@@ -75,7 +75,7 @@ class TrackdbDocument(Document):
     configuration = fields.ObjectField()
     data = fields.NestedField()
 
-    class Django(object):
+    class Django:
         """Inner nested class Django."""
 
         model = Trackdb  # The model associate with this Document

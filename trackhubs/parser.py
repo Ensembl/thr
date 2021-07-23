@@ -41,10 +41,10 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     dict_info_list = []
 
     try:
-        with urllib.request.urlopen(url) as f:
+        with urllib.request.urlopen(url) as file:
             # read the whole file into a list
             # each element represent one line from the file
-            file_content = f.read().decode('utf-8').splitlines()
+            file_content = file.read().decode('utf-8').splitlines()
             # the length is used to check if we reached the end of the file
             len_file_content = len(file_content)
 
@@ -79,9 +79,8 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     except (IOError, urllib.error.HTTPError, urllib.error.URLError, ValueError, AttributeError, TypeError) as ex:
         logger.error(ex)
         return None
-    if dict_info is []:
+    if not dict_info:  # dict_info is empty
         logger.error("Couldn't parse the provided text file, please make sure it well formatted!")
         return None
-    else:
-        return dict_info_list
 
+    return dict_info_list

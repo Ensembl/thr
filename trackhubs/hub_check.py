@@ -32,18 +32,24 @@ def hub_check(hub_url):
         # consider the OS used and download the appropriate one accordingly
         if platform == "linux":
             subprocess.run(
-                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/hubCheck"]
+                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/hubCheck"],
+                check=True
             )
         elif platform == "darwin":
             subprocess.run(
-                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/macOSX.x86_64/hubCheck"]
+                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/macOSX.x86_64/hubCheck"],
+                check=True
             )
 
         hubcheck.chmod(0o700)
 
     print("[INFO] Checking " + hub_url + "...")
     hub_check_result = subprocess.run(
-        ["tools/hubCheck", "-noTracks", hub_url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+        ["tools/hubCheck", "-noTracks", hub_url],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        check=True
     )
     print(hub_check_result)
 
@@ -63,13 +69,13 @@ def hub_check(hub_url):
     if warnings:
         return {
             'warning': 'Warnings found (they can be ignored)',
-            'details': [war for war in other_lines]
+            'details': list(war for war in other_lines)
         }
 
     if error:
         return {
             'error': 'Error in hub {}: {}'.format(hub_url, line_0.strip(':')),
-            'details': [err for err in other_lines]
+            'details': list(err for err in other_lines)
         }
 
     return {

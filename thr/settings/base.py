@@ -15,6 +15,7 @@
 import os
 from pathlib import Path
 
+# pylint: disable=pointless-string-statement
 """
 Django settings for thr project.
 

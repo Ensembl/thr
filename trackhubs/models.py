@@ -12,18 +12,17 @@
    limitations under the License.
 """
 from datetime import datetime
-import json
 import logging
 import time
 
 from django.conf import settings
 from django.db import models
-from users.models import CustomUser as User
 from django.db.models import Count
 from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
+from users.models import CustomUser as User
 import trackhubs
 
 logger = logging.getLogger(__name__)
@@ -269,6 +268,7 @@ class Trackdb(models.Model):
         return file_type_counts_dict
 
     def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):
+        # pylint: disable=too-many-arguments
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
@@ -281,13 +281,13 @@ class Trackdb(models.Model):
         # TODO: handle exceptions
         """
         try:
-            es = connections.Elasticsearch()
+            es_conn = connections.Elasticsearch()
 
-            es.update(
+            es_conn.update(
                 index=index,
                 doc_type=doc_type,
                 id=self.trackdb_id,
-                refresh=True,
+                # refresh=True,
                 body={
                     'doc': {
                         'owner': hub.get_owner(),

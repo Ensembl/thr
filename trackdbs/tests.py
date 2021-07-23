@@ -21,35 +21,6 @@ def test_get_trackdb_without_login(api_client):
 
 
 def test_get_trackdb_success(project_dir, api_client, create_trackhub_resource):
-    expected_result = {
-        'owner': 'test_user',
-        'created': '2021-04-06 17:28:47',
-        'updated': '2021-04-06 17:28:47',
-        'version': 'v1.0',
-        'type': 'genomics',
-        'source': {
-            'checksum': None,
-            'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hg19/trackDb.txt'
-        },
-        'hub': {
-            'name': 'JASPAR_TFBS',
-            'short_label': 'JASPAR TFBS',
-            'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
-            'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
-        },
-        'species': {
-            'scientific_name': 'Homo sapiens',
-            'common_name': None,
-            'taxon_id': 9606
-        },
-        'assembly': {
-            'name': 'GRCh37',
-            'accession': 'GCA_000001405.1',
-            'ucsc_synonym': 'hg19'
-        },
-        'configuration': {}
-    }
-
     response = api_client.get('/api/trackdb/1/')
     actual_result = response.json()
     assert response.status_code == 200

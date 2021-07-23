@@ -17,8 +17,8 @@ import logging
 import time
 
 import django
-from users.models import CustomUser as User
 from django.db import transaction
+from users.models import CustomUser as User
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
@@ -63,8 +63,8 @@ def get_obj_if_exist(unique_col, object_name, file_type=False):
     existing_obj = object_name.objects.filter(name=unique_col).first()
     if existing_obj:
         return existing_obj
-    else:
-        return None
+
+    return None
 
 
 def save_datatype_filetype_visibility(name_list, object_name):
@@ -117,13 +117,13 @@ def save_genome(genome_dict):
     existing_genome_obj = trackhubs.models.Genome.objects.filter(name=genome_dict['genome']).first()
     if existing_genome_obj:
         return existing_genome_obj
-    else:
-        new_genome_obj = trackhubs.models.Genome(
-            name=genome_dict['genome'],
-            trackdb_location=genome_dict['trackDb']
-        )
-        new_genome_obj.save()
-        return new_genome_obj
+
+    new_genome_obj = trackhubs.models.Genome(
+        name=genome_dict['genome'],
+        trackdb_location=genome_dict['trackDb']
+    )
+    new_genome_obj.save()
+    return new_genome_obj
 
 
 def save_trackdb(url, hub, genome, assembly, species):
@@ -176,21 +176,21 @@ def save_track(track_dict, trackdb, file_type, visibility):
 
     if existing_track_obj:
         return existing_track_obj
-    else:
-        new_track_obj = trackhubs.models.Track(
-            # save name only without 'on' or 'off' settings
-            name=get_first_word(track_dict['track']),
-            short_label=track_dict.get('shortLabel'),
-            long_label=track_dict.get('longLabel'),
-            big_data_url=track_dict.get('bigDataUrl'),
-            html=track_dict.get('html'),
-            parent=None,  # track id will go here later on using add_parent_id() function
-            trackdb=trackdb,
-            file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
-            visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
-        )
-        new_track_obj.save()
-        return new_track_obj
+
+    new_track_obj = trackhubs.models.Track(
+        # save name only without 'on' or 'off' settings
+        name=get_first_word(track_dict['track']),
+        short_label=track_dict.get('shortLabel'),
+        long_label=track_dict.get('longLabel'),
+        big_data_url=track_dict.get('bigDataUrl'),
+        html=track_dict.get('html'),
+        parent=None,  # track id will go here later on using add_parent_id() function
+        trackdb=trackdb,
+        file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
+        visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
+    )
+    new_track_obj.save()
+    return new_track_obj
 
 
 def get_first_word(tabbed_info):
@@ -278,16 +278,16 @@ def save_assembly(genome_assembly_name, genome):
 
     if existing_assembly_obj:
         return existing_assembly_obj
-    else:
-        new_assembly_obj = trackhubs.models.Assembly(
-            accession=assembly_info_from_dump.accession_with_version,
-            name=assembly_info_from_dump.assembly_name,
-            long_name=assembly_info_from_dump.assembly_name,
-            ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
-            genome=genome
-        )
-        new_assembly_obj.save()
-        return new_assembly_obj
+
+    new_assembly_obj = trackhubs.models.Assembly(
+        accession=assembly_info_from_dump.accession_with_version,
+        name=assembly_info_from_dump.assembly_name,
+        long_name=assembly_info_from_dump.assembly_name,
+        ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
+        genome=genome
+    )
+    new_assembly_obj.save()
+    return new_assembly_obj
 
 
 def save_species(genome_assembly_name):
@@ -308,13 +308,14 @@ def save_species(genome_assembly_name):
         existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
         if existing_species_obj:
             return existing_species_obj
-        else:
-            new_species = trackhubs.models.Species(
-                taxon_id=assembly_info_from_dump.tax_id,
-                scientific_name=assembly_info_from_dump.scientific_name
-            )
-            new_species.save()
-            return new_species
+
+        new_species = trackhubs.models.Species(
+            taxon_id=assembly_info_from_dump.tax_id,
+            scientific_name=assembly_info_from_dump.scientific_name
+        )
+        new_species.save()
+        return new_species
+
     except django.db.utils.OperationalError:
         logger.exception('Error trying to connect to the database')
 
@@ -343,7 +344,9 @@ def save_and_update_document(hub_url, data_type, current_user):
         if original_owner_id == current_user.id:
             return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
         original_owner_email = User.objects.filter(id=original_owner_id).first().email
-        return {"error": "This hub is already submitted by a different user (the original submitter's email: {})".format(original_owner_email)}
+        return {
+            "error": "This hub is already submitted by a different user (the original submitter's email: {})".format(
+                original_owner_email)}
 
     # run the USCS hubCheck tool found in kent tools on the submitted hub
     hub_check_result = hub_check(hub_url)
@@ -360,7 +363,8 @@ def save_and_update_document(hub_url, data_type, current_user):
         if data_type:
             data_type = data_type.lower()
             if data_type not in DATA_TYPES:
-                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type, ", ".join(DATA_TYPES))}
+                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type,
+                                                                                                 ", ".join(DATA_TYPES))}
         else:
             data_type = 'genomics'
 
@@ -405,9 +409,11 @@ def save_and_update_document(hub_url, data_type, current_user):
                     # get the file type and visibility
                     # TODO: if file_type in FILE_TYPES Good, Else Error
                     if 'type' in track:
-                        file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType, file_type=True).name
+                        file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType,
+                                                                     file_type=True).name
                     if 'visibility' in track:
-                        visibility = get_datatype_filetype_visibility(track['visibility'], trackhubs.models.Visibility).name
+                        visibility = get_datatype_filetype_visibility(track['visibility'],
+                                                                      trackhubs.models.Visibility).name
 
                     track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
                     if not track_obj:
@@ -445,14 +451,17 @@ def save_and_update_document(hub_url, data_type, current_user):
                                 })
 
                         else:  # we are in the second level (subsubtrack)
-                            if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
-                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
+                            if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][
+                                parent_track_obj.name]:
+                                trackdb_configuration[grandparent_track_obj.name]['members'][
+                                    parent_track_obj.name].update({
                                     'members': {
                                         track['track']: track
                                     }
                                 })
                             else:
-                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]['members'].update({
+                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name][
+                                    'members'].update({
                                     track['track']: track
                                 })
 
@@ -468,5 +477,3 @@ def save_and_update_document(hub_url, data_type, current_user):
         return {'success': 'The hub is submitted successfully'}
 
     return None
-
-

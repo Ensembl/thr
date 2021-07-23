@@ -24,7 +24,7 @@ class TrackdbDocumentSerializer(DocumentSerializer):
     id = serializers.SerializerMethodField()
     score = serializers.SerializerMethodField()
 
-    class Meta(object):
+    class Meta:
         """Meta options."""
 
         # Specify the correspondent document class
@@ -50,11 +50,13 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         ]
 
     def get_score(self, obj):
+        # pylint: disable=no-self-use
         if hasattr(obj.meta, 'score'):
             return obj.meta.score
         return None
 
     def get_id(self, obj):
+        # pylint: disable=no-self-use
         if hasattr(obj.meta, 'id'):
             return obj.meta.id
         return None
