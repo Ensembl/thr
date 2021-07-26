@@ -32,13 +32,11 @@ def hub_check(hub_url):
         # consider the OS used and download the appropriate one accordingly
         if platform == "linux":
             subprocess.run(
-                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/hubCheck"],
-                check=True
+                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/hubCheck"]
             )
         elif platform == "darwin":
             subprocess.run(
-                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/macOSX.x86_64/hubCheck"],
-                check=True
+                ["curl", "-o", "tools/hubCheck", "http://hgdownload.soe.ucsc.edu/admin/exe/macOSX.x86_64/hubCheck"]
             )
 
         hubcheck.chmod(0o700)
@@ -48,8 +46,7 @@ def hub_check(hub_url):
         ["tools/hubCheck", "-noTracks", hub_url],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        universal_newlines=True,
-        check=True
+        universal_newlines=True
     )
     print(hub_check_result)
 

@@ -79,8 +79,8 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     except (IOError, urllib.error.HTTPError, urllib.error.URLError, ValueError, AttributeError, TypeError) as ex:
         logger.error(ex)
         return None
-    if not dict_info:  # dict_info is empty
-        logger.error("Couldn't parse the provided text file, please make sure it well formatted!")
+    if dict_info is []:  # dict_info is empty
+        logger.error("Couldn't parse the provided text file, please make sure it exists and well formatted!")
         return None
 
     return dict_info_list

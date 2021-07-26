@@ -71,9 +71,10 @@ class TrackdbDocumentListView(APIView):
 class TrackdbDocumentDetailView(APIView):
     """The TrackhubDocumentDetail view."""
 
-    def get(self, request, primary_key):
+    def get(self, request, pk):
+        # pylint: disable=invalid-name
         try:
-            trackdb_document = TrackdbDocument.get(id=primary_key)
+            trackdb_document = TrackdbDocument.get(id=pk)
         except elasticsearch.exceptions.NotFoundError:
             return Response({"error": "TrackDB document not found."}, status=status.HTTP_404_NOT_FOUND)
 

@@ -1,3 +1,8 @@
+# this two links are good examples of this file content
+# https://gist.githubusercontent.com/gabrielhurley/1192142/raw/a8f20fbabb79f2a24487c158c7ea42a0574a8049/.pylintrc
+# https://raw.githubusercontent.com/Ensembl/gifts_rest/3243c6181bba6b6ef28f3fefbd5a6760f635eb13/pylintrc
+
+
 [MASTER]
 
 # Specify a configuration file.

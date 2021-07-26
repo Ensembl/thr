@@ -2,7 +2,7 @@ image: python:3.7
 
 services:
   - name: mysql:5.7
-    alias: mysql_db
+    alias: mysql
 
   - name: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
     alias: elasticsearch
@@ -11,12 +11,19 @@ services:
 before_script:
   - python -V
   - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
+  - mysql --version
+  - echo "Sleeping for 20 seconds.."; sleep 20;
   - pip install -r requirements.txt
+  - python manage.py makemigrations
+  - python manage.py migrate
+  - curl http://elasticsearch:9200
+  - python manage.py search_index --rebuild -f
+  - curl -X GET "elasticsearch:9200/_cat/indices"
 
 variables:
   # Configure mysql service (https://hub.docker.com/_/mysql/)
-  MYSQL_HOST: "mysql_db"
-  MYSQL_DATABASE: "test_thr_db"
+  MYSQL_HOST: "mysql"
+  MYSQL_DATABASE: "thr_db"
   MYSQL_USER: "thr_dev"
   MYSQL_PASSWORD: "password"
   MYSQL_ROOT_PASSWORD: "password"
@@ -28,13 +35,11 @@ stages:
 
 pylint:
   stage: Static Analysis
+  needs: []
   script:
-    - pylint --fail-under=9 $(git ls-files '*.py')
+    - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
 
 pytest:
-  stage: Test
+  stage: Tests
   script:
-    - echo "Sleeping for 15 seconds.."; sleep 15;
-    - curl http://elasticsearch:9200
     - pytest -v
-

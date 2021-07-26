@@ -30,9 +30,9 @@ class TrackdbDetail(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     @staticmethod
-    def get_trackdb(primary_key):
+    def get_trackdb(pk):
         try:
-            return Trackdb.objects.get(pk=primary_key)
+            return Trackdb.objects.get(pk=pk)
         except Trackdb.DoesNotExist as trackdb_not_found:
             raise Http404 from trackdb_not_found
 
