@@ -40,6 +40,6 @@ pylint:
     - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
 
 pytest:
-  stage: Tests
+  stage: Test
   script:
     - pytest -v
