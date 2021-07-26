@@ -22,6 +22,9 @@ from thr.settings import BASE_DIR
 
 @pytest.fixture
 def project_dir():
+    """
+    INFO: this fixture isn't used for now because it breaks CI tests
+    """
     return BASE_DIR.parent
 
 
