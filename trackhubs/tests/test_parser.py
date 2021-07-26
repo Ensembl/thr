@@ -59,7 +59,7 @@ def test_parse_genomes_success(project_dir):
 
 def test_parse_trackdbs_success(project_dir):
     # fake_trackdbs_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hg19/trackDb.txt'
-    fake_trackdbs_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/trackDb.txt'
+    fake_trackdbs_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hg19/trackDb.txt'
 
     expected_trackdbs_info = [
         {

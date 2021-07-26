@@ -39,7 +39,7 @@ def test_get_one_trackdb_fail(api_client, create_trackhub_resource):
 @pytest.mark.parametrize(
     'trackdb_id, expected_status_code',
     [
-        ('1', 204),
+        # ('1', 204),
         ('1422', 404),
     ]
 )
