@@ -5,11 +5,6 @@ image: python:3.7
 services:
   - name: docker:19.03.12-dind
 
-# Since we are using Alpine, everything is not installed by default.
-# Thus we are setting up the basics
-before_script:
-  - python -V
-
 variables:
   # Environemt Variable for docker:dind service explaining to use overlay2 as supporting driver for docker
   DOCKER_DRIVER: overlay2
@@ -19,7 +14,7 @@ variables:
 # In a django application we have various stages which include testing, packing the code,
 # performing migrations, collecting static files and running the application.
 # The various stages are broadly classified into 3 main categories:
-# 1. Test       2. Release      3. Deploy
+# 1. Test       2. Build & Release      3. Deploy
 
 stages:
   - test
@@ -85,6 +80,7 @@ pytest:
 build:
   image: docker:19.03.12
   stage: build
+  needs: ["pytest"]
   services:
     - docker:19.03.12-dind
   variables:
