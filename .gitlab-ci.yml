@@ -8,13 +8,16 @@ services:
 variables:
   # Environemt Variable for docker:dind service explaining to use overlay2 as supporting driver for docker
   DOCKER_DRIVER: overlay2
+  # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
 
 
 # This is the major part of the code which explains the stages present in our pipeline.
 # In a django application we have various stages which include testing, packing the code,
 # performing migrations, collecting static files and running the application.
 # The various stages are broadly classified into 3 main categories:
-# 1. Test       2. Build & Release      3. Deploy
+# 1. Test       2. Release      3. Deploy
 
 stages:
   - test
@@ -35,6 +38,7 @@ pylint:
     # Installing mysql and requirements
     - pip install -r requirements.txt
   script:
+    - python -V
     - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
 
 
@@ -73,6 +77,7 @@ pytest:
       command: [ "bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node" ]
 
   script:
+    - python -V
     # Command to test our application
     - pytest -v
 
