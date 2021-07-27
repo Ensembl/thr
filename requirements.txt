@@ -16,6 +16,7 @@ djangorestframework==3.11.2
 ElasticMock==1.5.1
 elasticsearch==6.8.1
 elasticsearch-dsl==6.4.0
+gunicorn==20.1.0
 idna==2.10
 iniconfig==1.0.1
 isort==5.9.2

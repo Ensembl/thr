@@ -25,10 +25,7 @@ stages:
   - deploy
 
 
-# Stage I
-# Testing Phase:
-# This is where the main code is tested.
-# Other options like code coverage, etc are also written in this phase
+# Test
 
 pylint:
   stage: test
@@ -82,6 +79,8 @@ pytest:
     - pytest -v
 
 
+# Build
+
 build:
   image: docker:19.03.12
   stage: build
@@ -91,7 +90,13 @@ build:
   variables:
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   script:
-#    - docker login -u bilal -p $CI_REGISTRY_TOKEN dockerhub.ebi.ac.uk
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_TOKEN $CI_REGISTRY
     - docker build -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
+
+# Deploy
+# TBC..
+
+# Useful resources:
+# https://docs.gitlab.com/ee/user/packages/container_registry/
+# https://www.agiliq.com/blog/2018/07/ci-and-cd-for-django-using-gitlab-ci/
