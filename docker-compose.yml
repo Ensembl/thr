@@ -1,44 +1,72 @@
 version: '3.7'
 
 services:
-  web:
+  django:
     build:
       context: .
+      dockerfile: Dockerfile
+    volumes:
+      - django_static_volume:/usr/src/app/static
+    expose:
+      - 8000
     ports:
       - "8000:8000"
-    volumes:
-      - .:/thr
+    env_file:
+      - .env
     command: >
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
              # Build elasticsearch index
+             #sleep 20 &&
              #python manage.py search_index --rebuild -f &&
              # Create the super user automatically using environment variables below
              # || true; is added to ignore the error in case the user exists already
              # It works only with Django 3+
              #python manage.py createsuperuser --noinput || true;
-             python manage.py runserver 0.0.0.0:8000"
-    environment:
-      - DEBUG=1
-      - DJANGO_SUPERUSER_USERNAME=admin
-      - DJANGO_SUPERUSER_EMAIL=admin@mail.com
-      - DJANGO_SUPERUSER_PASSWORD=password
+             #python manage.py runserver 0.0.0.0:8000 &&
+             pwd && gunicorn thr.wsgi:application --bind 0.0.0.0:8000"
     depends_on:
       - mysql
       - elasticsearch
     networks:
       - dbnet
+      - webnet
+
+  react:
+      build:
+        # Build from GitHub repo: https://docs.docker.com/engine/reference/commandline/build/#git-repositories
+        context: https://github.com/Ensembl/thr_frontend.git#feat/docker_and_ci
+        dockerfile: Dockerfile
+        args:
+          - API_SERVER=${ENV_API_SERVER}
+      volumes:
+        - react_static_volume:/usr/src/app/build/static
+      expose:
+        - 3000
+      env_file:
+        - .env
+      command: serve -s build -l 3000
+      depends_on:
+        - django
+      networks:
+        - webnet
 
   mysql:
-    container_name: mysql
     image: mysql:$MYSQL_VERSION
     ports:
       - "3306:3306"
+    volumes:
+      # using 'mysql_data:/var/lib/mysql/' instead of 'mysql_data:/var/lib/mysql/'
+      # fixed '[ERROR] --initialize specified but the data directory has files in it. Aborting.'
+      - mysql_data:/var/lib/mysql/
     environment:
-      MYSQL_DATABASE: "thr_db"
-      MYSQL_USER: "thr_dev"
-      MYSQL_PASSWORD: "password"
-      MYSQL_ROOT_PASSWORD: "password"
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      # fix 'Database is uninitialized and password option is not specified'
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
     networks:
       - dbnet
 
@@ -56,6 +84,30 @@ services:
       memlock:
         soft: -1
         hard: -1
+    networks:
+      - dbnet
+
+  nginx:
+    restart: always
+    build: ./nginx
+    volumes:
+      - django_static_volume:/usr/src/app/django_files/static
+      - react_static_volume:/usr/src/app/react_files/static
+    ports:
+      - 80:80
+    depends_on:
+      - react
+      - django
+    networks:
+      - webnet
+
+volumes:
+  mysql_data:
+  django_static_volume:
+  react_static_volume:
 
 networks:
   dbnet: {}
+  # fix 'nginx: [emerg] host not found in upstream' error
+  webnet:
+    driver: bridge
