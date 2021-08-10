@@ -40,5 +40,6 @@ urlpatterns = [
     path('api/trackhub/', include('trackhubs.urls')),
     path('api/search/', include('search.urls')),
     path('api/trackdb/', include('trackdbs.urls')),
+    path('api/info/', include('info.urls')),
     path('api/stats/', include('stats.urls')),
 ]
