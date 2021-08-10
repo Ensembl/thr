@@ -20,13 +20,12 @@ from rest_framework.response import Response
 from info.serializers import AssemblyInfoSerializer, TrackhubInfoSerializer
 from thr.settings import ELASTICSEARCH_DSL
 from rest_framework import status
+from django.conf import settings
 
 from trackhubs.models import Species, Assembly, Trackdb, Track, Hub
 
 
 class VersionInfoView(APIView):
-
-    REGISTRY_VERSION = 0.01
 
     def get(self, request):
         """
@@ -35,7 +34,7 @@ class VersionInfoView(APIView):
         If the request is successful, the Response is an hash with one key, version,
         whose value is a string which identifies the API version.
         """
-        return Response({'version': self.REGISTRY_VERSION})
+        return Response({'version': settings.THR_VERSION})
 
 
 class PingInfoView(APIView):

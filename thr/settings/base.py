@@ -228,3 +228,5 @@ LOGIN_URL = 'login'
 
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
+
+THR_VERSION = "0.6"

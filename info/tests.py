@@ -13,10 +13,11 @@
 """
 
 import pytest
+from django.conf import settings
 
 
 def test_version(api_client):
-    expected_result = {'version': 0.01}
+    expected_result = {'version': settings.THR_VERSION}
     response = api_client.get('/api/info/version')
     actual_result = response.json()
     assert response.status_code == 200
