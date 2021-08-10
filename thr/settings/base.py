@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'trackhubs.apps.TrackhubsConfig',
     'search.apps.SearchConfig',
+    'stats.apps.StatsConfig',
     'trackdbs.apps.TrackdbsConfig',
     'info.apps.InfoConfig',
     # Django Elasticsearch integration
