@@ -264,7 +264,7 @@ def test_change_user_password_success(api_client, django_user_model):
             400
         ),
         (
-            {'old_password': 'old_pass', 'new_password1': 'new_pass', 'new_password2': 'new_pass'},
+            {'old_password': 'old_pass', 'new_password1': 'new_pass', 'new_password2': 'new_pass_mismatch'},
             {'error': ["The two password fields didn't match."]},
             400
         ),
