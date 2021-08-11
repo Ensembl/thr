@@ -17,14 +17,9 @@ services:
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
              # Build elasticsearch index
-             #sleep 20 &&
-             #python manage.py search_index --rebuild -f &&
-             # Create the super user automatically using environment variables below
-             # || true; is added to ignore the error in case the user exists already
-             # It works only with Django 3+
-             #python manage.py createsuperuser --noinput || true;
-             #python manage.py runserver 0.0.0.0:8000 &&
-             pwd && gunicorn thr.wsgi:application --bind 0.0.0.0:8000"
+             # sleep 20 &&
+             #  python manage.py search_index --create -f &&
+             pwd && gunicorn thr.wsgi:application --bind 0.0.0.0:8000 --timeout 120"
     depends_on:
       - mysql
       - elasticsearch
@@ -53,12 +48,18 @@ services:
 
   mysql:
     image: mysql:$MYSQL_VERSION
+    command:
+      # Set max_allowed_packet to 256M
+      # Fix Aborted connection 11 to db: 'DB' user: 'USER' host: 'HOST' (Got an error reading communication packets)
+      - --max_allowed_packet=32505856
+      # wait_timeout may be need in case we get mysql timeout errors in the future
+      # - --wait_timeout=28800
     ports:
       - "3306:3306"
     volumes:
-      # using 'mysql_data:/var/lib/mysql/' instead of 'mysql_data:/var/lib/mysql/'
+      # using 'mysql_data:/var/lib/mysql/' instead of 'mysql_data:/var/lib/mysql/data/'
       # fixed '[ERROR] --initialize specified but the data directory has files in it. Aborting.'
-      - mysql_data:/var/lib/mysql/
+      - mysql_data:/var/lib/mysql
     environment:
       - MYSQL_DATABASE=${DB_DATABASE}
       - MYSQL_USER=${DB_USER}
@@ -76,6 +77,9 @@ services:
     ports:
       - "9200:9200"
       - "9300:9300"
+    expose:
+      - 9200
+      - 9300
     environment:
       # https://discuss.elastic.co/t/problems-with-access-to-elasticsearch-form-outside-machine/172450
       - discovery.type=single-node
