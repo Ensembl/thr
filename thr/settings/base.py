@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'search.apps.SearchConfig',
     'stats.apps.StatsConfig',
     'trackdbs.apps.TrackdbsConfig',
+    'info.apps.InfoConfig',
     # Django Elasticsearch integration
     'django_elasticsearch_dsl',
     # Django REST framework Elasticsearch integration
@@ -246,3 +247,4 @@ LOGIN_URL = 'login'
 EMAIL_HOST = "localhost"
 EMAIL_PORT = 1025
 
+THR_VERSION = "0.6"
