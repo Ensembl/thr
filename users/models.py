@@ -22,6 +22,6 @@ class CustomUser(AbstractUser):
     """
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
-    affiliation = models.CharField(max_length=100, blank=True, null=True)
+    affiliation = models.CharField(max_length=250, blank=True, null=True)
     check_interval = models.CharField(max_length=100, default='automatic')
     continuous_alert = models.BooleanField(default=0)

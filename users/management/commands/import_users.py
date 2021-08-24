@@ -44,6 +44,7 @@ def import_users_dump(filepath):
                     affiliation=user_info.get('affiliation'),
                     check_interval='automatic',
                 )
+                user.is_active = False
                 user.is_superuser = False
                 user.save()
             return len(users_info)
@@ -63,7 +64,6 @@ class Command(BaseCommand):
         it will be used only once
         Usage:
         $ python manage.py import_users
-        TODO: import providing the old DB info
     """
 
     def create_parser(self, *args, **kwargs):
@@ -75,24 +75,12 @@ class Command(BaseCommand):
         parser.formatter_class = RawTextHelpFormatter
         return parser
 
-    # def add_arguments(self, parser):
-    #     # This is an optional argument
-    #     parser.add_argument(
-    #         '--fetch',
-    #         type=str,
-    #         help="fetch assemblies info from <source>, <source> can be 'ena', 'ensembl' or 'ucsc' (without quotes)",
-    #     )
-
     def handle(self, *args, **options):
         start = time.time()
-        # chosen_source = options['fetch'].lower() if options['fetch'] is not None else None
 
-        # if chosen_source == 'ena':
+        json_dump_file = 'samples/users_sample.json'
+        users_count = import_users_dump(json_dump_file)
 
-        # just import ENA assembly dump
-        ena_filepath = 'users/management/commands/users_dump/staging_users_sample.json'
-
-        users_count = import_users_dump(ena_filepath)
         if users_count is not None:
             end = time.time()
             self.stdout.write(self.style.SUCCESS(
