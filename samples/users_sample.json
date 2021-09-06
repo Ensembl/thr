@@ -1,0 +1,4 @@
+[
+  {"user_id":1, "username":"user101", "first_name":"user101", "last_name":"foo", "email":"user101@mail.com", "password":"some_random_unhashed_password", "continuous_alert":0, "affiliation":"EBI", "check_interval":0, "auth_key":""},
+  {"user_id":2, "username":"user202", "first_name":"user202", "last_name":"bar", "email":"user202@mail.com", "password":"another_random_unhashed_password", "continuous_alert":0, "affiliation":"EBI", "check_interval":0, "auth_key":"8aoF5ZYfu36ypi8zkVXDLTGn1R26b8Zi5IizJZV/42ARj5KawoyJ./V3z.gSN9XO"}
+]

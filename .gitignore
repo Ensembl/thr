@@ -65,4 +65,7 @@ thr_env/
 .DS_Store
 .idea
 
+# users dump
+users/management/commands/users_dump
+
 # End of https://www.toptal.com/developers/gitignore/api/python,django,venv,pycharm
