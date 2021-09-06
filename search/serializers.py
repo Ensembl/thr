@@ -21,8 +21,12 @@ import search.documents
 class TrackdbDocumentSerializer(DocumentSerializer):
     """Serializer for Trackdb document."""
 
-    id = serializers.SerializerMethodField()
-    score = serializers.SerializerMethodField()
+    # TODO: find a way to add the score if needed
+    # score = serializers.SerializerMethodField()
+    source = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
 
     class Meta(object):
         """Meta options."""
@@ -31,30 +35,47 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         document = search.documents.TrackdbDocument
 
         fields = [
+            'trackdb_id',
+            'source',
             'hub',
-            'public',
-            'description',
-            'assembly',
-            'type',
-            'species',
             'version',
+            'owner',
+            'status',
+            'species',
+            'assembly',
             'created',
-            'updated',
-            # 'configuration',
-            # 'data',
-            # 'status_message',
-            # 'status_last_update',
-            # 'status',
-            # 'source_url',
-            # 'source_checksum',
+            'type',
+            'configuration',
         ]
 
-    def get_score(self, obj):
-        if hasattr(obj.meta, 'score'):
-            return obj.meta.score
-        return None
+    def get_status(self, obj):
+        """Represent status value."""
+        try:
+            minimal_status_info = {
+                "last_update": obj.status.last_update,
+                "message": obj.status.message
+            }
+            return minimal_status_info
+        except Exception:
+            return None
 
-    def get_id(self, obj):
-        if hasattr(obj.meta, 'id'):
-            return obj.meta.id
-        return None
+    def get_source(self, obj):
+        """Represent source object."""
+        try:
+            return obj.source.to_dict()
+        except Exception:
+            return {}
+
+    def get_owner(self, obj):
+        """Represent the owner value."""
+        try:
+            return obj.owner
+        except Exception:
+            return ''
+
+    def get_type(self, obj):
+        """Represent type value."""
+        try:
+            return obj.type
+        except Exception:
+            return ''

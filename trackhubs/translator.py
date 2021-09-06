@@ -25,7 +25,7 @@ from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
 from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
-from trackhubs.tracks_status import save_tracks_status, fix_big_data_url
+from trackhubs.tracks_status import fetch_tracks_status, fix_big_data_url
 
 logger = logging.getLogger(__name__)
 
@@ -392,7 +392,7 @@ def save_and_update_document(hub_url, data_type, current_user):
             trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
-            tracks_status = save_tracks_status(trackdbs_info, trackdb_url)
+            tracks_status = fetch_tracks_status(trackdbs_info, trackdb_url)
 
             trackdb_data = []
             trackdb_configuration = {}
