@@ -69,6 +69,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
                 'password': 'Passwords must match!'
             })
         user.set_password(password)
+        # this will become true after the account is activated using email verification
+        user.is_active = False
         user.save()
         return user
 

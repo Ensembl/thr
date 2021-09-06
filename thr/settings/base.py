@@ -72,6 +72,7 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
@@ -227,7 +228,12 @@ LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'thr_home'
 LOGIN_URL = 'login'
 
-EMAIL_HOST = "localhost"
-EMAIL_PORT = 1025
+# this can be tested locally using the command:
+# python -m smtpd -n -c DebuggingServer localhost:1025
+EMAIL_HOST = 'localhost'  # 'smtp.gmail.com'
+EMAIL_PORT = 1025  # 587
+EMAIL_HOST_USER = ''  # trackhub-registry@ebi.ac.uk
+EMAIL_HOST_PASSWORD = ''  # e.g. google app password
+EMAIL_USE_TLS = False  # True
 
 THR_VERSION = "0.6"
