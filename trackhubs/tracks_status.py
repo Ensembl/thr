@@ -68,7 +68,7 @@ def check_response(url):
         return "{}".format(exp.reason)
 
 
-def save_tracks_status(trackdb_dict, trackdb_url):
+def fetch_tracks_status(trackdb_dict, trackdb_url):
     """
     Create the tracks status dictionary
     :param trackdb_dict: the trackdb dictionary containing all tracks

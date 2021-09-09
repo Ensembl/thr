@@ -44,34 +44,101 @@ class TrackdbDocument(Document):
     the search.api.serializers controls what will be shown after triggering a search query
     """
 
-    type = fields.TextField(attr='data_type_indexing')
-
+    type = fields.TextField(
+        attr='data_type_indexing',
+        analyzer=html_strip,
+        fields={
+            'raw': fields.KeywordField(),
+        }
+    )
+    
     hub = fields.ObjectField(properties={
-        'name': fields.KeywordField(),
-        'short_label': fields.TextField(),
-        'long_label': fields.TextField(),
-        'url': fields.TextField(),
-        'description_url': fields.TextField(),
-        'email': fields.TextField(),
+        'name': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'short_label': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'long_label': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'url': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'description_url': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
+        'email': fields.TextField(
+            analyzer=html_strip,
+            fields={
+                'raw': fields.KeywordField(),
+            }
+        ),
     })
 
     assembly = fields.ObjectField(
         attr='assembly_indexing',
         properties={
-            'accession': fields.KeywordField(),
-            'name': fields.KeywordField(),
-            'long_name': fields.TextField(),
-            'ucsc_synonym': fields.KeywordField(),
+            'accession': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'name': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'long_name': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'ucsc_synonym': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
     })
 
     species = fields.ObjectField(
         attr='species_indexing',
         properties={
             'taxon_id': fields.IntegerField(),
-            'scientific_name': fields.KeywordField(),
-            'common_name': fields.KeywordField(),
+            'scientific_name': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
+            'common_name': fields.TextField(
+                analyzer=html_strip,
+                fields={
+                    'raw': fields.KeywordField(),
+                }
+            ),
     })
 
+    status = fields.ObjectField()
     configuration = fields.ObjectField()
     data = fields.NestedField()
 
@@ -88,15 +155,11 @@ class TrackdbDocument(Document):
             'version',
             'created',
             'updated',
-            # 'status_message',
-            # 'status_last_update',
-            # 'status',
-            # 'source_url',
-            # 'source_checksum',
         ]
 
     # Meta is used to set dynamic mapping to false to avoid mapping explosion
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings
     class Meta:
+        model = Trackdb
         all = MetaField(enabled=False)
         dynamic = MetaField('false')

@@ -11,11 +11,10 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-import elasticsearch
-from django.core.management.base import BaseCommand, CommandError
-from django.db.models import Count
 
-from trackhubs.translator import save_and_update_document
+from django.core.management.base import BaseCommand
+
+from trackhubs.tracks_status import fetch_tracks_status
 import trackhubs.models
 
 
@@ -27,7 +26,8 @@ class Command(BaseCommand):
     def _enrich_docs(self):
         all_trackdbs = trackhubs.models.Trackdb.objects.all()
         for trackdb in all_trackdbs:
-            trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration)
+            tracks_status = fetch_tracks_status(trackdb.__dict__, trackdb.source_url)
+            trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration, tracks_status)
 
     def handle(self, *args, **options):
         # the command below will enrich all trackdbs stored in the DB
