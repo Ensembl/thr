@@ -43,7 +43,7 @@ def hub_check(hub_url):
 
     print("[INFO] Checking " + hub_url + "...")
     hub_check_result = subprocess.run(
-        ["tools/hubCheck", "-noTracks", hub_url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+        ["tools/hubCheck", "-noTracks", "-verbose=2", hub_url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
     )
     print(hub_check_result)
 
