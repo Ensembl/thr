@@ -135,7 +135,7 @@ def test_email_verification_success(api_client):
     # get the new registered user
     user = User.objects.get(email=payload['email'])
     # and make sure the account is not activated
-    assert user.is_active is False
+    assert user.is_account_activated is False
 
     # get token from email
     # use a regex to match the expected link

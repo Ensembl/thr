@@ -70,7 +70,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
             })
         user.set_password(password)
         # this will become true after the account is activated using email verification
-        user.is_active = False
+        user.is_account_activated = False
         user.save()
         return user
 

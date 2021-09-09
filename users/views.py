@@ -18,6 +18,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.conf import settings
 from rest_framework import status, authentication, permissions
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -31,6 +32,20 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # https://londonappdeveloper.com/json-web-tokens-vs-token-authentication/
 
 from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer
+
+
+# extend the ObtainAuthToken class to add is_account_activated status to API response
+class LoginViewAPI(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'email': user.email,
+            'is_account_activated': user.is_account_activated
+        })
 
 
 class RegistrationViewAPI(APIView):
@@ -50,9 +65,8 @@ class RegistrationViewAPI(APIView):
             access_token = RefreshToken.for_user(new_user).access_token
 
             # prepare the data that will be sent to user
-            current_site = get_current_site(request).domain
-            relative_link = reverse('email_verification_api')
-            full_url = 'http://' + current_site + relative_link + "?token=" + str(access_token)
+            fe_url = settings.FRONTEND_URL
+            full_url = 'http://' + fe_url + "/email_verification?token=" + str(access_token)
 
             send_mail(
                 subject='Verify your email',
@@ -63,7 +77,7 @@ class RegistrationViewAPI(APIView):
             )
 
             return Response(
-                {'success': 'User registered successfully! A verification link has been sent to your email account.'},
+                {'success': 'User registered successfully! A verification link has been sent to your email address'},
                 status=status.HTTP_201_CREATED
             )
 
@@ -81,15 +95,21 @@ class EmailVerificationView(APIView):
         try:
             payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms='HS256')
             user = User.objects.get(id=payload['user_id'])
-            if not user.is_active:
-                user.is_active = True
+            if not user.is_account_activated:
+                user.is_account_activated = True
                 user.save()
-            return Response({'success': 'Account successfully activated!'}, status=status.HTTP_200_OK)
+            return Response({'success': 'Account activated! Please login to your account'}, status=status.HTTP_200_OK)
 
         except jwt.ExpiredSignatureError as identifier:
-            return Response({'error': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'This activation link is expired or have already been used!'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except jwt.exceptions.DecodeError as identifier:
-            return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {'error': 'Invalid token!'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LogoutViewAPI(APIView):

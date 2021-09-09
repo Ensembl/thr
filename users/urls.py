@@ -13,14 +13,14 @@
 """
 
 from django.urls import path
-from rest_framework.authtoken.views import obtain_auth_token
 
-from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView, ChangePasswordView, EmailVerificationView
+from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView, ChangePasswordView, EmailVerificationView, \
+    LoginViewAPI
 
 urlpatterns = [
     path('user/', UserDetailsView.as_view(), name='user_api'),
     path('register', RegistrationViewAPI.as_view(), name='register_api'),
-    path('login', obtain_auth_token, name='login_api'),
+    path('login', LoginViewAPI.as_view(), name='login_api'),
     path('logout', LogoutViewAPI.as_view(), name='logout_api'),
     path('change_password', ChangePasswordView.as_view(), name='change_password_api'),
     path('email_verification', EmailVerificationView.as_view(), name='email_verification_api'),
