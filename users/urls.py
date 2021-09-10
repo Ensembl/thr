@@ -15,7 +15,8 @@
 from django.urls import path
 from rest_framework.authtoken.views import obtain_auth_token
 
-from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView, ChangePasswordView
+from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView, ChangePasswordView, \
+    ValidateResetPasswordAPI, ResetPasswordEmailView, SetNewPasswordAPI
 
 urlpatterns = [
     path('user/', UserDetailsView.as_view(), name='user_api'),
@@ -24,4 +25,7 @@ urlpatterns = [
     path('logout', LogoutViewAPI.as_view(), name='logout_api'),
     path('logout', LogoutViewAPI.as_view(), name='logout_api'),
     path('change_password', ChangePasswordView.as_view(), name='change_password_api'),
+    path('reset_password_email',  ResetPasswordEmailView.as_view(), name='reset_password_email_api'),
+    path('reset_password/<uidb64>/<token>',  ValidateResetPasswordAPI.as_view(), name='validate_reset_password_api'),
+    path('reset_password_complete',  SetNewPasswordAPI.as_view(), name='set_new_password_api'),
 ]

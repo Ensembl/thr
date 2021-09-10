@@ -11,10 +11,15 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from rest_framework.exceptions import AuthenticationFailed
 
-from users.models import CustomUser
+from users.models import CustomUser as User
 from rest_framework import serializers
 from django.contrib.auth import password_validation
+
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -25,7 +30,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = [
             'email',
             'username',
@@ -52,7 +57,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
                          "'automatic', 'weekly', 'monthly'".format(check_interval)
             })
 
-        user = CustomUser(
+        user = User(
             email=self.validated_data['email'],
             username=self.validated_data['username'],
             first_name=self.validated_data.get('first_name'),
@@ -73,7 +78,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return user
 
     def validate(self, attrs):
-        if CustomUser.objects.filter(email=attrs['email']).exists():
+        if User.objects.filter(email=attrs['email']).exists():
             raise serializers.ValidationError({
                 'email': 'Email already in use'
             })
@@ -87,7 +92,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
     continuous_alert = serializers.BooleanField(default=0)
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = [
             'email',
             'first_name',
@@ -98,7 +103,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, user):
-        if CustomUser.objects.filter(email=user.email).count() > 1:
+        if User.objects.filter(email=user.email).count() > 1:
             raise serializers.ValidationError({'email': 'Email already in use by another user'})
 
         user.email = self.validated_data.get('email')
@@ -135,3 +140,46 @@ class ChangePasswordSerializer(serializers.Serializer):
         user.set_password(password)
         user.save()
         return user
+
+
+class ResetPasswordEmailSerializer(serializers.Serializer):
+
+    email = serializers.EmailField(required=True, max_length=128)
+
+    class Meta:
+        fields = ['email']
+
+    def validate(self, attrs):
+        if User.objects.filter(email=attrs['email']).exists():
+            return super().validate(attrs)
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+
+    password = serializers.CharField(min_length=6, max_length=64, write_only=True)
+    uidb64 = serializers.CharField(min_length=1, write_only=True)
+    token = serializers.CharField(min_length=1, write_only=True)
+
+    class Meta:
+        fields = ['password', 'token', 'uidb64']
+
+    def validate(self, attrs):
+        try:
+            password = attrs.get('password')
+            uidb64 = attrs.get('uidb64')
+            token = attrs.get('token')
+
+            id = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=id)
+
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise AuthenticationFailed('The reset link is invalid', 401)
+
+            user.set_password(password)
+            user.save()
+            return user
+
+        except Exception as exp:
+            raise AuthenticationFailed(exp, 401)
+
+        return super().validate(attrs)
