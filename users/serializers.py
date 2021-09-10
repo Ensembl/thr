@@ -11,7 +11,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-from rest_framework.exceptions import AuthenticationFailed
 
 from users.models import CustomUser as User
 from rest_framework import serializers
@@ -23,7 +22,6 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
-
     email = serializers.EmailField(required=True, max_length=128)
     check_interval = serializers.CharField(required=True, max_length=128)
     continuous_alert = serializers.BooleanField(required=True)
@@ -86,7 +84,6 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
-
     email = serializers.EmailField(required=True, max_length=128)
     check_interval = serializers.ChoiceField(choices=['automatic', 'weekly', 'monthly'], required=True)
     continuous_alert = serializers.BooleanField(default=0)
@@ -117,7 +114,6 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
-
     old_password = serializers.CharField(max_length=128, write_only=True, required=True)
     new_password1 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     new_password2 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
@@ -143,7 +139,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class ResetPasswordEmailSerializer(serializers.Serializer):
-
     email = serializers.EmailField(required=True, max_length=128)
 
     class Meta:
@@ -155,7 +150,6 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
 
 
 class SetNewPasswordSerializer(serializers.Serializer):
-
     new_password = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     new_password_confirm = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     uidb64 = serializers.CharField(min_length=1, write_only=True)
@@ -166,26 +160,24 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
 
-        try:
-            new_password = attrs.get('new_password')
-            new_password_confirm = attrs.get('new_password_confirm')
-            uidb64 = attrs.get('uidb64')
-            token = attrs.get('token')
+        new_password = attrs.get('new_password')
+        new_password_confirm = attrs.get('new_password_confirm')
+        uidb64 = attrs.get('uidb64')
+        token = attrs.get('token')
 
-            if new_password != new_password_confirm:
-                raise AuthenticationFailed("The two password fields didn't match.", 400)
+        if new_password != new_password_confirm:
+            raise serializers.ValidationError({
+                "error": "The two password fields didn't match."
+            })
 
-            id = force_str(urlsafe_base64_decode(uidb64))
-            user = User.objects.get(id=id)
+        id = force_str(urlsafe_base64_decode(uidb64))
+        user = User.objects.get(id=id)
 
-            if not PasswordResetTokenGenerator().check_token(user, token):
-                raise AuthenticationFailed('The reset link is invalid', 401)
+        if not PasswordResetTokenGenerator().check_token(user, token):
+            raise serializers.ValidationError({
+                'error': 'The reset link is invalid'
+            })
 
-            user.set_password(new_password)
-            user.save()
-            return user
-
-        except Exception as exp:
-            raise AuthenticationFailed(exp, 401)
-
-        return super().validate(attrs)
+        user.set_password(new_password)
+        user.save()
+        return user
