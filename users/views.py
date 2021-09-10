@@ -29,6 +29,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 
+
 class RegistrationViewAPI(APIView):
     """
     User registration endpoint, if the request is successful,

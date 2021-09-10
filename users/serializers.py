@@ -119,8 +119,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
 class ChangePasswordSerializer(serializers.Serializer):
 
     old_password = serializers.CharField(max_length=128, write_only=True, required=True)
-    new_password1 = serializers.CharField(max_length=128, write_only=True, required=True)
-    new_password2 = serializers.CharField(max_length=128, write_only=True, required=True)
+    new_password1 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
+    new_password2 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
 
     def validate_old_password(self, value):
         user = self.context['request'].user
@@ -156,7 +156,8 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
 
 class SetNewPasswordSerializer(serializers.Serializer):
 
-    password = serializers.CharField(min_length=6, max_length=64, write_only=True)
+    new_password = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
+    new_password_confirm = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     uidb64 = serializers.CharField(min_length=1, write_only=True)
     token = serializers.CharField(min_length=1, write_only=True)
 
@@ -164,10 +165,15 @@ class SetNewPasswordSerializer(serializers.Serializer):
         fields = ['password', 'token', 'uidb64']
 
     def validate(self, attrs):
+
         try:
-            password = attrs.get('password')
+            new_password = attrs.get('new_password')
+            new_password_confirm = attrs.get('new_password_confirm')
             uidb64 = attrs.get('uidb64')
             token = attrs.get('token')
+
+            if new_password != new_password_confirm:
+                raise AuthenticationFailed("The two password fields didn't match.", 400)
 
             id = force_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=id)
@@ -175,7 +181,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
             if not PasswordResetTokenGenerator().check_token(user, token):
                 raise AuthenticationFailed('The reset link is invalid', 401)
 
-            user.set_password(password)
+            user.set_password(new_password)
             user.save()
             return user
 
