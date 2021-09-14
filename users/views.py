@@ -148,7 +148,7 @@ class ResetPasswordEmailView(APIView):
 
                 # send the email
                 fe_url = settings.FRONTEND_URL
-                full_url = 'http://' + fe_url + "/reset_password/" + uidb64 + "/" + token
+                full_url = 'http://' + fe_url + "/reset_password?uidb64=" + uidb64 + "&token=" + token
 
                 send_mail(
                     subject='[Trackhub Registry] Password reset',
@@ -168,7 +168,9 @@ class ValidateResetPasswordAPI(APIView):
     Validate reset password token
     """
 
-    def get(self, request, uidb64, token):
+    def get(self, request):
+        uidb64 = request.GET.get('uidb64')
+        token = request.GET.get('token')
         try:
             # get a human readable string of user ID
             id = smart_str(urlsafe_base64_decode(uidb64))

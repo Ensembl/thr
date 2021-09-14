@@ -145,8 +145,7 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
         fields = ['email']
 
     def validate(self, attrs):
-        if User.objects.filter(email=attrs['email']).exists():
-            return super().validate(attrs)
+        return super().validate(attrs)
 
 
 class SetNewPasswordSerializer(serializers.Serializer):
@@ -179,5 +178,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
             })
 
         user.set_password(new_password)
+        # TODO: uncomment the line below after email verification branch is merged
+        # resetting the password automatically activates the account
+        # user.is_account_activated = True
         user.save()
         return user
