@@ -13,8 +13,12 @@
 """
 
 import pytest
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.urls import reverse
+from django.utils.http import urlsafe_base64_encode
 from rest_framework.authtoken.models import Token
+
+from thr import settings
 
 
 @pytest.fixture
@@ -282,3 +286,124 @@ def test_change_user_password_fail(api_client, django_user_model, data, expected
     actual_result = response.json()
     assert actual_result == expected_result
     assert response.status_code == expected_status_code
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    'email, status_code', [
+        ({'': ''}, 400),
+        ({'email': ''}, 400),
+        ({'email': 123}, 400),
+        ({'randomfield': 'foo'}, 400),
+        ({'email': 'testuser@mail.com'}, 200),
+        ({'email': 'random@mail.com'}, 200),
+    ]
+)
+def test_reset_link_sent(api_client, email, status_code):
+    """
+    Make sure that the reset link is sent
+    whether the email exists or not as long as it's valid
+    """
+    reset_password_email_url = reverse('reset_password_email_api')
+    reset_password_email_response = api_client.post(reset_password_email_url, email)
+    # assert that the email is sent
+    assert reset_password_email_response.status_code == status_code
+
+
+def test_validate_reset_password_fail(api_client, create_user_resource):
+    """
+    Validate the token and uidb64
+    """
+    # get the user
+    user, _ = create_user_resource
+
+    # create a random password reset uid
+    uidb64 = 'MQ'
+    # create a password reset token
+    token = '5u2-2833487c076e005d0994'
+
+    # validate it using the api (it should fail)
+    reset_validation_response = api_client.get(
+        '/api/reset_password?uidb64=' + uidb64 + '?token=' + token
+    )
+    actual_result = reset_validation_response.json()
+    assert reset_validation_response.status_code == 400
+    assert actual_result == {'error': 'Token is not valid, please request a new one'}
+
+
+def test_validate_reset_password_success(api_client, create_user_resource):
+    """
+    Validate the token and uidb64
+    """
+    # get the user
+    user, _ = create_user_resource
+
+    # generate a uidb64 reset token
+    uidb64 = urlsafe_base64_encode(str(user.id).encode())
+    # generate a password reset token
+    token = PasswordResetTokenGenerator().make_token(user)
+
+    # validate it using the api
+    reset_validation_response = api_client.get(
+        'http://' + settings.BACKEND_URL + '/api/reset_password?uidb64=' + uidb64 + '&token=' + token
+    )
+    actual_result = reset_validation_response.json()
+    assert reset_validation_response.status_code == 200
+    assert actual_result == {
+        "success": "Credentials are Valid",
+        "uidb64": uidb64,
+        "token": token
+    }
+
+
+def test_reset_password_complete_success(api_client, create_user_resource):
+    """
+    Reset the password
+    """
+    # get the user
+    user, _ = create_user_resource
+
+    # generate a uidb64 reset token
+    uidb64 = urlsafe_base64_encode(str(user.id).encode())
+    # generate a password reset token
+    token = PasswordResetTokenGenerator().make_token(user)
+
+    url = reverse('set_new_password_api')
+    data = {
+        'new_password': 'new-password',
+        'new_password_confirm': 'new-password',
+        'uidb64': uidb64,
+        'token': token
+    }
+    set_new_password_response = api_client.patch(url, data=data)
+
+    actual_result = set_new_password_response.json()
+    print('actual_result --> ', actual_result)
+    assert set_new_password_response.status_code == 200
+    assert actual_result == {'success': 'Password reset successfully!'}
+
+
+def test_reset_password_complete_fail(api_client, create_user_resource):
+    """
+    Reset the password
+    """
+    # get the user
+    user, _ = create_user_resource
+
+    # create a random password reset uid
+    uidb64 = 'MQ'
+    # create a password reset token
+    token = '5u2-2833487c076e005d0994'
+
+    url = reverse('set_new_password_api')
+    data = {
+        'new_password': 'new-password',
+        'new_password_confirm': 'new-password',
+        'uidb64': uidb64,
+        'token': token
+    }
+    set_new_password_response = api_client.patch(url, data=data)
+
+    actual_result = set_new_password_response.json()
+    assert set_new_password_response.status_code == 400
+    assert actual_result == {'error': ['The reset link is invalid']}

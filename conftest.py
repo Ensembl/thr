@@ -36,7 +36,7 @@ def create_user_resource(django_user_model):
     """
     Create a temporary user then return the user and token
     """
-    user = django_user_model.objects.create_user(username='test_user', password='test-password')
+    user = django_user_model.objects.create_user(username='testuser', password='test-password', email='testuser@mail.com')
     token, _ = Token.objects.get_or_create(user=user)
     return user, token
 

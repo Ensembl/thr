@@ -11,6 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import django
 
 from thr import settings
 from django.contrib.auth import logout
@@ -136,7 +137,13 @@ class ResetPasswordEmailView(APIView):
 
     def post(self, request):
         serializer = self.serializer_class(data=request.data)
-        email = request.data['email']
+        try:
+            email = request.data['email']
+        except django.utils.datastructures.MultiValueDictKeyError:
+            return Response(
+                {'error': 'Email field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         if serializer.is_valid():
             user = User.objects.filter(email=email).first()
@@ -157,10 +164,12 @@ class ResetPasswordEmailView(APIView):
                     recipient_list=[user.email],
                     fail_silently=False
                 )
-        return Response(
-            {'success': 'Please check your email, We have sent you a link to reset your password'},
-            status=status.HTTP_200_OK
-        )
+            return Response(
+                {'success': 'Please check your email, We have sent you a link to reset your password'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ValidateResetPasswordAPI(APIView):

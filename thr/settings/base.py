@@ -246,5 +246,6 @@ EMAIL_HOST_PASSWORD = ''  # email password
 EMAIL_USE_TLS = False  # True
 
 FRONTEND_URL = 'localhost:3000'
+BACKEND_URL = 'localhost:8000'
 
 THR_VERSION = "0.6"
