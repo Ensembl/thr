@@ -12,7 +12,6 @@
    limitations under the License.
 """
 from datetime import datetime
-import json
 import logging
 import time
 
@@ -150,15 +149,6 @@ class Hub(models.Model):
         return trackdbs_ids_list
 
 
-class Genome(models.Model):
-    class Meta:
-        db_table = "genome"
-
-    genome_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    trackdb_location = models.CharField(max_length=255)
-
-
 class Assembly(models.Model):
     class Meta:
         db_table = "assembly"
@@ -168,7 +158,6 @@ class Assembly(models.Model):
     name = models.CharField(max_length=255, null=True)
     long_name = models.CharField(max_length=255, null=True)
     ucsc_synonym = models.CharField(max_length=255, null=True)
-    genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
 
 class Trackdb(models.Model):
@@ -188,7 +177,6 @@ class Trackdb(models.Model):
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
-    genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     species = models.ForeignKey(Species, on_delete=models.CASCADE)
 
     @property
