@@ -32,7 +32,6 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
-    # TODO: Rename 'taxon_id' to 'tax_id'
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)

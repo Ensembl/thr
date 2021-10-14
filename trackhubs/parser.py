@@ -18,13 +18,10 @@ import urllib.request
 logger = logging.getLogger(__name__)
 
 
-def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
+def parse_file_from_url(url):
     """
     Parse the hub.txt, genomes.txt and trackdb.txt files from given hub url
     :param url: hub,genomes or trackdb url
-    :param is_hub: is set to true if we are parsing a hub
-    :param is_genome: is set to true if we are parsing genomes
-    :param is_trackdb: is set to true if we are parsing trackdb
     :returns: an array of dictionaries, each dictionary contains one object
     either hub, genome or track
     hub_url examples:
@@ -32,7 +29,6 @@ def parse_file_from_url(url, is_hub=False, is_genome=False, is_trackdb=False):
     https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.txt
     ftp://ftp.vectorbase.org/public_data/rnaseq_alignments/hubs/aedes_aegypti/VBRNAseq_group_SRP039093/hub.txt
     http://urgi.versailles.inra.fr/repetdb/repetdb_trackhubs/repetdb_Melampsora_larici-populina_98AG31_v1.0/hub.txt
-    TODO: Remove is_XYZ from params
     """
     logger.info("Parsing '{}'".format(url))
     # dict_info is where key/value of each element (it can be hub, genome or track) is stored

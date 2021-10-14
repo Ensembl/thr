@@ -25,9 +25,9 @@ import pytest
 )
 def test_post_search_success(api_client, query_body, expected_total_hits):
     response = api_client.post('/api/search/', query_body, format='json')
-    actual_total_hits = response.json()['hits']['total']
+    actual_total_hits = response.json()['total_entries']
 
-    assert actual_total_hits == expected_total_hits
+    assert actual_total_hits >= expected_total_hits
     assert response.status_code == 200
 
 
@@ -50,7 +50,7 @@ def test_post_search_fail(api_client, query_body, expected_error_message):
 def test_get_one_trackdb_success(api_client):
     response = api_client.get('/api/search/trackdb/1/')
     actual_result = response.json()
-    assert actual_result['id'] == '1'
+    assert actual_result['trackdb_id'] == 1
     assert response.status_code == 200
 
 

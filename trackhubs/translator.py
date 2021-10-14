@@ -328,7 +328,7 @@ def save_and_update_document(hub_url, data_type, current_user):
     if 'error' in hub_check_result.keys():
         return hub_check_result
 
-    hub_info_array = parse_file_from_url(hub_url, is_hub=True)
+    hub_info_array = parse_file_from_url(hub_url)
 
     if hub_info_array:
         hub_info = hub_info_array[0]
@@ -343,7 +343,7 @@ def save_and_update_document(hub_url, data_type, current_user):
             data_type = 'genomics'
 
         genome_url = base_url + '/' + hub_info['genomesFile']
-        genomes_trackdbs_info = parse_file_from_url(genome_url, is_genome=True)
+        genomes_trackdbs_info = parse_file_from_url(genome_url)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
         hub_obj = save_hub(hub_info, data_type, current_user)
@@ -365,7 +365,7 @@ def save_and_update_document(hub_url, data_type, current_user):
             trackdb_url = base_url + '/' + genome_trackdb['trackDb']
             trackdb_obj = save_trackdb(trackdb_url, hub_obj, assembly_obj, error_or_species_obj)
 
-            trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
+            trackdbs_info = parse_file_from_url(trackdb_url)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
             tracks_status = fetch_tracks_status(trackdbs_info, trackdb_url)
