@@ -68,7 +68,7 @@ class Hub(models.Model):
 
     hub_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    short_label = models.CharField(max_length=255, null=True)
+    short_label = models.TextField(blank=True, null=True)
     long_label = models.TextField(blank=True, null=True)
     url = models.CharField(max_length=255)
     description_url = models.URLField(null=True)
@@ -308,14 +308,15 @@ class Track(models.Model):
 
     track_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    short_label = models.CharField(max_length=255, null=True)
+    short_label = models.TextField(blank=True, null=True)
     long_label = models.TextField(blank=True, null=True)
-    big_data_url = models.CharField(max_length=255, null=True)
+    big_data_url = models.TextField(blank=True, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
     additional_properties = JSONField(null=True)
     super_track = models.CharField(max_length=20, null=True)
     composite_track = models.CharField(max_length=20, null=True)
+    is_multiwig_track = models.BooleanField(default=False)
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     trackdb = models.ForeignKey(Trackdb, on_delete=models.CASCADE)
     # Set file_type nullable to true in track table because SuperTracks in JSON dump don't have a type field
