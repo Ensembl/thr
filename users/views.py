@@ -11,7 +11,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import django
 
+from thr import settings
 from django.contrib.auth import logout
 from rest_framework import status, authentication, permissions, generics
 from rest_framework.authtoken.models import Token
@@ -19,7 +21,14 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer
+from users.models import CustomUser as User
+from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer, \
+    ResetPasswordEmailSerializer, SetNewPasswordSerializer
+
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.core.mail import send_mail
 
 
 class RegistrationViewAPI(APIView):
@@ -114,5 +123,101 @@ class ChangePasswordView(UpdateAPIView):
         # return a success message with the new token
         return Response(
             {'success': 'Your password is updated successfully!', 'token': token.key},
+            status=status.HTTP_200_OK
+        )
+
+
+class ResetPasswordEmailView(APIView):
+    """
+    Endpoint allowing the user to submit their email
+    to send them a password reset link
+    """
+
+    serializer_class = ResetPasswordEmailSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        try:
+            email = request.data['email']
+        except django.utils.datastructures.MultiValueDictKeyError:
+            return Response(
+                {'error': 'Email field is required'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if serializer.is_valid():
+            user = User.objects.filter(email=email).first()
+            if user:
+                # encode the user id
+                uidb64 = urlsafe_base64_encode(str(user.id).encode())
+                # create the token
+                token = PasswordResetTokenGenerator().make_token(user)
+
+                # send the email
+                fe_url = settings.FRONTEND_URL
+                full_url = 'http://' + fe_url + "/reset_password?uidb64=" + uidb64 + "&token=" + token
+
+                send_mail(
+                    subject='[Trackhub Registry] Password reset',
+                    from_email='bilal@ebi.ac.uk',  # 'trackhub-registry@ebi.ac.uk',
+                    message='Hi, \nPlease use the link below to reset your password \n' + full_url,
+                    recipient_list=[user.email],
+                    fail_silently=False
+                )
+            return Response(
+                {'success': 'Please check your email, We have sent you a link to reset your password'},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ValidateResetPasswordAPI(APIView):
+    """
+    Validate reset password token
+    """
+
+    def get(self, request):
+        uidb64 = request.GET.get('uidb64')
+        token = request.GET.get('token')
+        try:
+            # get a human readable string of user ID
+            id = smart_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(id=id)
+
+            # make sure that user isn't using this token for a second time
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                return Response(
+                    {'error': 'Token is not valid, please request a new one'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            return Response(
+                {'success': 'Credentials are Valid', 'uidb64': uidb64, 'token': token},
+                status=status.HTTP_200_OK
+
+            )
+
+        except DjangoUnicodeDecodeError as exp:
+            return Response(
+                {'error': 'Token is not valid, please request a new one'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+
+class SetNewPasswordAPI(APIView):
+    """
+    Allow the user to reset the password
+    """
+
+    serializer_class = SetNewPasswordSerializer
+
+    def patch(self, request):
+        serializer = self.serializer_class(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+
+        return Response(
+            {'success': 'Password reset successfully!'},
             status=status.HTTP_200_OK
         )
