@@ -333,65 +333,62 @@ class Trackdb(models.Model):
         # - Triticum aestivum (IWGSC1+popseq/TGACv1, archive plant)
         # - Zea mays (AGPv3, archive plant)
 
-        # if it's human assembly
-        # only GRCh38.* and GRCh37.* assemblies are supported,
-        # domain is different in the two cases
-        if species_scientific_name.lower() == 'homo_sapiens':
-            if assembly_name.lower() == 'grch38':
-                division = 'www'
-            elif assembly_name.lower() == 'grch37':
-                division = 'grch37'
+        # The dictionary below contains the following information:
+        # species_assemblies_divisions = {
+        #       species_scientific_name: {
+        #           assembly_name: division
+        #       }
+        # }
+        species_assemblies_divisions = {
+            # if it's human assembly
+            # only GRCh38.* and GRCh37.* assemblies are supported,
+            # domain is different in the two cases
             # other human assemblies are not supported
-
-        # if it's mouse assembly
-        # any GRCm38 patch is supported, other assemblies are not
-        elif species_scientific_name.lower() == 'mus_musculus':
-            if assembly_name.lower() == 'grcm38':
-                division = 'www'
-
-        # if it's rat assembly must take archive into account
-        elif species_scientific_name.lower() == 'rattus_norvegicus':
-            if assembly_name.lower() == 'rnor_6':
-                division = 'www'
-            elif assembly_name.lower() == 'rnor_5':
-                division = 'mar2015.archive'
-
-        # if it's zebrafish assembly must take archive into account
-        elif species_scientific_name.lower() == 'danio_rerio':
-            if assembly_name.lower() == 'grcz10':
-                division = 'www'
-            elif assembly_name.lower() == 'zv9':
-                division = 'mar2015.archive'
-
-        # if it's fruitfly assembly must take archive into account
-        elif species_scientific_name.lower() == 'drosophila_melanogaster':
-            if assembly_name.lower() == 'release_6':
-                division = 'www'
-            elif assembly_name.lower() == 'release_5':
-                division = 'dec2014.archive'
-
-        # Handle old maize assembly
-        elif species_scientific_name.lower() == 'zea mays':
-            if assembly_name.lower() == 'b73_refgen_v3':
-                division = 'archive.plants'
-            elif assembly_name.lower() == 'agpv4':
+            "homo_sapiens": {
+                'grch38': 'www',
+                'grch37': 'grch37'
+            },
+            # if it's mouse assembly
+            # any GRCm38 patch is supported, other assemblies are not
+            "mus_musculus": {
+                'grcm38': 'www'
+            },
+            # if it's rat assembly must take archive into account
+            "rattus_norvegicus": {
+                'rnor_6': 'www',
+                'rnor_5': 'mar2015.archive'
+            },
+            # if it's zebrafish assembly must take archive into account
+            "danio_rerio": {
+                'grcz10': 'www',
+                'zv9': 'mar2015.archive'
+            },
+            # if it's fruitfly assembly must take archive into account
+            "drosophila_melanogaster": {
+                'release_6': 'www',
+                'release_5': 'dec2014.archive'
+            },
+            # Handle old maize assembly
+            "zea mays": {
+                'b73_refgen_v3': 'archive.plants',
                 # AGPv4 is new assembly but doesn't have accession
-                division = 'plants'
+                'agpv4': 'plants'
+            },
+            # Handle old wheat assembly, but also new since EG interface doesn't work here
+            "triticum_aestivum": {
+                'iwgsc1+popseq': 'archive.plants',
+                # TGACv1 is the 'newest' old assembly
+                'tgac': 'oct2017-plants',
+                # IWGSC is new assembly and has accession, but
+                # as said above EG interface cannot fetch entry from genome shared db
+                # this is weird as same code elsewhere using EG interface works
+                'iwgsc': 'plants'
+            },
+        }
 
-        # Handle old wheat assembly, but also new since EG interface doesn't work here
-        elif species_scientific_name.lower() == 'triticum_aestivum':
-            if assembly_name.lower() == 'iwgsc1+popseq':
-                division = 'archive.plants'
-            # TGACv1 is the 'newest' old assembly
-            elif assembly_name.lower() == 'tgac':
-                division = 'oct2017-plants'
-            # IWGSC is new assembly and has accession, but
-            # as said above EG interface cannot fetch entry from genome shared db
-            # this is weird as same code elsewhere using EG interface works
-            elif assembly_name.lower() == 'iwgsc':
-                division = 'plants'
+        division = species_assemblies_divisions.get(species_scientific_name.lower()).get(assembly_name.lower())
 
-        else:
+        if division is None:
             # Normal cases are here
             # see Translator.pm line 1231 onward
 
@@ -410,10 +407,11 @@ class Trackdb(models.Model):
 
             if genome_division == 'ensemblvertebrates':
                 division = 'www'
-            else:
-                # if genome_division.startswith('ensembl'):
+            elif genome_division.startswith('ensembl'):
                 # remove 'ensembl' string
                 division = genome_division[len('ensembl'):]
+            else:
+                raise Exception("Genome division: '{}' isn't recognized".format(genome_division))
 
         if division:
             domain = domain.replace('### DIVISION ###', division)
@@ -432,27 +430,21 @@ class Trackdb(models.Model):
         # VectorBase browser links
         vectorbase_domain = "https://www.vectorbase.org"
 
-        # handle special case: Anopheles stephensi strain Indian (Anopheles_stephensiI in VB)
-        # cannot use species scientific name as it does not have strain
-        if assembly_accession == 'GCA_000300775.2':
-            species_scientific_name = 'Anopheles_stephensi_indian'
+        assembly_accession_species_scientific_name = {
+            # handle special case: Anopheles stephensi strain Indian (Anopheles_stephensiI in VB)
+            # cannot use species scientific name as it does not have strain
+            'GCA_000300775.2': 'Anopheles_stephensi_indian',
+            # and similarly for other species, even if it's not planned to have track hubs for them at the moment
+            'GCA_000150785.1': 'Anopheles_gambiae_pimperena',
+            'GCA_000441895.2': 'Anopheles_sinensis_china',
+            # handle another special case: ENA uses Anopheles gambiae M as main species name instead of Anopheles coluzzii
+            'GCA_000150765.1': 'Anopheles_coluzzii',
+            # updates on Aeges aegypti assemblies
+            'GCA_000004015.1': 'Aedes_aegypti_lvp',  # was Aedes_aegypti
+            'GCA_002204515.1': 'Aedes_aegypti_lvpagwg',
+        }
 
-        # and similarly for other species, even if it's not planned to have track hubs for them at the moment
-        if assembly_accession == 'GCA_000150785.1':
-            species_scientific_name = 'Anopheles_gambiae_pimperena'
-        if assembly_accession == 'GCA_000441895.2':
-            species_scientific_name = 'Anopheles_sinensis_china'
-
-        # handle another special case: ENA uses Anopheles gambiae M as main species name instead of Anopheles coluzzii
-        if assembly_accession == 'GCA_000150765.1':
-            species_scientific_name = 'Anopheles_coluzzii'
-
-        # updates on Aeges aegypti assemblies
-        if assembly_accession == 'GCA_000004015.1':
-            species_scientific_name = 'Aedes_aegypti_lvp'  # was Aedes_aegypti
-
-        if assembly_accession == 'GCA_002204515.1':
-            species_scientific_name = 'Aedes_aegypti_lvpagwg'  # new separate assembly
+        species_scientific_name = assembly_accession_species_scientific_name.get(assembly_accession)
 
         browser_links['vectorbase'] = "{}/TrackHub?url={};species={};name={};registry=1".format(vectorbase_domain,
                                                                                                 hub_url,
