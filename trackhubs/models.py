@@ -317,8 +317,6 @@ class Trackdb(models.Model):
             browser_links['biodalliance'] = "/biodalliance/view?assembly={}&name={}&url={}" \
                 .format(assembly_ucsc_synonym, hub_short_label.strip(), hub_url)
 
-        # EnsEMBL browser link
-        domain = 'http://### DIVISION ###.ensembl.org'
         # Get the species scientific name using species id in trackdb object
         species_scientific_name = Species.objects.filter(id=self.species_id).values('scientific_name').first().get(
             'scientific_name')
@@ -413,19 +411,19 @@ class Trackdb(models.Model):
             else:
                 raise Exception("Genome division: '{}' isn't recognized".format(genome_division))
 
-        if division:
-            domain = domain.replace('### DIVISION ###', division)
+        # EnsEMBL browser link
+        domain = f'http://{division}.ensembl.org'
 
-            # if division contains the string 'archive' but not followed by '.plants'
-            if re.search("archive(?!\.plants)", division):
-                # link to plant archive site should be the current one
-                browser_links[
-                    'ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
-                    domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
-            else:
-                browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
-                                                                                                     species_scientific_name,
-                                                                                                     hub_short_label.strip().replace(' ', '%20'))
+        # if division contains the string 'archive' but not followed by '.plants'
+        if re.search("archive(?!\.plants)", division):
+            # link to plant archive site should be the current one
+            browser_links[
+                'ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
+                domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
+        else:
+            browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
+                                                                                                species_scientific_name,
+                                                                                                hub_short_label.strip().replace(' ', '%20'))
 
         # VectorBase browser links
         vectorbase_domain = "https://www.vectorbase.org"
