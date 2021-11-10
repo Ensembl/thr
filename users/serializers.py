@@ -14,7 +14,7 @@
 
 from rest_framework import serializers
 from django.contrib.auth import password_validation
-from users.models import CustomUser
+from users.models import CustomUser as User
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
@@ -102,7 +102,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
     def update(self, user):
         # pylint: disable = arguments-differ
-        if CustomUser.objects.filter(email=user.email).count() > 1:
+        if User.objects.filter(email=user.email).count() > 1:
             raise serializers.ValidationError({'email': 'Email already in use by another user'})
 
         user.email = self.validated_data.get('email')
