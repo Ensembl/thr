@@ -25,7 +25,7 @@ cd thr
 You can run the whole application ([Frontend](https://github.com/Ensembl/thr_frontend) + [Backend](https://github.com/Ensembl/thr)) using docker-compose:
 
 ```shell script
-docker-compose up
+docker-compose -f docker-compose-local.yml up
 ```
 
 > If it's executed for the first time it will take some time (~10min) to download the necessary images and setup the environment.
@@ -36,7 +36,7 @@ docker-compose up
 To stop the docker use:
 
 ```shell script
-docker-compose stop
+docker-compose -f docker-compose-local.yml stop
 ```
 
 > The `docker-compose stop` command will stop your containers, but it won't remove them. 

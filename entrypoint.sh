@@ -12,8 +12,6 @@ fi
 
 # create the static files to be used by the Django admin portal
 python manage.py collectstatic --noinput
-# migrate our current THR schema to the MySQL database
-python manage.py migrate --noinput
 
 # create a superuser defined by the environment variables
 echo "from django.contrib.auth.models import User;

@@ -14,10 +14,8 @@ services:
     env_file:
       - .env
     command: >
-      sh -c "# --fake-initial Allows to skip the initial migration if all database tables already exist.
-             python manage.py migrate --fake-initial &&
-             # python manage.py makemigrations &&
-             # python manage.py migrate &&
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
              # Build elasticsearch index
              sleep 20 &&
              python manage.py search_index --rebuild -f &&
