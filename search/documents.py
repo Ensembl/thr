@@ -44,46 +44,46 @@ class TrackdbDocument(Document):
     the search.api.serializers controls what will be shown after triggering a search query
     """
 
-    type = fields.StringField(
+    type = fields.TextField(
         attr='data_type_indexing',
         analyzer=html_strip,
         fields={
             'raw': fields.KeywordField(),
         }
     )
-
+    
     hub = fields.ObjectField(properties={
-        'name': fields.StringField(
+        'name': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'short_label': fields.StringField(
+        'short_label': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'long_label': fields.StringField(
+        'long_label': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'url': fields.StringField(
+        'url': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'description_url': fields.StringField(
+        'description_url': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'email': fields.StringField(
+        'email': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
@@ -94,25 +94,25 @@ class TrackdbDocument(Document):
     assembly = fields.ObjectField(
         attr='assembly_indexing',
         properties={
-            'accession': fields.StringField(
+            'accession': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
                 }
             ),
-            'name': fields.StringField(
+            'name': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
                 }
             ),
-            'long_name': fields.StringField(
+            'long_name': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
                 }
             ),
-            'ucsc_synonym': fields.StringField(
+            'ucsc_synonym': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
@@ -124,13 +124,13 @@ class TrackdbDocument(Document):
         attr='species_indexing',
         properties={
             'taxon_id': fields.IntegerField(),
-            'scientific_name': fields.StringField(
+            'scientific_name': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
                 }
             ),
-            'common_name': fields.StringField(
+            'common_name': fields.TextField(
                 analyzer=html_strip,
                 fields={
                     'raw': fields.KeywordField(),
@@ -142,7 +142,7 @@ class TrackdbDocument(Document):
     configuration = fields.ObjectField()
     data = fields.NestedField()
 
-    class Django(object):
+    class Django:
         """Inner nested class Django."""
 
         model = Trackdb  # The model associate with this Document

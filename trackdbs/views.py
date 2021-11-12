@@ -17,9 +17,9 @@ from django.http import Http404
 from elasticsearch_dsl import connections
 from rest_framework import authentication, permissions, status
 from rest_framework.views import APIView
-from trackdbs.serializers import TrackdbSerializer
-from trackhubs.models import Hub, Trackdb
 from rest_framework.response import Response
+from trackdbs.serializers import TrackdbSerializer
+from trackhubs.models import Trackdb
 
 
 class TrackdbDetail(APIView):
@@ -29,19 +29,22 @@ class TrackdbDetail(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_trackdb(self, pk):
+    @staticmethod
+    def get_trackdb(pk):
         try:
             return Trackdb.objects.get(pk=pk)
-        except Trackdb.DoesNotExist:
-            raise Http404
+        except Trackdb.DoesNotExist as trackdb_not_found:
+            raise Http404 from trackdb_not_found
 
     def get(self, request, pk):
+        # pylint: disable=invalid-name
         trackdb = self.get_trackdb(pk)
         serializer = TrackdbSerializer(trackdb)
         return Response(serializer.data)
 
     @transaction.atomic
     def delete(self, request, pk):
+        # pylint: disable=invalid-name
         trackdb = self.get_trackdb(pk)
 
         # delete the trackdb document from Elasticsearch
@@ -52,8 +55,8 @@ class TrackdbDetail(APIView):
 
         if current_user_id == hub_original_owner_id:
             try:
-                es = connections.Elasticsearch()
-                es.delete(index='trackhubs', doc_type='doc', id=trackdb.trackdb_id)
+                es_conn = connections.Elasticsearch()
+                es_conn.delete(index='trackhubs', doc_type='doc', id=trackdb.trackdb_id)
             except elasticsearch.exceptions.NotFoundError:
                 return Response(
                     {"error": "The trackdb doesn't exist, please check using 'GET api/trackdb/{}' endpoint".format(pk)},
@@ -64,8 +67,8 @@ class TrackdbDetail(APIView):
                     {"error": "Cannot connect to Elasticsearch"},
                     status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            except Exception as e:
-                return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as exp:
+                return Response({"error": str(exp)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(
                 {

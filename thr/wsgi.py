@@ -16,6 +16,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
+# pylint: disable=pointless-string-statement
 """
 WSGI config for thr project.
 

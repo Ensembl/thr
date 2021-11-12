@@ -12,9 +12,9 @@
    limitations under the License.
 """
 
-from users.models import CustomUser as User
 from rest_framework import serializers
 from django.contrib.auth import password_validation
+from users.models import CustomUser as User
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
@@ -45,6 +45,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
 
     def save(self):
+        # pylint: disable = arguments-differ
         check_interval = self.validated_data.get('check_interval')
 
         if not check_interval:
@@ -100,6 +101,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, user):
+        # pylint: disable = arguments-differ
         if User.objects.filter(email=user.email).count() > 1:
             raise serializers.ValidationError({'email': 'Email already in use by another user'})
 
@@ -114,6 +116,7 @@ class CustomUserSerializer(serializers.ModelSerializer):
 
 
 class ChangePasswordSerializer(serializers.Serializer):
+    # pylint: disable=abstract-method)
     old_password = serializers.CharField(max_length=128, write_only=True, required=True)
     new_password1 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     new_password2 = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
@@ -124,11 +127,11 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError('Your old password was entered incorrectly. Please enter it again.')
         return value
 
-    def validate(self, data):
-        if data['new_password1'] != data['new_password2']:
+    def validate(self, attrs):
+        if attrs['new_password1'] != attrs['new_password2']:
             raise serializers.ValidationError({"error": "The two password fields didn't match."})
-        password_validation.validate_password(data['new_password1'], self.context['request'].user)
-        return data
+        password_validation.validate_password(attrs['new_password1'], self.context['request'].user)
+        return attrs
 
     def save(self, **kwargs):
         password = self.validated_data['new_password1']
