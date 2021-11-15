@@ -21,7 +21,7 @@ from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from users.models import CustomUser as User
+from django.contrib.auth import get_user_model
 from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer, \
     ResetPasswordEmailSerializer, SetNewPasswordSerializer
 
@@ -29,6 +29,8 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
+
+User = get_user_model()
 
 
 class RegistrationViewAPI(APIView):

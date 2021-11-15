@@ -22,8 +22,10 @@ from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
-from users.models import CustomUser as User
+from django.contrib.auth import get_user_model
 import trackhubs
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 

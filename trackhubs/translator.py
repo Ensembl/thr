@@ -17,7 +17,7 @@ import logging
 import time
 
 import django
-from users.models import CustomUser as User
+from django.contrib.auth import get_user_model
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
@@ -25,6 +25,8 @@ from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
 from trackhubs.tracks_status import fetch_tracks_status, fix_big_data_url
+
+User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
