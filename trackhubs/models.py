@@ -22,10 +22,8 @@ from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
-from django.contrib.auth import get_user_model
+from users.models import CustomUser as User
 import trackhubs
-
-User = get_user_model()
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +52,7 @@ class FileType(models.Model):
 
     file_type_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    settings = JSONField()
+    settings = models.TextField(null=True)  # JSONField()
 
 
 class Visibility(models.Model):
@@ -181,9 +179,9 @@ class Trackdb(models.Model):
     version = models.CharField(default="v1.0", max_length=10)
     created = models.IntegerField(default=int(time.time()))
     updated = models.IntegerField(null=True)
-    configuration = JSONField()
-    data = JSONField()
-    status = JSONField()
+    configuration = models.TextField(null=True)  # JSONField()
+    data = models.TextField(null=True)  # JSONField()
+    status = models.TextField(null=True)  # JSONField()
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
@@ -327,7 +325,7 @@ class Track(models.Model):
     big_data_url = models.CharField(max_length=255, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
-    additional_properties = JSONField()
+    additional_properties = models.TextField(null=True)  # JSONField()
     composite_parent = models.CharField(max_length=2, null=True)
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     trackdb = models.ForeignKey(Trackdb, on_delete=models.CASCADE)
