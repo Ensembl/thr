@@ -38,9 +38,10 @@ def import_ena_dump(filepath):
             GenomeAssemblyDump.objects.all().delete()
             print("All rows are deleted! Please wait, the import process will take a while")
 
+            genome_assembly_dump_list = []
             for data in data_list:
                 accession_with_version = data.get('accession') + '.' + data.get('version')
-                GenomeAssemblyDump.objects.create(
+                genome_assembly_dump = GenomeAssemblyDump(
                     accession=data.get('accession'),
                     version=data.get('version'),
                     accession_with_version=accession_with_version,
@@ -51,6 +52,16 @@ def import_ena_dump(filepath):
                     ucsc_synonym=INSDC_TO_UCSC.get(accession_with_version),
                     api_last_updated=data.get('last_updated')
                 )
+                genome_assembly_dump_list.append(genome_assembly_dump)
+
+                # bulk insert in chunks to avoid the error:
+                # 1153, "Got a packet bigger than 'max_allowed_packet' bytes"
+                if len(genome_assembly_dump_list) == 100000:
+                    GenomeAssemblyDump.objects.bulk_create(genome_assembly_dump_list)
+                    genome_assembly_dump_list = []
+
+            GenomeAssemblyDump.objects.bulk_create(genome_assembly_dump_list)
+
             return len(data_list)
 
     except FileNotFoundError:
