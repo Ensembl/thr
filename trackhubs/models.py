@@ -24,8 +24,7 @@ import elasticsearch
 from elasticsearch_dsl import connections
 from users.models import CustomUser as User
 import trackhubs
-from trackhubs.utils import str2obj
-
+from .utils import str2obj
 logger = logging.getLogger(__name__)
 
 

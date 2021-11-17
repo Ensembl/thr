@@ -16,6 +16,7 @@ from django.core.management.base import BaseCommand
 
 from trackhubs.tracks_status import fetch_tracks_status
 import trackhubs.models
+from django.core import management
 
 
 class Command(BaseCommand):
@@ -30,6 +31,7 @@ class Command(BaseCommand):
             trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration, tracks_status)
 
     def handle(self, *args, **options):
+        management.call_command("search_index", "--rebuild", "-f")
         # the command below will enrich all trackdbs stored in the DB
         # e.g. python manage.py enrich
         self._enrich_docs()
