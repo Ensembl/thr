@@ -14,9 +14,7 @@ services:
     env_file:
       - .env
     command: >
-      sh -c "python manage.py makemigrations &&
-             python manage.py migrate &&
-             # Build elasticsearch index
+      sh -c "# Build elasticsearch index
              sleep 20 &&
              python manage.py search_index --rebuild -f &&
              pwd && gunicorn thr.wsgi:application --bind 0.0.0.0:8000 --timeout 120"

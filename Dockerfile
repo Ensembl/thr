@@ -45,7 +45,9 @@ RUN apk del .tmp
 
 # run entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+# NOTE: Uncomment the line below when running docker compose
+# It's disabled for the sake of Kubernetes deployment
+# ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
 
 # Useful resources:

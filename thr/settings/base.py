@@ -133,12 +133,12 @@ AUTH_USER_MODEL = 'users.CustomUser'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('THR_DB_NAME', 'thr_db'),
-        'USER': os.environ.get('THR_DB_USER', 'thr_dev'),
-        'PASSWORD': os.environ.get('THR_DB_PASSWORD', 'password'),
-        'HOST': os.environ.get('THR_HOST', 'mysql'),
-        'PORT': os.environ.get('THR_PORT', '3306'),
+        'ENGINE': os.environ.get('DB_ENGINE', 'django.db.backends.mysql'),
+        'NAME': os.environ.get('DB_DATABASE', 'thr_db'),
+        'USER': os.environ.get('DB_USER', 'thr_dev'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
+        'HOST': os.environ.get('DB_HOST', 'mysql'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             # Tell MySQLdb to connect with 'utf8mb4' character set
             'charset': 'utf8mb4',
@@ -155,7 +155,7 @@ ELASTICSEARCH_DSL = {
 
 # Name of the Elasticsearch index
 ELASTICSEARCH_INDEX_NAMES = {
-    'search.documents': 'trackhubs',
+    'search.documents': os.environ.get('ES_INDEX', 'trackhubs'),
 }
 
 # Password validation
