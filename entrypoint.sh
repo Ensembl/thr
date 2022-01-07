@@ -12,8 +12,11 @@ fi
 
 # create the static files to be used by the Django admin portal
 python manage.py collectstatic --noinput
+# find and delete any remaining migration files before creating new ones
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc"  -delete
 # migrate our current THR schema to the MySQL database
-python manage.py makemigration
+python manage.py makemigrations
 python manage.py migrate
 
 # create a superuser defined by the environment variables
