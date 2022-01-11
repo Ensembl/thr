@@ -30,6 +30,18 @@ RUN apk add --no-cache mariadb-connector-c-dev ;\
     pip install mysqlclient;\
     apk del .build-deps
 
+# Fix: Error loading shared library libstdc++.so.6: No such file or directory (needed by ./hubCheck)
+#      Error loading shared library libgcc_s.so.1: No such file or directory (needed by ./hubCheck)
+#      Error relocating /usr/src/app/tools/hubCheck: qsort_r: symbol not found
+# and many others (when running hubcheck $ ldd ./hubcheck)
+RUN apk update --no-cache && \
+    apk upgrade --no-cache && \
+    apk add --no-cache curl bash openssl libgcc libstdc++ ncurses-libs libc-dev patch g++ gcompat
+# download hubcheck utility
+RUN mkdir tools ;\
+    curl -o tools/hubCheck http://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/hubCheck ;\
+    chmod u+x tools/hubCheck
+
 # Required alpine packages to install uWSGI server in order to run django app
 RUN apk add --update --no-cache --virtual .tmp gcc libc-dev linux-headers
 
