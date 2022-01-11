@@ -27,4 +27,9 @@ User = get_user_model();
 User.objects.filter(email='$DJANGO_ADMIN_EMAIL').delete();
 User.objects.create_superuser('$DJANGO_ADMIN_USER', '$DJANGO_ADMIN_EMAIL', '$DJANGO_ADMIN_PASSWORD')" | python manage.py shell
 
+# import the assembly dump
+python manage.py import_assemblies --fetch ena
+# and load it to MySQL DB
+python manage.py import_assemblies
+
 exec "$@"
