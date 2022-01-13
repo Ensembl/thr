@@ -19,6 +19,9 @@ find . -path "*/migrations/*.pyc"  -delete
 python manage.py makemigrations
 python manage.py migrate
 
+# build ES index
+python manage.py search_index --rebuild -f
+
 # create a superuser defined by the environment variables
 # Fix: 'Manager isn't available' error
 # https://stackoverflow.com/a/67530965/4488332
