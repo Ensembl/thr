@@ -257,10 +257,13 @@ def get_assembly_info_from_dump(genome_assembly_name):
     """
     assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
     assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
+    assembly_info_from_dump_accession = GenomeAssemblyDump.objects.filter(accession_with_version=genome_assembly_name).first()
     if assembly_info_from_dump:
         return assembly_info_from_dump
     if assembly_info_from_dump_ucsc_synonym:
         return assembly_info_from_dump_ucsc_synonym
+    elif assembly_info_from_dump_accession:
+        return assembly_info_from_dump_accession
     return None
 
 
