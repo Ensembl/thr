@@ -28,7 +28,7 @@ class TrackdbDocumentSerializer(DocumentSerializer):
     status = serializers.SerializerMethodField()
     type = serializers.SerializerMethodField()
 
-    class Meta(object):
+    class Meta:
         """Meta options."""
 
         # Specify the correspondent document class

@@ -14,20 +14,20 @@
 import time
 
 import pytest
-import trackhubs
+# import trackhubs
 from trackhubs.constants import FILE_TYPES, DATA_TYPES, VISIBILITY
 from trackhubs import translator, models
 
 
 @pytest.mark.django_db
 def test_save_datatype_filetype_visibility():
-    trackhubs.translator.save_datatype_filetype_visibility(DATA_TYPES, trackhubs.models.DataType)
-    trackhubs.translator.save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
-    trackhubs.translator.save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
+    translator.save_datatype_filetype_visibility(DATA_TYPES, models.DataType)
+    translator.save_datatype_filetype_visibility(FILE_TYPES, models.FileType)
+    translator.save_datatype_filetype_visibility(VISIBILITY, models.Visibility)
 
-    saved_datatypes_count = trackhubs.models.DataType.objects.all().count()
-    saved_filetypes_count = trackhubs.models.FileType.objects.all().count()
-    saved_visibilities_count = trackhubs.models.Visibility.objects.all().count()
+    saved_datatypes_count = models.DataType.objects.all().count()
+    saved_filetypes_count = models.FileType.objects.all().count()
+    saved_visibilities_count = models.Visibility.objects.all().count()
 
     assert saved_datatypes_count == len(DATA_TYPES)
     assert saved_filetypes_count == len(FILE_TYPES)
@@ -36,16 +36,16 @@ def test_save_datatype_filetype_visibility():
 
 @pytest.mark.django_db
 def test_get_datatype_filetype_visibility():
-    actual_datatype_obj = trackhubs.models.DataType.objects.create(name='genomics')
-    expected_datatype_obj = trackhubs.translator.get_datatype_filetype_visibility('genomics', trackhubs.models.DataType)
+    actual_datatype_obj = models.DataType.objects.create(name='genomics')
+    expected_datatype_obj = translator.get_datatype_filetype_visibility('genomics', models.DataType)
     assert actual_datatype_obj == expected_datatype_obj
 
-    actual_filetype_obj = trackhubs.models.FileType.objects.create(name='bam')
-    expected_filetype_obj = trackhubs.translator.get_datatype_filetype_visibility('bam', trackhubs.models.FileType)
+    actual_filetype_obj = models.FileType.objects.create(name='bam')
+    expected_filetype_obj = translator.get_datatype_filetype_visibility('bam', models.FileType)
     assert actual_filetype_obj == expected_filetype_obj
 
-    actual_visibility_obj = trackhubs.models.Visibility.objects.create(name='hide')
-    expected_visibility_obj = trackhubs.translator.get_datatype_filetype_visibility('hide', trackhubs.models.Visibility)
+    actual_visibility_obj = models.Visibility.objects.create(name='hide')
+    expected_visibility_obj = translator.get_datatype_filetype_visibility('hide', models.Visibility)
     assert actual_visibility_obj == expected_visibility_obj
 
 
@@ -127,14 +127,14 @@ def test_save_track(create_track_resource):
     ]
 )
 def test_get_first_word(string_with_spaces, expected_result):
-    actual_result = trackhubs.translator.get_first_word(string_with_spaces)
+    actual_result = translator.get_first_word(string_with_spaces)
     assert expected_result == actual_result
 
 
 @pytest.mark.django_db
 def test_add_parent_id(create_track_resource, create_child_track_resource):
     parent_name = 'JASPAR2020_TFBS_hg19 off'
-    parent_track = trackhubs.translator.add_parent_id(
+    parent_track = translator.add_parent_id(
         parent_name=parent_name,
         current_track=create_child_track_resource
     )
@@ -144,7 +144,7 @@ def test_add_parent_id(create_track_resource, create_child_track_resource):
 
 @pytest.mark.django_db
 def test_get_parents(create_child_track_with_parent_resource):
-    parent_track, grandparent_track = trackhubs.translator.get_parents(create_child_track_with_parent_resource)
+    parent_track, grandparent_track = translator.get_parents(create_child_track_with_parent_resource)
     assert parent_track.track_id == create_child_track_with_parent_resource.parent_id
     assert grandparent_track is None
 
@@ -158,7 +158,7 @@ def test_get_parents(create_child_track_with_parent_resource):
 )
 @pytest.mark.django_db
 def test_is_hub_exists(hub_url, expected_result, create_hub_resource):
-    actual_result = trackhubs.translator.is_hub_exists(hub_url)
+    actual_result = translator.is_hub_exists(hub_url)
     assert actual_result == expected_result
 
 
@@ -166,8 +166,9 @@ def test_is_hub_exists(hub_url, expected_result, create_hub_resource):
 def test_save_and_update_document_success(project_dir, create_user_resource, create_genome_assembly_dump_resource):
     user, _ = create_user_resource
 
-    fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
-    actual_result = trackhubs.translator.save_and_update_document(fake_hub_url, data_type='genomics', current_user=user)
+    # fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+    fake_hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
+    actual_result = translator.save_and_update_document(fake_hub_url, data_type='genomics', current_user=user)
     expected_result = {'success': 'The hub is submitted successfully'}
     assert actual_result == expected_result
 
@@ -183,5 +184,5 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
 def test_save_and_update_document_fail(hub_url, expected_error_key_result, create_user_resource, create_hub_resource):
     user, _ = create_user_resource
 
-    actual_result = trackhubs.translator.save_and_update_document(hub_url, data_type='genomics', current_user=user)
+    actual_result = translator.save_and_update_document(hub_url, data_type='genomics', current_user=user)
     assert expected_error_key_result in actual_result

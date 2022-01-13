@@ -43,7 +43,10 @@ def hub_check(hub_url):
 
     print("[INFO] Checking " + hub_url + "...")
     hub_check_result = subprocess.run(
-        ["tools/hubCheck", "-noTracks", "-verbose=2", hub_url], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True
+        ["tools/hubCheck", "-noTracks", hub_url],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True
     )
     print(hub_check_result)
 
@@ -63,13 +66,13 @@ def hub_check(hub_url):
     if warnings:
         return {
             'warning': 'Warnings found (they can be ignored)',
-            'details': [war for war in other_lines]
+            'details': list(war for war in other_lines)
         }
 
     if error:
         return {
             'error': 'Error in hub {}: {}'.format(hub_url, line_0.strip(':')),
-            'details': [err for err in other_lines]
+            'details': list(err for err in other_lines)
         }
 
     return {

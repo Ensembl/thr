@@ -1,34 +1,102 @@
 image: python:3.7
 
+# GitLab CI uses the services keyword to define what docker containers should be linked with our base image.
+# Since we are using docker as our image we'll be using docker:dind i.e. Docker-In-Docker-Image
 services:
-  - name: mysql:5.7
-    alias: mysql_db
-
-  - name: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
-    alias: elasticsearch
-    command: ["bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node"]
-
-before_script:
-  - python -V
+  - name: docker:19.03.12-dind
 
 variables:
-  # Configure mysql service (https://hub.docker.com/_/mysql/)
-  MYSQL_HOST: "mysql_db"
-  MYSQL_DATABASE: "test_thr_db"
-  MYSQL_USER: "thr_dev"
-  MYSQL_PASSWORD: "password"
-  MYSQL_ROOT_PASSWORD: "password"
-  ELASTICSEARCH_URL: "http://elasticsearch:9200"
+  # Environemt Variable for docker:dind service explaining to use overlay2 as supporting driver for docker
+  DOCKER_DRIVER: overlay2
+  # Use TLS https://docs.gitlab.com/ee/ci/docker/using_docker_build.html#tls-enabled
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+
+
+# This is the major part of the code which explains the stages present in our pipeline.
+# In a django application we have various stages which include testing, packing the code,
+# performing migrations, collecting static files and running the application.
+# The various stages are broadly classified into 3 main categories:
+# 1. Test       2. Release      3. Deploy
 
 stages:
   - test
+  - build
+  - deploy
 
-test_app:
+
+# Test
+
+pylint:
   stage: test
-  script:
-    - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
+  # This job doesn't depend on the others
+  needs: []
+  before_script:
+    # Installing mysql and requirements
     - pip install -r requirements.txt
-    - echo "Sleeping for 15 seconds.."; sleep 15;
+  script:
+    - python -V
+    - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
+
+
+pytest:
+  stage: test
+  before_script:
+    # Installing mysql and requirements
+    - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
+    - mysql --version
+    - echo "Sleeping for 20 seconds.."; sleep 20;
+    - pip install -r requirements.txt
+    # Executing makemigrations and migrate
+    - python manage.py makemigrations
+    - python manage.py migrate
     - curl http://elasticsearch:9200
+    # Delete the indices and then recreate and populate them
+    - python manage.py search_index --rebuild -f
+    - curl -X GET "elasticsearch:9200/_cat/indices"
+
+  variables:
+    # Configure mysql service (https://hub.docker.com/_/mysql/)
+    MYSQL_HOST: "mysql"
+    MYSQL_DATABASE: "thr_db"
+    MYSQL_USER: "thr_dev"
+    MYSQL_PASSWORD: "password"
+    MYSQL_ROOT_PASSWORD: "password"
+    # Configure Elascticsearch
+    ELASTICSEARCH_URL: "http://elasticsearch:9200"
+
+  services:
+    - name: mysql:5.7
+      alias: mysql
+
+    - name: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+      alias: elasticsearch
+      command: [ "bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node" ]
+
+  script:
+    - python -V
+    # Command to test our application
     - pytest -v
 
+
+# Build
+
+build:
+  image: docker:19.03.12
+  stage: build
+  needs: ["pytest"]
+  services:
+    - docker:19.03.12-dind
+  variables:
+    IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_TOKEN $CI_REGISTRY
+    - docker build -t $IMAGE_TAG .
+    - docker push $IMAGE_TAG
+
+# Deploy
+# TBC..
+
+# Useful resources:
+# https://docs.gitlab.com/ee/user/packages/container_registry/
+# https://www.agiliq.com/blog/2018/07/ci-and-cd-for-django-using-gitlab-ci/

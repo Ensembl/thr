@@ -200,6 +200,7 @@ class TrackdbDocumentDetailView(APIView):
     """The TrackhubDocumentDetail view."""
 
     def get(self, request, pk):
+        # pylint: disable=invalid-name
         try:
             trackdb_document = TrackdbDocument.get(id=pk)
         except elasticsearch.exceptions.NotFoundError:

@@ -41,7 +41,7 @@ def fix_big_data_url(big_data_url, trackdb_url):
         validate(big_data_url)
         return big_data_url
 
-    except ValidationError as e:
+    except ValidationError:
         return trackdb_base_url + '/' + big_data_url
 
 
@@ -56,16 +56,16 @@ def check_response(url):
     check_response makes sure that the file exists
     """
     try:
-        r = urllib.request.urlopen(url)
-        return r.getcode()
-    except urllib.error.HTTPError as e:
+        response = urllib.request.urlopen(url)
+        return response.getcode()
+    except urllib.error.HTTPError as exp:
         # Return code error (e.g. 404, 501, ...)
-        logger.error('HTTPError: {}'.format(e.code))
-        return "{}: {}".format(e.code, e.reason)
-    except urllib.error.URLError as e:
+        logger.error('HTTPError: {}'.format(exp.code))
+        return "{}: {}".format(exp.code, exp.reason)
+    except urllib.error.URLError as exp:
         # Not an HTTP-specific error (e.g. connection refused, FTP errors)
-        logger.error('URLError: {}'.format(e.reason))
-        return "{}".format(e.reason)
+        logger.error('URLError: {}'.format(exp.reason))
+        return "{}".format(exp.reason)
 
 
 def fetch_tracks_status(trackdb_dict, trackdb_url):
