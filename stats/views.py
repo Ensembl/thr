@@ -34,7 +34,8 @@ class SummaryStatsView(APIView):
           [ 'Species', 140, 'color: #76A7FA' ],
           [ 'Assemblies', 161, 'opacity: 0.2' ]
         ]
-        The structure may change in the future depending on what React FE requires to render the graph
+        The structure may change in the future depending on
+        what React FE requires to render the graph
         """
         try:
             summary = [

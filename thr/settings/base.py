@@ -15,6 +15,7 @@
 import os
 from pathlib import Path
 
+# pylint: disable=pointless-string-statement
 """
 Django settings for thr project.
 
@@ -27,12 +28,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
+# TODO: take a look at the checklist
+# Quick-start development settings - unsuitable for production
+# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR her is 'thr/thr'
 BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+# Get Django environment set by docker (i.e either development or production), or else set it to local
+DJANGO_ENV = os.environ.get('DJANGO_ENV', 'local')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ.get('SECRET_KEY', 'changeme')
@@ -40,10 +45,17 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'changeme')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(int(os.environ.get('DEBUG', 0)))
 
-ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS')
-if ALLOWED_HOSTS_ENV:
-    ALLOWED_HOSTS.extend(ALLOWED_HOSTS_ENV.split(','))
+# it will be set depending on the environement
+ALLOWED_HOSTS = []
+
+# If Django environement has been set by docker it would be either development
+# or production otherwise it would be undefined or local
+if DJANGO_ENV == 'development':
+    DEBUG = True
+    ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', 'localhost']
+
+elif DJANGO_ENV == 'production':
+    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 
 # Application definition
 
@@ -137,6 +149,7 @@ DATABASES = {
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': os.environ.get('ES_HOST', 'elasticsearch:9200'),
+        'timeout': 600,  # Custom timeout
     },
 }
 
@@ -224,20 +237,32 @@ USE_L10N = True
 
 USE_TZ = True
 
+
+# (CORS) Cross-Origin Resource Sharing Settings
+CORS_ORIGIN_ALLOW_ALL = True
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
-STATIC_URL = '/static/static/'
-MEDIA_URL = '/static/media/'
-
-STATIC_ROOT = '/vol/web/static'
-MEDIA_ROOT = '/vol/web/media'
+# We add the variable STATIC_ROOT which defines where the static files are collected in the production build
+# when the command 'python manage.py collectstatic --noinput' is run from the 'entrypoint.sh' file,
+# otherwise this command would not run.
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_URL = '/static/'
 
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'thr_home'
 LOGIN_URL = 'login'
 
-EMAIL_HOST = "localhost"
-EMAIL_PORT = 1025
+# this can be tested locally using the command:
+# python -m smtpd -n -c DebuggingServer localhost:1025
+EMAIL_HOST = 'localhost'  # 'smtp'
+EMAIL_PORT = 1025  # 587
+EMAIL_HOST_USER = ''  # trackhub-registry@ebi.ac.uk
+EMAIL_HOST_PASSWORD = ''  # email password
+EMAIL_USE_TLS = False  # True
+
+FRONTEND_URL = 'localhost:3000'
+BACKEND_URL = 'localhost:8000'
 
 THR_VERSION = "0.6"

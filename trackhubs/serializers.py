@@ -40,6 +40,7 @@ class CustomHubListSerializer(serializers.ModelSerializer):
     trackdbs = serializers.SerializerMethodField()
 
     def get_trackdbs(self, obj):
+        # pylint: disable=no-self-use
         return obj.get_trackdbs_list_from_hub()
 
     class Meta(HubSerializer.Meta):
@@ -63,4 +64,5 @@ class CustomOneHubSerializer(serializers.ModelSerializer):
         ]
 
     def get_trackdbs(self, obj):
+        # pylint: disable=no-self-use
         return obj.get_trackdbs_full_list_from_hub()

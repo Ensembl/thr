@@ -19,7 +19,8 @@ def test_post_trackhub_success(project_dir, api_client, create_user_resource, cr
     _, token = create_user_resource
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt',
         'assemblies': {
             'assembly1': 'assembly1_value',
             'assembly2': 'assembly2_value'
@@ -45,7 +46,8 @@ def test_post_trackhub_no_url_field(project_dir, api_client, create_user_resourc
     _, token = create_user_resource
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
-        'wrong_field_name': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        # 'wrong_field_name': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        'wrong_field_name': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     assert response.status_code == 400
@@ -53,7 +55,8 @@ def test_post_trackhub_no_url_field(project_dir, api_client, create_user_resourc
 
 def test_post_trackhub_without_login(project_dir, api_client):
     submitted_hub = {
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     assert response.status_code == 401
@@ -70,7 +73,8 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
         'name': 'JASPAR_TFBS',
         'short_label': 'JASPAR TFBS',
         'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',
         'email': 'wyeth@cmmt.ubc.ca',
         'trackdbs': [
@@ -109,7 +113,8 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
         'name': 'JASPAR_TFBS',
         'short_label': 'JASPAR TFBS',
         'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/trackDb.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',
         'email': 'wyeth@cmmt.ubc.ca',
         'trackdbs': [

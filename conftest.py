@@ -22,6 +22,9 @@ from thr.settings import BASE_DIR
 
 @pytest.fixture
 def project_dir():
+    """
+    INFO: this fixture isn't used for now because it breaks CI tests
+    """
     return BASE_DIR.parent
 
 
@@ -36,7 +39,7 @@ def create_user_resource(django_user_model):
     """
     Create a temporary user then return the user and token
     """
-    user = django_user_model.objects.create_user(username='test_user', password='test-password')
+    user = django_user_model.objects.create_user(username='testuser', password='test-password', email='testuser@mail.com')
     token, _ = Token.objects.get_or_create(user=user)
     return user, token
 
@@ -101,7 +104,8 @@ def create_trackhub_resource(project_dir, api_client, create_user_resource, crea
     _, token = create_user_resource
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     return response

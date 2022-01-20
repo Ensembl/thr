@@ -1,0 +1,117 @@
+version: '3.7'
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - django_static_volume:/usr/src/app/static
+    expose:
+      - 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             # Build elasticsearch index
+             sleep 20 &&
+             python manage.py search_index --rebuild -f &&
+             pwd && gunicorn thr.wsgi:application --bind 0.0.0.0:8000 --timeout 120"
+    depends_on:
+      - mysql
+      - elasticsearch
+    networks:
+      - dbnet
+      - webnet
+
+  react:
+      build:
+        # Build from GitHub repo: https://docs.docker.com/engine/reference/commandline/build/#git-repositories
+        context: https://github.com/Ensembl/thr_frontend.git#feat/docker_and_ci
+        dockerfile: Dockerfile
+        args:
+          - API_SERVER=${ENV_API_SERVER}
+      volumes:
+        - react_static_volume:/usr/src/app/build/static
+      expose:
+        - 3000
+      env_file:
+        - .env
+      command: serve -s build -l 3000
+      depends_on:
+        - django
+      networks:
+        - webnet
+
+  mysql:
+    image: mysql:$MYSQL_VERSION
+    command:
+      # Set max_allowed_packet to 256M
+      # Fix Aborted connection 11 to db: 'DB' user: 'USER' host: 'HOST' (Got an error reading communication packets)
+      - --max_allowed_packet=32505856
+      # wait_timeout may be need in case we get mysql timeout errors in the future
+      # - --wait_timeout=28800
+    ports:
+      - "3306:3306"
+    volumes:
+      # using 'mysql_data:/var/lib/mysql/' instead of 'mysql_data:/var/lib/mysql/data/'
+      # fixed '[ERROR] --initialize specified but the data directory has files in it. Aborting.'
+      - mysql_data:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=${DB_DATABASE}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      # fix 'Database is uninitialized and password option is not specified'
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
+    networks:
+      - dbnet
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:$ELASTIC_VERSION
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    expose:
+      - 9200
+      - 9300
+    environment:
+      # https://discuss.elastic.co/t/problems-with-access-to-elasticsearch-form-outside-machine/172450
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms2g -Xmx2g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - dbnet
+
+  nginx:
+    restart: always
+    build: ./nginx
+    volumes:
+      - django_static_volume:/usr/src/app/django_files/static
+      - react_static_volume:/usr/src/app/react_files/static
+    ports:
+      - 80:80
+    depends_on:
+      - react
+      - django
+    networks:
+      - webnet
+
+volumes:
+  mysql_data:
+  django_static_volume:
+  react_static_volume:
+
+networks:
+  dbnet: {}
+  # fix 'nginx: [emerg] host not found in upstream' error
+  webnet:
+    driver: bridge
