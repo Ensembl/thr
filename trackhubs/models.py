@@ -36,7 +36,6 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
-    # TODO: Rename 'taxon_id' to 'tax_id'
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)
@@ -56,7 +55,7 @@ class FileType(models.Model):
 
     file_type_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    settings = JSONField()
+    settings = JSONField(null=True)
 
 
 class Visibility(models.Model):
@@ -64,7 +63,7 @@ class Visibility(models.Model):
         db_table = "visibility"
 
     visibility_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=45)
+    name = models.CharField(default="hide", max_length=45)
 
 
 class Hub(models.Model):
@@ -72,13 +71,14 @@ class Hub(models.Model):
         db_table = "hub"
 
     hub_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    short_label = models.CharField(max_length=255, null=True)
-    long_label = models.CharField(max_length=255, null=True)
+    name = models.CharField(max_length=255)
+    short_label = models.TextField(blank=True, null=True)
+    long_label = models.TextField(blank=True, null=True)
     url = models.CharField(max_length=255)
     description_url = models.URLField(null=True)
     email = models.EmailField(null=True)
     data_type = models.ForeignKey(DataType, on_delete=models.CASCADE)
+    assembly_hub = models.BooleanField(default=False)
     # TODO: make sure that if the owner is deleted, the hubs are deleted too
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
@@ -152,15 +152,6 @@ class Hub(models.Model):
         return trackdbs_ids_list
 
 
-class Genome(models.Model):
-    class Meta:
-        db_table = "genome"
-
-    genome_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    trackdb_location = models.CharField(max_length=255)
-
-
 class Assembly(models.Model):
     class Meta:
         db_table = "assembly"
@@ -170,7 +161,6 @@ class Assembly(models.Model):
     name = models.CharField(max_length=255, null=True)
     long_name = models.CharField(max_length=255, null=True)
     ucsc_synonym = models.CharField(max_length=255, null=True)
-    genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
 
 
 class Trackdb(models.Model):
@@ -191,7 +181,6 @@ class Trackdb(models.Model):
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
-    genome = models.ForeignKey(Genome, on_delete=models.CASCADE)
     species = models.ForeignKey(Species, on_delete=models.CASCADE)
 
     @property
@@ -503,16 +492,19 @@ class Track(models.Model):
 
     track_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    short_label = models.CharField(max_length=255, null=True)
-    long_label = models.CharField(max_length=255, null=True)
-    big_data_url = models.CharField(max_length=255, null=True)
+    short_label = models.TextField(blank=True, null=True)
+    long_label = models.TextField(blank=True, null=True)
+    big_data_url = models.TextField(blank=True, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
-    additional_properties = JSONField()
-    composite_parent = models.CharField(max_length=2, null=True)
+    additional_properties = JSONField(null=True)
+    super_track = models.CharField(max_length=20, null=True)
+    composite_track = models.CharField(max_length=20, null=True)
+    is_multiwig_track = models.BooleanField(default=False)
     parent = models.ForeignKey('self', null=True, on_delete=models.CASCADE)
     trackdb = models.ForeignKey(Trackdb, on_delete=models.CASCADE)
-    file_type = models.ForeignKey(FileType, on_delete=models.CASCADE)
+    # Set file_type nullable to true in track table because SuperTracks in JSON dump don't have a type field
+    file_type = models.ForeignKey(FileType, on_delete=models.CASCADE, null=True)
     visibility = models.ForeignKey(Visibility, on_delete=models.CASCADE)
 
 
