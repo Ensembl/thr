@@ -142,7 +142,7 @@ class TrackdbDocumentListView(DocumentViewSet):
 
     document = TrackdbDocument
     serializer_class = TrackdbDocumentSerializer
-    
+
     lookup_field = 'id'
     filter_backends = [
         CustomFilteringFilterBackend,

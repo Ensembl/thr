@@ -109,30 +109,11 @@ def save_hub(hub_dict, data_type, current_user):
     return new_hub_obj
 
 
-def save_genome(genome_dict):
-    """
-    Save the genome in MySQL DB  if it doesn't exist already
-    :param genome_dict: genome dictionary containing all the parsed info
-    :returns: either the existing genome or the new created one
-    """
-    existing_genome_obj = trackhubs.models.Genome.objects.filter(name=genome_dict['genome']).first()
-    if existing_genome_obj:
-        return existing_genome_obj
-
-    new_genome_obj = trackhubs.models.Genome(
-        name=genome_dict['genome'],
-        trackdb_location=genome_dict['trackDb']
-    )
-    new_genome_obj.save()
-    return new_genome_obj
-
-
-def save_trackdb(url, hub, genome, assembly, species):
+def save_trackdb(url, hub, assembly, species):
     """
     Save the genome in MySQL DB  if it doesn't exist already
     :param url: trackdb url
     :param hub: hub object associated with this trackdb
-    :param genome: genome object associated with this trackdb
     :param assembly: assembly object associated with this trackdb
     :param species: the species associated with this trackdb
     :returns: either the existing trackdb or the new created one
@@ -147,7 +128,6 @@ def save_trackdb(url, hub, genome, assembly, species):
             updated=int(time.time()),
             assembly=assembly,
             hub=hub,
-            genome=genome,
             species=species,
             source_url=url
         )
@@ -259,19 +239,21 @@ def get_assembly_info_from_dump(genome_assembly_name):
     """
     assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
     assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
+    assembly_info_from_dump_accession = GenomeAssemblyDump.objects.filter(accession_with_version=genome_assembly_name).first()
     if assembly_info_from_dump:
         return assembly_info_from_dump
     if assembly_info_from_dump_ucsc_synonym:
         return assembly_info_from_dump_ucsc_synonym
+    elif assembly_info_from_dump_accession:
+        return assembly_info_from_dump_accession
     return None
 
 
-def save_assembly(genome_assembly_name, genome):
+def save_assembly(genome_assembly_name):
     """
     Get the assembly information from 'genome_assembly_dump' table
     based on the assemblies submitted by the user
     :param genome_assembly_name: genome assembly name extracted from genomes.txt file
-    :param genome: genome object
     :returns: assembly info object if found or None otherwise
     """
     assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
@@ -279,16 +261,15 @@ def save_assembly(genome_assembly_name, genome):
 
     if existing_assembly_obj:
         return existing_assembly_obj
-
-    new_assembly_obj = trackhubs.models.Assembly(
-        accession=assembly_info_from_dump.accession_with_version,
-        name=assembly_info_from_dump.assembly_name,
-        long_name=assembly_info_from_dump.assembly_name,
-        ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
-        genome=genome
-    )
-    new_assembly_obj.save()
-    return new_assembly_obj
+    else:
+        new_assembly_obj = trackhubs.models.Assembly(
+            accession=assembly_info_from_dump.accession_with_version,
+            name=assembly_info_from_dump.assembly_name,
+            long_name=assembly_info_from_dump.assembly_name,
+            ucsc_synonym=assembly_info_from_dump.ucsc_synonym
+        )
+        new_assembly_obj.save()
+        return new_assembly_obj
 
 
 def save_species(genome_assembly_name):
@@ -354,7 +335,7 @@ def save_and_update_document(hub_url, data_type, current_user):
     if 'error' in hub_check_result.keys():
         return hub_check_result
 
-    hub_info_array = parse_file_from_url(hub_url, is_hub=True)
+    hub_info_array = parse_file_from_url(hub_url)
 
     if hub_info_array:
         hub_info = hub_info_array[0]
@@ -370,15 +351,13 @@ def save_and_update_document(hub_url, data_type, current_user):
             data_type = 'genomics'
 
         genome_url = base_url + '/' + hub_info['genomesFile']
-        genomes_trackdbs_info = parse_file_from_url(genome_url, is_genome=True)
+        genomes_trackdbs_info = parse_file_from_url(genome_url)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
         hub_obj = save_hub(hub_info, data_type, current_user)
 
         for genome_trackdb in genomes_trackdbs_info:
             logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
-
-            genome_obj = save_genome(genome_trackdb)
 
             error_or_species_obj = save_species(genome_trackdb['genome'])
             if not isinstance(error_or_species_obj, trackhubs.models.Species):
@@ -388,13 +367,13 @@ def save_and_update_document(hub_url, data_type, current_user):
                 return error_or_species_obj
 
             # we got the assembly_name from genomes_trackdb['genome']
-            assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
+            assembly_obj = save_assembly(genome_trackdb['genome'])
 
             # Save the initial data
             trackdb_url = base_url + '/' + genome_trackdb['trackDb']
-            trackdb_obj = save_trackdb(trackdb_url, hub_obj, genome_obj, assembly_obj, error_or_species_obj)
+            trackdb_obj = save_trackdb(trackdb_url, hub_obj, assembly_obj, error_or_species_obj)
 
-            trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
+            trackdbs_info = parse_file_from_url(trackdb_url)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
             tracks_status = fetch_tracks_status(trackdbs_info, trackdb_url)

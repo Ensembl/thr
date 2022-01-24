@@ -70,18 +70,6 @@ def test_save_hub(create_hub_resource):
 
 
 @pytest.mark.django_db
-def test_save_genome(create_genome_resource):
-    expected_genome_info = {
-        'genome': 'hg19',
-        'trackDb': 'hg19/trackDb.txt',
-        'url': 'https://url/to/the/genomes.txt'
-    }
-
-    assert expected_genome_info['genome'] == create_genome_resource.name
-    assert expected_genome_info['trackDb'] == create_genome_resource.trackdb_location
-
-
-@pytest.mark.django_db
 def test_save_assembly(create_assembly_resource):
     expected_assembly_info = {
         'accession': 'GCA_000001405.1',
