@@ -407,10 +407,15 @@ def save_and_update_document(hub_url, data_type, current_user):
                     )
 
                     # if the track is parent we prepare the configuration object
-                    if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
-                        # logger.debug("'{}' is parent".format(track['track']))
-                        trackdb_configuration[track['track']] = track
-                        trackdb_configuration[track['track']].pop('url', None)
+                    # if any(k in track for k in ('compositeTrack', 'superTrack', 'container')):
+                    # logger.debug("'{}' is parent".format(track['track']))
+
+                    # prepare the configuration object
+                    # the if above commented out because regardless of whether the track is a parent or not
+                    # this fix seems to work, but looks too good to be true, however I can't see any side effect
+                    # the commented if above is left there just in case if it turns out I need it in the future
+                    trackdb_configuration[track['track']] = track
+                    trackdb_configuration[track['track']].pop('url', None)
 
                     # if the track is a child, add the parent id and update
                     # the configuration to include the current track
