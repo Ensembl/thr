@@ -18,7 +18,6 @@ import time
 
 import django
 from users.models import CustomUser as User
-from django.db import transaction
 
 import trackhubs
 from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
@@ -63,8 +62,8 @@ def get_obj_if_exist(unique_col, object_name, file_type=False):
     existing_obj = object_name.objects.filter(name=unique_col).first()
     if existing_obj:
         return existing_obj
-    else:
-        return None
+
+    return None
 
 
 def save_datatype_filetype_visibility(name_list, object_name):
@@ -108,30 +107,11 @@ def save_hub(hub_dict, data_type, current_user):
     return new_hub_obj
 
 
-def save_genome(genome_dict):
-    """
-    Save the genome in MySQL DB  if it doesn't exist already
-    :param genome_dict: genome dictionary containing all the parsed info
-    :returns: either the existing genome or the new created one
-    """
-    existing_genome_obj = trackhubs.models.Genome.objects.filter(name=genome_dict['genome']).first()
-    if existing_genome_obj:
-        return existing_genome_obj
-    else:
-        new_genome_obj = trackhubs.models.Genome(
-            name=genome_dict['genome'],
-            trackdb_location=genome_dict['trackDb']
-        )
-        new_genome_obj.save()
-        return new_genome_obj
-
-
-def save_trackdb(url, hub, genome, assembly, species):
+def save_trackdb(url, hub, assembly, species):
     """
     Save the genome in MySQL DB  if it doesn't exist already
     :param url: trackdb url
     :param hub: hub object associated with this trackdb
-    :param genome: genome object associated with this trackdb
     :param assembly: assembly object associated with this trackdb
     :param species: the species associated with this trackdb
     :returns: either the existing trackdb or the new created one
@@ -146,7 +126,6 @@ def save_trackdb(url, hub, genome, assembly, species):
             updated=int(time.time()),
             assembly=assembly,
             hub=hub,
-            genome=genome,
             species=species,
             source_url=url
         )
@@ -176,21 +155,21 @@ def save_track(track_dict, trackdb, file_type, visibility):
 
     if existing_track_obj:
         return existing_track_obj
-    else:
-        new_track_obj = trackhubs.models.Track(
-            # save name only without 'on' or 'off' settings
-            name=get_first_word(track_dict['track']),
-            short_label=track_dict.get('shortLabel'),
-            long_label=track_dict.get('longLabel'),
-            big_data_url=track_dict.get('bigDataUrl'),
-            html=track_dict.get('html'),
-            parent=None,  # track id will go here later on using add_parent_id() function
-            trackdb=trackdb,
-            file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
-            visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
-        )
-        new_track_obj.save()
-        return new_track_obj
+
+    new_track_obj = trackhubs.models.Track(
+        # save name only without 'on' or 'off' settings
+        name=get_first_word(track_dict['track']),
+        short_label=track_dict.get('shortLabel'),
+        long_label=track_dict.get('longLabel'),
+        big_data_url=track_dict.get('bigDataUrl'),
+        html=track_dict.get('html'),
+        parent=None,  # track id will go here later on using add_parent_id() function
+        trackdb=trackdb,
+        file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
+        visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
+    )
+    new_track_obj.save()
+    return new_track_obj
 
 
 def get_first_word(tabbed_info):
@@ -258,19 +237,21 @@ def get_assembly_info_from_dump(genome_assembly_name):
     """
     assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
     assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
+    assembly_info_from_dump_accession = GenomeAssemblyDump.objects.filter(accession_with_version=genome_assembly_name).first()
     if assembly_info_from_dump:
         return assembly_info_from_dump
-    elif assembly_info_from_dump_ucsc_synonym:
+    if assembly_info_from_dump_ucsc_synonym:
         return assembly_info_from_dump_ucsc_synonym
+    elif assembly_info_from_dump_accession:
+        return assembly_info_from_dump_accession
     return None
 
 
-def save_assembly(genome_assembly_name, genome):
+def save_assembly(genome_assembly_name):
     """
     Get the assembly information from 'genome_assembly_dump' table
     based on the assemblies submitted by the user
     :param genome_assembly_name: genome assembly name extracted from genomes.txt file
-    :param genome: genome object
     :returns: assembly info object if found or None otherwise
     """
     assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
@@ -283,8 +264,7 @@ def save_assembly(genome_assembly_name, genome):
             accession=assembly_info_from_dump.accession_with_version,
             name=assembly_info_from_dump.assembly_name,
             long_name=assembly_info_from_dump.assembly_name,
-            ucsc_synonym=assembly_info_from_dump.ucsc_synonym,
-            genome=genome
+            ucsc_synonym=assembly_info_from_dump.ucsc_synonym
         )
         new_assembly_obj.save()
         return new_assembly_obj
@@ -308,13 +288,14 @@ def save_species(genome_assembly_name):
         existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
         if existing_species_obj:
             return existing_species_obj
-        else:
-            new_species = trackhubs.models.Species(
-                taxon_id=assembly_info_from_dump.tax_id,
-                scientific_name=assembly_info_from_dump.scientific_name
-            )
-            new_species.save()
-            return new_species
+
+        new_species = trackhubs.models.Species(
+            taxon_id=assembly_info_from_dump.tax_id,
+            scientific_name=assembly_info_from_dump.scientific_name
+        )
+        new_species.save()
+        return new_species
+
     except django.db.utils.OperationalError:
         logger.exception('Error trying to connect to the database')
 
@@ -343,14 +324,16 @@ def save_and_update_document(hub_url, data_type, current_user):
         if original_owner_id == current_user.id:
             return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
         original_owner_email = User.objects.filter(id=original_owner_id).first().email
-        return {"error": "This hub is already submitted by a different user (the original submitter's email: {})".format(original_owner_email)}
+        return {
+            "error": "This hub is already submitted by a different user (the original submitter's email: {})".format(
+                original_owner_email)}
 
     # run the USCS hubCheck tool found in kent tools on the submitted hub
     hub_check_result = hub_check(hub_url)
     if 'error' in hub_check_result.keys():
         return hub_check_result
 
-    hub_info_array = parse_file_from_url(hub_url, is_hub=True)
+    hub_info_array = parse_file_from_url(hub_url)
 
     if hub_info_array:
         hub_info = hub_info_array[0]
@@ -360,20 +343,19 @@ def save_and_update_document(hub_url, data_type, current_user):
         if data_type:
             data_type = data_type.lower()
             if data_type not in DATA_TYPES:
-                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type, ", ".join(DATA_TYPES))}
+                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type,
+                                                                                                 ", ".join(DATA_TYPES))}
         else:
             data_type = 'genomics'
 
         genome_url = base_url + '/' + hub_info['genomesFile']
-        genomes_trackdbs_info = parse_file_from_url(genome_url, is_genome=True)
+        genomes_trackdbs_info = parse_file_from_url(genome_url)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
         hub_obj = save_hub(hub_info, data_type, current_user)
 
         for genome_trackdb in genomes_trackdbs_info:
             logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
-
-            genome_obj = save_genome(genome_trackdb)
 
             error_or_species_obj = save_species(genome_trackdb['genome'])
             if not isinstance(error_or_species_obj, trackhubs.models.Species):
@@ -383,13 +365,13 @@ def save_and_update_document(hub_url, data_type, current_user):
                 return error_or_species_obj
 
             # we got the assembly_name from genomes_trackdb['genome']
-            assembly_obj = save_assembly(genome_trackdb['genome'], genome_obj)
+            assembly_obj = save_assembly(genome_trackdb['genome'])
 
             # Save the initial data
             trackdb_url = base_url + '/' + genome_trackdb['trackDb']
-            trackdb_obj = save_trackdb(trackdb_url, hub_obj, genome_obj, assembly_obj, error_or_species_obj)
+            trackdb_obj = save_trackdb(trackdb_url, hub_obj, assembly_obj, error_or_species_obj)
 
-            trackdbs_info = parse_file_from_url(trackdb_url, is_trackdb=True)
+            trackdbs_info = parse_file_from_url(trackdb_url)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
             tracks_status = fetch_tracks_status(trackdbs_info, trackdb_url)
@@ -405,9 +387,11 @@ def save_and_update_document(hub_url, data_type, current_user):
                     # get the file type and visibility
                     # TODO: if file_type in FILE_TYPES Good, Else Error
                     if 'type' in track:
-                        file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType, file_type=True).name
+                        file_type = get_datatype_filetype_visibility(track['type'], trackhubs.models.FileType,
+                                                                     file_type=True).name
                     if 'visibility' in track:
-                        visibility = get_datatype_filetype_visibility(track['visibility'], trackhubs.models.Visibility).name
+                        visibility = get_datatype_filetype_visibility(track['visibility'],
+                                                                      trackhubs.models.Visibility).name
 
                     track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
                     if not track_obj:
@@ -445,14 +429,17 @@ def save_and_update_document(hub_url, data_type, current_user):
                                 })
 
                         else:  # we are in the second level (subsubtrack)
-                            if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]:
-                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name].update({
+                            if 'members' not in trackdb_configuration[grandparent_track_obj.name]['members'][
+                                parent_track_obj.name]:
+                                trackdb_configuration[grandparent_track_obj.name]['members'][
+                                    parent_track_obj.name].update({
                                     'members': {
                                         track['track']: track
                                     }
                                 })
                             else:
-                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name]['members'].update({
+                                trackdb_configuration[grandparent_track_obj.name]['members'][parent_track_obj.name][
+                                    'members'].update({
                                     track['track']: track
                                 })
 
@@ -468,5 +455,3 @@ def save_and_update_document(hub_url, data_type, current_user):
         return {'success': 'The hub is submitted successfully'}
 
     return None
-
-

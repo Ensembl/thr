@@ -1,10 +1,25 @@
-FROM python:3.7-alpine
+# See the NOTICE file distributed with this work for additional information
+# regarding copyright ownership.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-# Add scripts to the PATH
-# This will allow us to access scripts directly in the container
-ENV PATH="/scripts:${PATH}"
+FROM python:3.7.9-alpine
 
-COPY ./requirements.txt ./requirements.txt
+# set work directory
+WORKDIR /usr/src/app
+
+# set environment variables to create Python byte cache to speed up Python a little bit (optional)
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
 
 # required packages to install mysql
 # https://github.com/gliderlabs/docker-alpine/issues/181
@@ -17,27 +32,21 @@ RUN apk add --no-cache mariadb-connector-c-dev ;\
 
 # Required alpine packages to install uWSGI server in order to run django app
 RUN apk add --update --no-cache --virtual .tmp gcc libc-dev linux-headers
-RUN pip install -r /requirements.txt
+
+# copy our django project
+COPY . .
+# install dependencies
+#COPY ./requirements.txt .
+RUN pip install -r /usr/src/app/requirements.txt
 RUN apk del .tmp
 
-RUN mkdir /thr
-COPY ./thr /thr
-WORKDIR /thr
-COPY ./scripts /scripts
+# copy entrypoint.sh
+#COPY ./entrypoint.sh /usr/src/app/entrypoint.sh
 
-RUN chmod +x /scripts/*
+# run entrypoint.sh
+RUN chmod +x /usr/src/app/entrypoint.sh
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
-# Contains content uploaded by users
-RUN mkdir -p /vol/web/media
-# Contains JS, CSS etc
-RUN mkdir -p /vol/web/static
 
-RUN adduser -D user
-RUN chown -R user:user /vol
-RUN chmod -R 755 /vol/web
-
-# switch to the user created
-USER user
-
-# entrypoint.sh runs uWSGI and start the django app
-CMD ["entrypoint.sh"]
+# Useful resources:
+# https://datagraphi.com/blog/post/2020/8/30/docker-guide-build-a-fully-production-ready-machine-learning-app-with-react-django-and-postgresql-on-docker

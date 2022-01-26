@@ -77,19 +77,22 @@ class TrackHubDetail(APIView):
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_hub(self, pk):
+    @staticmethod
+    def get_hub(primary_key):
         try:
-            return Hub.objects.get(pk=pk)
-        except Hub.DoesNotExist:
-            raise Http404
+            return Hub.objects.get(pk=primary_key)
+        except Hub.DoesNotExist as hub_not_found:
+            raise Http404 from hub_not_found
 
     def get(self, request, pk):
+        # pylint: disable=invalid-name
         hub = self.get_hub(pk)
         serializer = CustomOneHubSerializer(hub)
         return Response(serializer.data)
 
     @transaction.atomic
     def delete(self, request, pk):
+        # pylint: disable=invalid-name
         hub = self.get_hub(pk)
         trackdbs_ids_list = hub.get_trackdbs_ids_from_hub()
 
@@ -112,8 +115,9 @@ class TrackHubDetail(APIView):
                     {"error": "Cannot connect to Elasticsearch"},
                     status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
-            except Exception as e:
-                return Response({"error": str(e)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as exp:
+                # pylint: disable = broad-except
+                return Response({"error": str(exp)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(
                 {
@@ -128,4 +132,3 @@ class TrackHubDetail(APIView):
         hub.delete()
 
         return Response({"success": "Hub '{}' is deleted successfully".format(hub.name)}, status=status.HTTP_200_OK)
-

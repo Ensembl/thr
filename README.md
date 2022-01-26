@@ -20,23 +20,97 @@ git clone https://github.com/Ensembl/thr.git
 cd thr
 ```
 
-### Using Docker
+### Using Docker (Backend + Frontend)
 
-Fire up docker-compose, it will take some time to download the necessary images and setup the environment
-
+You can run the whole application ([Frontend](https://github.com/Ensembl/thr_frontend) + [Backend](https://github.com/Ensembl/thr)) using docker-compose:
 
 ```shell script
-docker-compose up
+docker-compose -f docker-compose-local.yml up
 ```
 
-The app will be accessible at: http://127.0.0.1:8000
-Elasticsearch: http://127.0.0.1:9200
+> If it's executed for the first time it will take some time (~10min) to download the necessary images and setup the environment.
+
+* The app will be accessible at: http://127.0.0.1
+* And Elasticsearch at: http://127.0.0.1:9200
 
 To stop the docker use:
 
 ```shell script
-docker-compose stop
+docker-compose -f docker-compose-local.yml stop
 ```
+
+> The `docker-compose stop` command will stop your containers, but it won't remove them. 
+
+##### Create Elasticsearch index
+
+Get the container ID (while `docker-compose up` is running)
+
+```shell script
+docker container ls
+```
+
+You'll get somthing like this:
+```shell
+$ docker container ls
+CONTAINER ID   IMAGE                                                 COMMAND                  CREATED          STATUS         PORTS                                                                                  NAMES
+fd8d0eed8c88   thr_nginx                                             "/docker-entrypoint.…"   10 minutes ago   Up 2 minutes   0.0.0.0:80->80/tcp, :::80->80/tcp                                                      thr_nginx_1
+378be0cb1e26   thr_react                                             "docker-entrypoint.s…"   10 minutes ago   Up 2 minutes   3000/tcp                                                                               thr_react_1
+c41390a512be   thr_django                                            "/usr/src/app/entryp…"   10 minutes ago   Up 2 minutes   0.0.0.0:8000->8000/tcp, :::8000->8000/tcp                                              thr_django_1
+8b1bc7c4aa46   mysql:5.7                                             "docker-entrypoint.s…"   10 minutes ago   Up 2 minutes   33060/tcp, 0.0.0.0:3306->3306/tcp, :::3306->3306/tcp                                   thr_mysql_1
+87b1ca81fa08   docker.elastic.co/elasticsearch/elasticsearch:6.3.0   "/usr/local/bin/dock…"   5 days ago       Up 2 minutes   0.0.0.0:9200->9200/tcp, :::9200->9200/tcp, 0.0.0.0:9300->9300/tcp, :::9300->9300/tcp   elasticsearch
+```
+
+Then run the command
+
+```shell script
+docker exec -it <thr_django_container_id> python manage.py search_index --rebuild -f
+```
+
+`--rebuild` will delete the index if it exists.
+
+> You can restart a specific container by typing: `docker-compose restart elasticsearch` where `elasticsearch` is the container name
+
+##### Importing genome assembly dump
+
+If it's your first time importing genome assembly information/dump from `ENA` use
+```shell script
+docker exec -it <thr_django_container_id> python manage.py import_assemblies --fetch ena
+```
+
+It will fetch assembly info from ENA and dump it in a JSON file (then you can use the command below to populate the database)
+
+An example of how the output will look like:
+```shell
+docker exec -it 9fe9ad66132a python manage.py import_assemblies --fetch ena 
+[ENA] Fetching assemblies from ENA, it may take few minutes...
+[ENA] 1075977 Objects are fetched successfully (took 525.88 seconds)
+```
+
+If the JSON is already there, you can simply run 
+```shell script
+docker exec -it 9fe9ad66132a python manage.py import_assemblies
+```
+that will use the JSON file (located in `./assemblies_dump` directory) and loads it to MySQL table
+
+An example of how the output will look like:
+```shell
+docker exec -it 9fe9ad66132a python manage.py import_assemblies 
+All rows are deleted! Please wait, the import process will take a while
+[ENA] 1075977 objects imported successfully to MySQL DB (took 1539.78 seconds)!
+```
+
+> The script deletes all the previously imported assemblies are re-populate the new JSON file content.
+> 
+> This doesn't delete the hubs, nor the info related to them, the assemblies info imported from JSON are stored in a 
+> separate table which is used to populate hub-related tables when submitting a new hub
+
+##### Create super user (Optional)
+
+```shell script
+docker exec -it <thr_django_container_id> python manage.py createsuperuser
+```
+
+##### Additional Docker commands
 
 To removes stopped service containers and anonymous volumes attached use:
 
@@ -50,29 +124,20 @@ If we need to rebuild the images again we can use the command:
 docker-compose up --build
 ```
 
-##### Create Elasticsearch index
-
-Get the container ID (while `docker-compose up` is running)
-
-```shell script
-docker container ls
-```
-
-Then run the command
+The docker-compose down command will stop the containers, but it also removes the stopped containers 
+as well as any networks that were created. We can take down 1 step further and add the -v flag to remove all volumes too:
 
 ```shell script
-docker exec -it <thr_web_container_id> python manage.py search_index --rebuild -f
+docker-compose down -v
 ```
 
-`--rebuild` will delete the index if it exists.
+To take look of what's inside a specific container:
 
-##### Create super user (Optional)
-
-```shell script
-docker exec -it <thr_web_container_id> python manage.py createsuperuser
+```shell
+docker exec -it <container_id> sh
 ```
 
-### Without Docker
+### Without Docker (Backend only)
 
 ##### Preparing the environment
 
@@ -88,8 +153,6 @@ Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
 # MySQL
-export THR_DB_NAME=thr_db  # The DB should already be created
-export DEBUG=1
 export THR_DB_NAME=thr_db  # The DB should already be created
 export THR_DB_USER=user
 export THR_DB_PASSWORD=password
@@ -122,13 +185,13 @@ If it's your first time importing genome assembly information/dump from `ENA` us
 python manage.py import_assemblies --fetch ena
 ```
 
-> `UCSC` and `Ensembl` will also be added later.
+It will fetch assembly info from ENA and dump it in a JSON file the use the latter to populate the database
 
-So that it creates the JSON file, otherwise you can simply run 
+If the JSON is already there, you can simply run 
 ```shell script
 python manage.py import_assemblies
 ```
-And it will use the already existing JSON file(s) (located in `./assemblies_dump` directory)and loads them to MySQL table
+that will use the JSON file (located in `./assemblies_dump` directory) and loads it to MySQL table
 
 ##### Running the application
 

@@ -22,6 +22,9 @@ from thr.settings import BASE_DIR
 
 @pytest.fixture
 def project_dir():
+    """
+    INFO: this fixture isn't used for now because it breaks CI tests
+    """
     return BASE_DIR.parent
 
 
@@ -36,7 +39,7 @@ def create_user_resource(django_user_model):
     """
     Create a temporary user then return the user and token
     """
-    user = django_user_model.objects.create_user(username='test_user', password='test-password')
+    user = django_user_model.objects.create_user(username='testuser', password='test-password', email='testuser@mail.com')
     token, _ = Token.objects.get_or_create(user=user)
     return user, token
 
@@ -101,7 +104,8 @@ def create_trackhub_resource(project_dir, api_client, create_user_resource, crea
     _, token = create_user_resource
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
     submitted_hub = {
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
     response = api_client.post('/api/trackhub/', submitted_hub, format='json')
     return response
@@ -127,19 +131,7 @@ def create_hub_resource(create_user_resource, create_datatype_resource):
 
 
 @pytest.fixture()
-def create_genome_resource(create_hub_resource):
-    """
-    Create a temporary genome object
-    """
-    actual_genome_obj = trackhubs.models.Genome.objects.create(
-        name='hg19',
-        trackdb_location='hg19/trackDb.txt'
-    )
-    return actual_genome_obj
-
-
-@pytest.fixture()
-def create_assembly_resource(create_genome_resource):
+def create_assembly_resource():
     """
     Create a temporary assembly object
     """
@@ -147,15 +139,14 @@ def create_assembly_resource(create_genome_resource):
         accession='GCA_000001405.1',
         name='GRCh37',
         long_name='',
-        ucsc_synonym='',
-        genome=create_genome_resource
+        ucsc_synonym=''
     )
 
     return actual_assembly_obj
 
 
 @pytest.fixture()
-def create_trackdb_resource(create_hub_resource, create_genome_resource, create_assembly_resource, create_species_resource):
+def create_trackdb_resource(create_hub_resource, create_assembly_resource, create_species_resource):
     """
     Create a temporary trackdb object
     """
@@ -167,7 +158,6 @@ def create_trackdb_resource(create_hub_resource, create_genome_resource, create_
         updated=int(time.time()),
         assembly=create_assembly_resource,
         hub=create_hub_resource,
-        genome=create_genome_resource,
         species=create_species_resource,
         source_url=trackdb_url
     )

@@ -21,7 +21,8 @@ logging.disable(logging.CRITICAL)
 
 
 def test_parse_hub_success(project_dir):
-    fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+    # fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
+    fake_hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
 
     expected_hub_info = {
         'hub': 'JASPAR_TFBS',
@@ -32,12 +33,13 @@ def test_parse_hub_success(project_dir):
         'descriptionUrl': 'http://jaspar.genereg.net/genome-tracks/',
         'url': fake_hub_url
     }
-    actual_result = parse_file_from_url(fake_hub_url, is_hub=True)[0]
+    actual_result = parse_file_from_url(fake_hub_url)[0]
     assert expected_hub_info == actual_result
 
 
 def test_parse_genomes_success(project_dir):
-    fake_genomes_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/genomes.txt'
+    # fake_genomes_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/genomes.txt'
+    fake_genomes_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/genomes.txt'
 
     expected_genomes_info = [
         {
@@ -51,12 +53,13 @@ def test_parse_genomes_success(project_dir):
             'url': fake_genomes_url
         }
     ]
-    actual_result = parse_file_from_url(fake_genomes_url, is_genome=True)
+    actual_result = parse_file_from_url(fake_genomes_url)
     assert expected_genomes_info == actual_result
 
 
 def test_parse_trackdbs_success(project_dir):
-    fake_trackdbs_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hg19/trackDb.txt'
+    # fake_trackdbs_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hg19/trackDb.txt'
+    fake_trackdbs_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hg19/trackDb.txt'
 
     expected_trackdbs_info = [
         {
@@ -78,7 +81,7 @@ def test_parse_trackdbs_success(project_dir):
             'url': fake_trackdbs_url
         }
     ]
-    actual_result = parse_file_from_url(fake_trackdbs_url, is_trackdb=True)
+    actual_result = parse_file_from_url(fake_trackdbs_url)
     assert expected_trackdbs_info == actual_result
 
 
@@ -92,5 +95,5 @@ def test_parse_trackdbs_success(project_dir):
     ]
 )
 def test_parse_url_fail(test_url, expected_result):
-    actual_result = parse_file_from_url(test_url, is_hub=True)
+    actual_result = parse_file_from_url(test_url)
     assert actual_result == expected_result
