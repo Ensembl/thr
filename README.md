@@ -25,7 +25,7 @@ cd thr
 You can run the whole application ([Frontend](https://github.com/Ensembl/thr_frontend) + [Backend](https://github.com/Ensembl/thr)) using docker-compose:
 
 
-Uncomment the last line in `Dockefile`
+Uncomment the last line in `Dockerfile`
 
 ```bash
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]

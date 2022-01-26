@@ -24,7 +24,7 @@ python manage.py search_index --rebuild -f
 
 # create a superuser defined by the environment variables
 # Fix: 'Manager isn't available' error
-# https://stackoverflow.com/a/67530965/4488332
+# https://stackoverflow.com/a/17874111
 echo "from django.contrib.auth import get_user_model;
 User = get_user_model();
 User.objects.filter(email='$DJANGO_ADMIN_EMAIL').delete();

@@ -1,5 +1,8 @@
 import ast
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 def str2obj(var):
@@ -13,6 +16,13 @@ def str2obj(var):
     if isinstance(var, dict) or isinstance(var, list):
         return var
 
-    var = ast.literal_eval(var)
+    try:
+        var = ast.literal_eval(var)
+    # if the result of ast.literal_eval is not a dict or array
+    # print the error and return None
+    except ValueError as ex:
+        logger.error(ex)
+        return None
+
     string_var_double_quote = json.dumps(var)
     return json.loads(string_var_double_quote)
