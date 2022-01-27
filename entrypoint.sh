@@ -23,12 +23,7 @@ python manage.py migrate
 python manage.py search_index --rebuild -f
 
 # create a superuser defined by the environment variables
-# Fix: 'Manager isn't available' error
-# https://stackoverflow.com/a/17874111
-echo "from django.contrib.auth import get_user_model;
-User = get_user_model();
-User.objects.filter(email='$DJANGO_ADMIN_EMAIL').delete();
-User.objects.create_superuser('$DJANGO_ADMIN_USER', '$DJANGO_ADMIN_EMAIL', '$DJANGO_ADMIN_PASSWORD')" | python manage.py shell
+python manage.py create_superuser --username "$DJANGO_ADMIN_USER" --password "$DJANGO_ADMIN_PASSWORD" --noinput --email "$DJANGO_ADMIN_EMAIL"
 
 # import the assembly dump
 python manage.py import_assemblies --fetch ena
