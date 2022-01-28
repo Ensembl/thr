@@ -29,6 +29,10 @@ import trackhubs.utils
         ("foo", None, type(None)),
         (1, None, type(None)),
         (None, None, type(None)),
+        ({}, {}, dict),
+        ({'a': {'b': [11, 12]}}, {'a': {'b': [11, 12]}}, dict),
+        ([], [], list),
+        (['a', [11, True], 44], ['a', [11, True], 44], list),
     ]
 )
 def test_str2obj(the_string, expected_output, expected_type):
