@@ -149,7 +149,7 @@ DATABASES = {
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': os.environ.get('ES_HOST', 'elasticsearch:9200'),
-        'timeout': 600,  # Custom timeout
+        'timeout': 60000,  # Custom timeout
     },
 }
 
