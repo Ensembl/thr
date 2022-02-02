@@ -28,7 +28,7 @@ import elasticsearch
 from elasticsearch_dsl import connections
 from users.models import CustomUser as User
 import trackhubs
-
+from trackhubs.utils import str2obj
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +55,7 @@ class FileType(models.Model):
 
     file_type_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    settings = JSONField(null=True)
+    settings = models.TextField(null=True, default='')  # JSONField()
 
 
 class Visibility(models.Model):
@@ -106,7 +106,7 @@ class Hub(models.Model):
                     'schema': trackdb.version,
                     'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
                     'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
-                    'status': trackdb.status,
+                    'status': str2obj(trackdb.status),
                 }
             )
         return trackdbs_list
@@ -173,10 +173,10 @@ class Trackdb(models.Model):
     version = models.CharField(default="v1.0", max_length=10)
     created = models.IntegerField(default=int(time.time()))
     updated = models.IntegerField(null=True)
-    configuration = JSONField()
-    data = JSONField()
-    status = JSONField()
-    browser_links = JSONField()
+    configuration = models.TextField(null=True, default='')  # JSONField()
+    data = models.TextField(null=True, default='')  # JSONField()
+    status = models.TextField(null=True, default='')  # JSONField()
+    browser_links = models.TextField(null=True, default='')  # JSONField()
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
@@ -445,8 +445,9 @@ class Trackdb(models.Model):
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track
-        :param trackdb_data: data array that will be added to the trackdb document
-        :param trackdb_configuration: configuration object that will be added to the trackdb document
+        :param trackdb_data: data object that will be added to the trackdb document
+        :param trackdb_configuration: configuration string that will be added to the trackdb document
+        :param tracks_status: status dictionary that will be added to the trackdb document
         :param index: index name (default: 'trackhubs')
         :param doc_type: document type (default: 'doc')
         """
@@ -462,8 +463,8 @@ class Trackdb(models.Model):
                     'doc': {
                         'owner': hub.get_owner(),
                         'file_type': self.get_trackdb_file_type_count(),
-                        'data': trackdb_data,
-                        'browser_links': self.generate_browser_links(),
+                        'data': str2obj(trackdb_data),
+                        'browser_links': str2obj(self.generate_browser_links()),
                         'updated': int(time.time()),
                         'source': {
                             'url': self.source_url,
@@ -474,8 +475,8 @@ class Trackdb(models.Model):
                         'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
-                        'configuration': trackdb_configuration,
-                        'status': tracks_status
+                        'configuration': str2obj(trackdb_configuration),
+                        'status': str2obj(tracks_status)
                     }
                 }
             )
@@ -497,7 +498,10 @@ class Track(models.Model):
     big_data_url = models.TextField(blank=True, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
-    additional_properties = JSONField(null=True)
+    additional_properties = models.TextField(null=True)  # JSONField()
+    # TODO: make sure composite_parent is not used
+    # Check if it's replaced with super_track, composite_track and is_multiwig_track
+    # composite_parent = models.CharField(max_length=2, null=True)
     super_track = models.CharField(max_length=20, null=True)
     composite_track = models.CharField(max_length=20, null=True)
     is_multiwig_track = models.BooleanField(default=False)

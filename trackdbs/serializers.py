@@ -12,6 +12,7 @@
    limitations under the License.
 """
 from datetime import datetime
+from trackhubs.utils import str2obj
 
 from rest_framework import serializers
 from trackhubs import models
@@ -72,6 +73,8 @@ class TrackdbSerializer(serializers.ModelSerializer):
     browser_links = serializers.SerializerMethodField()
     species = serializers.SerializerMethodField()
     assembly = serializers.SerializerMethodField()
+    configuration = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Trackdb
@@ -133,6 +136,14 @@ class TrackdbSerializer(serializers.ModelSerializer):
     def get_assembly(obj):
         assembly = models.Assembly.objects.filter(assembly_id=obj.assembly.assembly_id).first()
         return TrackdbAssemblySerializer(assembly).data
+
+    @staticmethod
+    def get_configuration(obj):
+        return str2obj(obj.configuration)
+
+    @staticmethod
+    def get_status(obj):
+        return str2obj(obj.status)
 
     @staticmethod
     def get_file_type(obj):

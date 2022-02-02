@@ -33,7 +33,7 @@ from rest_framework.authtoken.models import Token
 from rest_framework_simplejwt.tokens import RefreshToken
 # https://londonappdeveloper.com/json-web-tokens-vs-token-authentication/
 
-from users.models import CustomUser as User
+from django.contrib.auth import get_user_model
 from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer, \
     ResetPasswordEmailSerializer, SetNewPasswordSerializer
 
@@ -41,6 +41,8 @@ from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
+
+User = get_user_model()
 
 
 # extend the ObtainAuthToken class to add is_account_activated status to API response

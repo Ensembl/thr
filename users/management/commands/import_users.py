@@ -15,10 +15,11 @@
 import json
 import time
 
-from users.models import CustomUser as User
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from argparse import RawTextHelpFormatter
 
+User = get_user_model()
 
 def import_users_dump(filepath):
     """

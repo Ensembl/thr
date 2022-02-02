@@ -24,6 +24,15 @@ cd thr
 
 You can run the whole application ([Frontend](https://github.com/Ensembl/thr_frontend) + [Backend](https://github.com/Ensembl/thr)) using docker-compose:
 
+
+Uncomment the last line in `Dockerfile`
+
+```bash
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+```
+
+Then run
+
 ```shell script
 docker-compose -f docker-compose-local.yml up
 ```
@@ -210,19 +219,13 @@ python manage.py createsuperuser
 
 ##### Rebuilding and enriching Elasticsearch index (if required)
 
-In case we want to rebuild the ES index with data existing in MySQL, you need to:
+In case we want to rebuild the ES index with data existing in MySQL, you need to run the following command:
 
 1. Rebuild ES index
 ```shell script
-python manage.py search_index --rebuild -f
-```
-This will load portion of the data from MySQL to ES
-
-2. Run the `enrich` command that extract `configuration`, `data` and `file type` objects from MySQL DB and store it back in Elasticsearch by updating the documents.
-
-```shell script
 python manage.py enrich 
 ```
+This will rebuild the ES index (`python manage.py search_index --rebuild -f`) and extract `configuration`, `data` and `file type` objects from MySQL DB and store it back in Elasticsearch by updating the documents.
 
 ##### Setting up Cron job
 
