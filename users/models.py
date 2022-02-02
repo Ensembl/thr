@@ -25,3 +25,7 @@ class CustomUser(AbstractUser):
     affiliation = models.CharField(max_length=250, blank=True, null=True)
     check_interval = models.CharField(max_length=100, default='automatic')
     continuous_alert = models.BooleanField(default=0)
+    # added is_account_activated because is_active field that comes with django
+    # doesn't offer the flexibility we need (e.g. user can't login if not is_active
+    # hence login response API can't return is_active status)
+    is_account_activated = models.BooleanField(default=False)

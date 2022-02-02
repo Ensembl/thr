@@ -11,12 +11,15 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import re
 
+import django
 import pytest
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.urls import reverse
 from django.utils.http import urlsafe_base64_encode
 from rest_framework.authtoken.models import Token
+from users.models import CustomUser as User
 
 from thr import settings
 
@@ -107,6 +110,73 @@ def test_registration(api_client, data, status_code):
     url = reverse('register_api')
     response = api_client.post(url, data)
     assert response.status_code == status_code
+
+
+@pytest.mark.django_db
+def test_email_verification_success(api_client):
+    """
+    Test email verification
+    """
+    payload = {
+        'email': 'user@example.com',
+        'username': 'user',
+        'password': 'test-pass',
+        'password2': 'test-pass',
+        'check_interval': 'automatic'
+    }
+
+    registration_url = reverse('register_api')
+    registration_response = api_client.post(registration_url, payload)
+    # assert that the user is registered successfully
+    assert registration_response.status_code == 201
+
+    # get the new registered user
+    user = User.objects.get(email=payload['email'])
+    # and make sure the account is not activated
+    assert user.is_account_activated is False
+
+    # get token from email
+    # use a regex to match the expected link
+    token_regex = r"email_verification\?token=([A-Za-z0-9:\-._]+)"
+    email_content = django.core.mail.outbox[0].body
+    # search for the pattern in the email
+    match = re.search(token_regex, email_content)
+    assert match.groups()
+    token = match.group(1)
+
+    # verify that the token we got is working
+    email_verification_response = api_client.get('/api/email_verification?token=' + token)
+    actual_result = email_verification_response.json()
+    assert email_verification_response.status_code == 200
+    assert actual_result == {'success': 'Account successfully activated!'}
+
+
+@pytest.mark.django_db
+def test_email_verification_fail(api_client):
+    """
+    Test email verification using the wrong token
+    """
+    payload = {
+        'email': 'user@example.com',
+        'username': 'user',
+        'password': 'test-pass',
+        'password2': 'test-pass',
+        'check_interval': 'automatic'
+    }
+
+    registration_url = reverse('register_api')
+    registration_response = api_client.post(registration_url, payload)
+    # assert that the user is registered successfully
+    assert registration_response.status_code == 201
+
+    # create random token
+    token = 'eyJ0eXAiOiJKV1jo.YWNjZXNzIiwiZXhw.oxNjMwOTQ4OTg3LCJqdGkiOiJmY2ZhNzQ3ZjQ1OGJfaWQiOjF9_otTBItQfC7aozK_VgWcY'
+
+    # verify that the token we created isn't working
+    email_verification_response = api_client.get('/api/email_verification?token=' + token)
+    actual_result = email_verification_response.json()
+    assert email_verification_response.status_code == 400
+    assert actual_result == {'error': 'Invalid token'}
 
 
 @pytest.mark.django_db

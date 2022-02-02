@@ -11,15 +11,27 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-import django
 
-from thr import settings
+import jwt
 from django.contrib.auth import logout
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.mail import send_mail
+from django.urls import reverse
+# from django.conf import settings
+from thr import settings
 from rest_framework import status, authentication, permissions
-from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.generics import UpdateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from users.models import CustomUser as User
+
+# Token authentication is used to handle login and logout
+from rest_framework.authtoken.models import Token
+# JWT Authentication is used to handle account activation
+# https://www.django-rest-framework.org/api-guide/authentication/#json-web-token-authentication
+from rest_framework_simplejwt.tokens import RefreshToken
+# https://londonappdeveloper.com/json-web-tokens-vs-token-authentication/
 
 from django.contrib.auth import get_user_model
 from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer, \
@@ -33,25 +45,82 @@ from django.core.mail import send_mail
 User = get_user_model()
 
 
+# extend the ObtainAuthToken class to add is_account_activated status to API response
+class LoginViewAPI(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'email': user.email,
+            'is_account_activated': user.is_account_activated
+        })
+
+
 class RegistrationViewAPI(APIView):
     """
     User registration endpoint, if the request is successful,
-    an HttpResponse is returned with the access token
-    :param request: the request
-    :returns: the data if the request was successful otherwise it return an error message
+    an HttpResponse is returned and an activation email is sent with the access token
+    it returns the success message if the request was successful otherwise it return an error message
     """
-
     def post(self, request):
+
         serializer = RegistrationSerializer(data=request.data)
-        data = {}
+
         if serializer.is_valid():
             new_user = serializer.save()
-            data['success'] = 'User registered successfully!'
-            token = Token.objects.create(user=new_user).key
-            data['token'] = token
-            return Response(data, status=status.HTTP_201_CREATED)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            # token = Token.objects.create(user=new_user).key
+            access_token = RefreshToken.for_user(new_user).access_token
+
+            # prepare the data that will be sent to user
+            fe_url = settings.FRONTEND_URL
+            full_url = 'http://' + fe_url + "/email_verification?token=" + str(access_token)
+
+            send_mail(
+                subject='Verify your email',
+                from_email='bilal@ebi.ac.uk',  # 'trackhub-registry@ebi.ac.uk',
+                message='Hi ' + new_user.username + ' Please use the link below to verify your email \n' + full_url,
+                recipient_list=[new_user.email],
+                fail_silently=False
+            )
+
+            return Response(
+                {'success': 'User registered successfully! A verification link has been sent to your email address'},
+                status=status.HTTP_201_CREATED
+            )
+
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class EmailVerificationView(APIView):
+    """
+    Email verification endpoint, used to activate the user account
+    """
+    def get(self, request):
+        access_token = request.GET.get('token')
+
+        try:
+            payload = jwt.decode(access_token, settings.SECRET_KEY, algorithms='HS256')
+            user = User.objects.get(id=payload['user_id'])
+            if not user.is_account_activated:
+                user.is_account_activated = True
+                user.save()
+            return Response({'success': 'Account activated! Please login to your account'}, status=status.HTTP_200_OK)
+
+        except jwt.ExpiredSignatureError as identifier:
+            return Response(
+                {'error': 'This activation link is expired or have already been used!'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except jwt.exceptions.DecodeError as identifier:
+            return Response(
+                {'error': 'Invalid token!'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LogoutViewAPI(APIView):

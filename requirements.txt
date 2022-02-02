@@ -13,6 +13,7 @@ django-elasticsearch-dsl-drf==0.20.8
 django-mysql==3.8.1
 django-nine==0.2.3
 djangorestframework==3.11.2
+djangorestframework-simplejwt==4.8.0
 ElasticMock==1.5.1
 elasticsearch==6.8.1
 elasticsearch-dsl==6.4.0
@@ -28,6 +29,7 @@ mysqlclient==2.0.1
 packaging==20.4
 pluggy==0.13.1
 py==1.10.0
+PyJWT==2.1.0
 pylint==2.9.5
 pylint-django==2.4.4
 pylint-plugin-utils==0.6
