@@ -24,5 +24,11 @@ def str2obj(var):
         logger.error(ex)
         return None
 
+    # Take into account values that are not lists/dicts of strings
+    # and don't cause ValueErrors, for example ast.literal_eval("'a'") evaluates to 'a',
+    # and ast.literal_eval("1") evaluates to 1
+    if not (isinstance(var, list) or isinstance(var, dict)):
+        return None
+
     string_var_double_quote = json.dumps(var)
     return json.loads(string_var_double_quote)
