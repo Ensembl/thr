@@ -11,12 +11,17 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import sys
 
 from django.core.management.base import BaseCommand
-
+import logging
 from trackhubs.tracks_status import fetch_tracks_status
 import trackhubs.models
 from django.core import management
+
+logger = logging.getLogger(__name__)
+# show logs in the console
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class Command(BaseCommand):
@@ -26,9 +31,30 @@ class Command(BaseCommand):
 
     def _enrich_docs(self):
         all_trackdbs = trackhubs.models.Trackdb.objects.all()
+        not_enriched_hubs_ids = []
+        trackdbs_counter = 0
+        total_trackdbs = len(all_trackdbs)
         for trackdb in all_trackdbs:
             tracks_status = fetch_tracks_status(trackdb.__dict__, trackdb.source_url)
-            trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration, tracks_status)
+            # this try except is to handle the error
+            # UnicodeDecodeError: 'utf-8' codec can't decode byte 0x92 in position 199: invalid start byte
+            # e.g. hub "VBRNAseq_group_1464"
+            try:
+                hub = trackhubs.models.Hub.objects.get(hub_id=trackdb.hub_id)
+                trackdb.update_trackdb_document(hub, trackdb.data, trackdb.configuration, tracks_status)
+            # we ignore them for now, TODO: investigate/solve this later
+            # more details here: https://www.ebi.ac.uk/seqdb/confluence/x/3ympCQ
+            except UnicodeDecodeError as unicode_err:
+                not_enriched_hubs_ids.append(trackdb.hub_id)
+                logger.debug("Hub id {} couldn't be enriched, reason: {}".format(trackdb.hub_id, unicode_err))
+
+            trackdbs_counter += 1
+            print('{}/{} trackdbs enriched/processed'.format(trackdbs_counter, total_trackdbs), end='\r')
+
+        logger.debug("Not Enriched Hubs IDs: ", not_enriched_hubs_ids)
+        not_enriched_hubs_len = len(list(set(not_enriched_hubs_ids)))
+        print("{} hubs enriched".format(total_trackdbs - not_enriched_hubs_len))
+        print("{} hubs couldn't be enriched".format(not_enriched_hubs_len))
 
     def handle(self, *args, **options):
         # uncomment the line below if you want to rebuild and enrich the index at the same time
