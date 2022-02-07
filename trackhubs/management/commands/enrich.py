@@ -44,6 +44,7 @@ class Command(BaseCommand):
                 trackdb.update_trackdb_document(hub, trackdb.data, trackdb.configuration, tracks_status)
             # we ignore them for now, TODO: investigate/solve this later
             # more details here: https://www.ebi.ac.uk/seqdb/confluence/x/3ympCQ
+            # UPDATE: This issue may never appear again if the cause was me manually changing the DB CHARSET
             except UnicodeDecodeError as unicode_err:
                 not_enriched_hubs_ids.append(trackdb.hub_id)
                 logger.debug("Hub id {} couldn't be enriched, reason: {}".format(trackdb.hub_id, unicode_err))

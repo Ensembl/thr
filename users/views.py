@@ -81,7 +81,7 @@ class RegistrationViewAPI(APIView):
 
             send_mail(
                 subject='Verify your email',
-                from_email='bilal@ebi.ac.uk',  # 'trackhub-registry@ebi.ac.uk',
+                from_email='trackhub-registry@ebi.ac.uk',
                 message='Hi ' + new_user.username + ' Please use the link below to verify your email \n' + full_url,
                 recipient_list=[new_user.email],
                 fail_silently=False
