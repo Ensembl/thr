@@ -27,7 +27,11 @@ class TrackdbDetail(APIView):
     Retrieve or delete a Trackdb instance.
     """
     authentication_classes = [authentication.TokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    # In Django REST, permissions are applied to the entire View class,
+    # but we can take into account aspects of the request (like the method such as GET or POST)
+    # in our authorization decision, that's exactly what IsAuthenticatedOrReadOnly does:
+    # It allows the unauthenticated users to GET trackdb but doesn't allow DELETE API calls
+    permission_classes = [permissions.IsAuthenticated | permissions.IsAuthenticatedOrReadOnly]
 
     @staticmethod
     def get_trackdb(pk):

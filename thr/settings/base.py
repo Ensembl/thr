@@ -257,13 +257,10 @@ LOGIN_URL = 'login'
 
 # this can be tested locally using the command:
 # python -m smtpd -n -c DebuggingServer localhost:1025
-EMAIL_HOST = 'localhost'  # 'smtp'
-EMAIL_PORT = 1025  # 587
-EMAIL_HOST_USER = ''  # trackhub-registry@ebi.ac.uk
-EMAIL_HOST_PASSWORD = ''  # email password
-EMAIL_USE_TLS = False  # True
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
+EMAIL_PORT = os.environ.get('EMAIL_PORT', 1025)
 
-FRONTEND_URL = 'localhost:3000'
-BACKEND_URL = 'localhost:8000'
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'localhost:3000')
+BACKEND_URL = os.environ.get('BACKEND_URL', 'localhost:8000')
 
-THR_VERSION = "0.6"
+THR_VERSION = "0.8"

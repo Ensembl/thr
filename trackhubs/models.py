@@ -11,6 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import json
 import re
 import sys
 from datetime import datetime
@@ -372,7 +373,10 @@ class Trackdb(models.Model):
             },
         }
 
-        division = species_assemblies_divisions.get(species_scientific_name.lower()).get(assembly_name.lower())
+        try:
+            division = species_assemblies_divisions.get(species_scientific_name.lower()).get(assembly_name.lower())
+        except AttributeError:
+            division = None
 
         if division is None:
             # Normal cases are here
@@ -381,37 +385,37 @@ class Trackdb(models.Model):
             # Look up division using Ensembl Rest API by using providing the assembly accession
             assembly_info_url = 'https://rest.ensembl.org/info/genomes/assembly/' + assembly_accession + ''
             response = requests.get(assembly_info_url, headers={'Accept': 'application/json'}, verify=True)
-            if not response.ok:
-                print("Couldn't get division for assembly '{}', reason: {} [{}]"
-                      .format(assembly_accession, response.text, response.status_code))
-                sys.exit
 
             # genome_division can be: 'EnsemblVertebrates', 'EnsemblProtists', 'EnsemblMetazoa',
             # 'EnsemblPlants', 'EnsemblFungi' or 'EnsemblBacteria'
             # See: https://rest.ensembl.org/documentation/info/info_divisions
-            genome_division = response.json()['division'].lower()
+            try:
+                genome_division = response.json().get('division')
+            except json.decoder.JSONDecodeError:
+                genome_division = None
 
-            if genome_division == 'ensemblvertebrates':
-                division = 'www'
-            elif genome_division.startswith('ensembl'):
-                # remove 'ensembl' string
-                division = genome_division[len('ensembl'):]
-            else:
-                raise Exception("Genome division: '{}' isn't recognized".format(genome_division))
+            if genome_division is not None:
+                genome_division = genome_division.lower()
+                if genome_division == 'ensemblvertebrates':
+                    division = 'www'
+                elif genome_division.startswith('ensembl'):
+                    # remove 'ensembl' string
+                    division = genome_division[len('ensembl'):]
+                else:
+                    raise Exception("Genome division: '{}' isn't recognized".format(genome_division))
 
-        # EnsEMBL browser link
-        domain = f'http://{division}.ensembl.org'
+                # EnsEMBL browser link
+                domain = f'http://{division}.ensembl.org'
 
-        # if division contains the string 'archive' but not followed by '.plants'
-        if re.search("archive(?!\.plants)", division):
-            # link to plant archive site should be the current one
-            browser_links[
-                'ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
-                domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
-        else:
-            browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
-                                                                                                species_scientific_name,
-                                                                                                hub_short_label.strip().replace(' ', '%20'))
+                # if division contains the string 'archive' but not followed by '.plants'
+                if re.search("archive(?!\.plants)", division):
+                    # link to plant archive site should be the current one
+                    browser_links['ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
+                        domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
+                else:
+                    browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
+                                                                                                        species_scientific_name,
+                                                                                                        hub_short_label.strip().replace(' ', '%20'))
 
         # VectorBase browser links
         vectorbase_domain = "https://www.vectorbase.org"
@@ -452,7 +456,9 @@ class Trackdb(models.Model):
         :param doc_type: document type (default: 'doc')
         """
         try:
-            es_conn = connections.Elasticsearch()
+            # Connect to ES and prevent Read timed out error
+            # https://stackoverflow.com/a/35302158/4488332
+            es_conn = connections.Elasticsearch(timeout=600, max_retries=10, retry_on_timeout=True)
 
             es_conn.update(
                 index=index,
@@ -482,9 +488,10 @@ class Trackdb(models.Model):
             )
             logger.info("Trackdb id {} is updated successfully".format(self.trackdb_id))
 
-        except elasticsearch.exceptions.ConnectionError:
+        except elasticsearch.exceptions.ConnectionError as es_con_err:
             logger.exception("There was an error while trying to connect to Elasticsearch. "
-                             "Please make sure ES service is running and configured properly!")
+                             "Please make sure ES service is running and configured properly!"
+                             " Reason: {}".format(es_con_err))
 
 
 class Track(models.Model):
