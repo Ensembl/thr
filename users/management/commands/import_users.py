@@ -44,6 +44,11 @@ def import_users_dump(filepath):
                     continuous_alert=user_info.get('continuous_alert'),
                     affiliation=user_info.get('affiliation'),
                     check_interval='automatic',
+                    # user accounts imported from THR legacy are activated by default
+                    # which means that the users don't need a to 'verify' their account
+                    is_account_activated=True,
+                    # BUT they need to reset the password, that's why:
+                    is_active=False
                 )
                 user.is_active = False
                 user.is_superuser = False
