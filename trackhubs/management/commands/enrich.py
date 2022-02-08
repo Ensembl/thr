@@ -40,7 +40,7 @@ class Command(BaseCommand):
             # UnicodeDecodeError: 'utf-8' codec can't decode byte 0x92 in position 199: invalid start byte
             # e.g. hub "VBRNAseq_group_1464"
             try:
-                trackdb.update_trackdb_document(trackdb.hub_id, trackdb.data, trackdb.configuration, tracks_status)
+                trackdb.update_trackdb_document(trackdb.hub, trackdb.data, trackdb.configuration, tracks_status)
             # we ignore them for now, TODO: investigate/solve this later
             # more details here: https://www.ebi.ac.uk/seqdb/confluence/x/3ympCQ
             # UPDATE: This issue may never appear again if the cause was me manually changing the DB CHARSET
