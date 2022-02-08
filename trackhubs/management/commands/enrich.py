@@ -40,8 +40,7 @@ class Command(BaseCommand):
             # UnicodeDecodeError: 'utf-8' codec can't decode byte 0x92 in position 199: invalid start byte
             # e.g. hub "VBRNAseq_group_1464"
             try:
-                hub = trackhubs.models.Hub.objects.get(hub_id=trackdb.hub_id)
-                trackdb.update_trackdb_document(hub, trackdb.data, trackdb.configuration, tracks_status)
+                trackdb.update_trackdb_document(trackdb.hub_id, trackdb.data, trackdb.configuration, tracks_status)
             # we ignore them for now, TODO: investigate/solve this later
             # more details here: https://www.ebi.ac.uk/seqdb/confluence/x/3ympCQ
             # UPDATE: This issue may never appear again if the cause was me manually changing the DB CHARSET
@@ -53,7 +52,7 @@ class Command(BaseCommand):
             print('{}/{} trackdbs enriched/processed'.format(trackdbs_counter, total_trackdbs), end='\r')
 
         logger.debug("Not Enriched Hubs IDs: ", not_enriched_hubs_ids)
-        not_enriched_hubs_len = len(list(set(not_enriched_hubs_ids)))
+        not_enriched_hubs_len = len(not_enriched_hubs_ids)
         print("{} hubs enriched".format(total_trackdbs - not_enriched_hubs_len))
         print("{} hubs couldn't be enriched".format(not_enriched_hubs_len))
 
