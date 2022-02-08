@@ -11,6 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+import time
 from datetime import datetime
 from trackhubs.utils import str2obj
 
@@ -106,6 +107,8 @@ class TrackdbSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_updated(obj):
+        if obj.updated is None:
+            obj.updated = int(time.time())
         return datetime.utcfromtimestamp(obj.updated).strftime('%Y-%m-%d %H:%M:%S')
 
     @staticmethod
