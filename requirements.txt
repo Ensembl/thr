@@ -5,7 +5,7 @@ certifi==2020.6.20
 chardet==4.0.0
 coverage==5.2.1
 dj-rest-auth==2.1.4
-Django==2.2.26
+Django==2.2.27
 django-cors-headers==3.5.0
 django-crontab==0.7.1
 django-elasticsearch-dsl==6.4.2
