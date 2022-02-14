@@ -36,7 +36,7 @@ def test_fix_big_data_url(big_data_url, trackdb_url, expected_result):
     'big_data_url, expected_result',
     [
         ('http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg38.bb', 200),
-        ('ftp://ftp.sra.ebi.ac.uk/vol1/ERZ113/ERZ1131357/SRR2922672.cram', None),
+        ('ftp://ftp.sra.ebi.ac.uk/vol1/ERZ113/ERZ1131357/SRR2922672.cram', "ftp error: error_perm('550 Failed to change directory.')"),
         ('ftp://ftp.sra.ebi.ac.uk/bar.cram', "ftp error: URLError(\"ftp error: error_perm('550 Failed to change directory.')\")"),
         ('http://some.org/random/url/foo.cram', '403: Forbidden'),
     ]

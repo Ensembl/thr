@@ -164,7 +164,6 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
 @pytest.mark.parametrize(
     'hub_url, expected_error_key_result',
     [
-        ('https://url/to/non/existing/hub.txt', 'error'),
         ('https://url/to/the/hub.txt', 'error'),
     ]
 )

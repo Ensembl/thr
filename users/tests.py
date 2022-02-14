@@ -148,7 +148,7 @@ def test_email_verification_success(api_client):
     email_verification_response = api_client.get('/api/email_verification?token=' + token)
     actual_result = email_verification_response.json()
     assert email_verification_response.status_code == 200
-    assert actual_result == {'success': 'Account successfully activated!'}
+    assert actual_result == {'success': 'Account activated! Please login to your account'}
 
 
 @pytest.mark.django_db
@@ -176,7 +176,7 @@ def test_email_verification_fail(api_client):
     email_verification_response = api_client.get('/api/email_verification?token=' + token)
     actual_result = email_verification_response.json()
     assert email_verification_response.status_code == 400
-    assert actual_result == {'error': 'Invalid token'}
+    assert actual_result == {'error': 'Invalid token!'}
 
 
 @pytest.mark.django_db

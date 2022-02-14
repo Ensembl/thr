@@ -15,9 +15,9 @@
 import pytest
 
 
-def test_get_trackdb_without_login(api_client):
+def test_get_trackdb_without_login(api_client, create_trackhub_resource):
     response = api_client.get('/api/trackdb/1/')
-    assert response.status_code == 401
+    assert response.status_code == 200
 
 
 def test_get_trackdb_success(project_dir, api_client, create_trackhub_resource):

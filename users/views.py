@@ -11,7 +11,7 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-
+import django
 import jwt
 from django.contrib.auth import logout
 from django.contrib.sites.shortcuts import get_current_site
