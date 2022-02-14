@@ -331,9 +331,9 @@ def save_and_update_document(hub_url, data_type, current_user):
                 original_owner_email)}
 
     # run the USCS hubCheck tool found in kent tools on the submitted hub
-    hub_check_result = hub_check(hub_url)
-    if 'error' in hub_check_result.keys():
-        return hub_check_result
+    # hub_check_result = hub_check(hub_url)
+    # if 'error' in hub_check_result.keys():
+    #     return hub_check_result
 
     hub_info_array = parse_file_from_url(hub_url)
 
