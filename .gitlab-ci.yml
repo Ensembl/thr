@@ -83,7 +83,7 @@ pylint:
 # Build
 
 build:
-  image: docker:19.03.12
+  image: docker
   stage: build
 #  needs: ["pytest"]
   services:
