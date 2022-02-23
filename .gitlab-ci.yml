@@ -87,7 +87,7 @@ build:
   stage: build
 #  needs: ["pytest"]
   services:
-    - docker:dind
+    - ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:dind
   variables:
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   before_script:
