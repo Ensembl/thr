@@ -7,11 +7,15 @@ image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:3.7
 services:
   - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:dind
 
+# This fixes "error during connect: Post http://docker:2375/v1.40/auth: dial tcp: lookup docker on 192.168.65.5:53: no such host"
 variables:
-  # This fixes "error during connect: Post http://docker:2375/v1.40/auth: dial tcp: lookup docker on 192.168.65.5:53: no such host"
+  # DOCKER_HOST variable tells docker how to connect to the daemon (a background service running inside the Docker VM)
   DOCKER_HOST: tcp://docker:2375/
+  # Environemt Variable for docker:dind service explaining to use overlay2 as supporting driver for docker
+  # https://docs.docker.com/storage/storagedriver/overlayfs-driver/
   DOCKER_DRIVER: overlay2
-  # See https://github.com/docker-library/docker/pull/166
+  # We need to disable TLS (https://about.gitlab.com/blog/2019/07/31/docker-in-docker-with-docker-19-dot-03/#disable-tls)
+  # to fix the error "docker: Cannot connect to the Docker daemon at tcp://docker:2375. Is the docker daemon running?"
   DOCKER_TLS_CERTDIR: ""
 
 
@@ -34,8 +38,8 @@ pylint:
     - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
 
 
-# I disabled pytest job for now till I figure out why it gets
-# stuck until it times out on GitLab CI  but running fine locally
+# I disabled pytest job for now till I
+# TODO: figure out why it gets stuck until it times out on GitLab CI but running fine locally
 .pytest:
   stage: test
   before_script:
