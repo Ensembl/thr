@@ -4,8 +4,8 @@ image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:3.7
 
 # GitLab CI uses the services keyword to define what docker containers should be linked with our base image.
 # Since we are using docker as our image we'll be using docker:dind i.e. Docker-In-Docker-Image
-services:
-  - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:dind
+#services:
+#  - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:dind
 
 # This fixes "error during connect: Post http://docker:2375/v1.40/auth: dial tcp: lookup docker on 192.168.65.5:53: no such host"
 variables:
@@ -87,6 +87,8 @@ build:
   stage: build
 #  needs: ["pytest"]
   services:
+    # The docker:dind image is required because it starts up the docker daemon when it is brought up by a runner.
+    # https://forum.gitlab.com/t/why-services-docker-dind-is-needed-while-already-having-image-docker/43534/2
     - docker:dind
   variables:
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
