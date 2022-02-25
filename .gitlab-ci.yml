@@ -2,11 +2,6 @@
 # https://docs.gitlab.com/ee/user/packages/dependency_proxy/#authenticate-within-cicd
 image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:3.7
 
-# GitLab CI uses the services keyword to define what docker containers should be linked with our base image.
-# Since we are using docker as our image we'll be using docker:dind i.e. Docker-In-Docker-Image
-#services:
-#  - name: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/docker:dind
-
 # This fixes "error during connect: Post http://docker:2375/v1.40/auth: dial tcp: lookup docker on 192.168.65.5:53: no such host"
 variables:
   # DOCKER_HOST variable tells docker how to connect to the daemon (a background service running inside the Docker VM)
