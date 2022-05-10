@@ -186,6 +186,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
         user.set_password(new_password)
         # resetting the password automatically activates the account
-        user.is_account_activated = True
+        user.is_active = True
         user.save()
         return user
