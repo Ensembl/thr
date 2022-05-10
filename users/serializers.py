@@ -185,8 +185,7 @@ class SetNewPasswordSerializer(serializers.Serializer):
             })
 
         user.set_password(new_password)
-        # TODO: uncomment the line below after email verification branch is merged
         # resetting the password automatically activates the account
-        # user.is_account_activated = True
+        user.is_account_activated = True
         user.save()
         return user
