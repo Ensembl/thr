@@ -230,8 +230,8 @@ class ResetPasswordEmailView(APIView):
 
                 send_mail(
                     subject='[Trackhub Registry] Password reset',
-                    from_email='bilal@ebi.ac.uk',  # 'trackhub-registry@ebi.ac.uk',
-                    message='Hi, \nPlease use the link below to reset your password \n' + full_url,
+                    from_email='trackhub-registry@ebi.ac.uk',
+                    message='Hi' + user.username + ', \nPlease use the link below to reset your password: \n' + full_url,
                     recipient_list=[user.email],
                     fail_silently=False
                 )
