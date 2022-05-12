@@ -72,7 +72,7 @@ class TrackdbDetail(APIView):
                     status.HTTP_500_INTERNAL_SERVER_ERROR
                 )
             except Exception as exp:
-                return Response({"error": str(exp)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"error": "An internal error has occurred!"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(
                 {

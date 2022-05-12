@@ -117,7 +117,7 @@ class TrackHubDetail(APIView):
                 )
             except Exception as exp:
                 # pylint: disable = broad-except
-                return Response({"error": str(exp)}, status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response({"error": "An internal error has occurred!"}, status.HTTP_500_INTERNAL_SERVER_ERROR)
         else:
             return Response(
                 {
