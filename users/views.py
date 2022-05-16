@@ -159,14 +159,6 @@ class UserDetailsView(APIView):
             'affiliation': user.affiliation,
             'check_interval': user.check_interval,
             'continuous_alert': user.continuous_alert,
-
-            # 'username': html.escape(user.username),
-            # 'email': html.escape(user.email),
-            # 'first_name': html.escape(user.first_name),
-            # 'last_name': html.escape(user.last_name),
-            # 'affiliation': html.escape(user.affiliation),
-            # 'check_interval': html.escape(user.check_interval),
-            # 'continuous_alert': html.escape(user.continuous_alert)
         })
 
     def post(self, request):
