@@ -13,6 +13,7 @@
 """
 
 import os
+from datetime import timedelta
 from pathlib import Path
 
 # pylint: disable=pointless-string-statement
@@ -211,6 +212,11 @@ LOGGING = {
             'level': 'DEBUG'
         }
     }
+}
+
+# Set email verification access token lifetime to 30 minutes (default is 5 minutes)
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
 }
 
 # cron job scheduled to be run at 00:00 every Sunday
