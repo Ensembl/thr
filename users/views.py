@@ -42,7 +42,7 @@ from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnico
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.core.mail import send_mail
 # Escape special HTML characters in Python
-import html
+from django.utils.html import escape
 
 User = get_user_model()
 
@@ -266,7 +266,7 @@ class ValidateResetPasswordAPI(APIView):
                 )
 
             return Response(
-                {'success': 'Credentials are Valid', 'uidb64': html.escape(uidb64), 'token': html.escape(token)},
+                {'success': 'Credentials are Valid', 'uidb64': escape(uidb64), 'token': escape(token)},
                 status=status.HTTP_200_OK
 
             )

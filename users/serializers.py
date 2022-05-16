@@ -12,6 +12,7 @@
    limitations under the License.
 """
 
+from django.utils.html import escape
 from rest_framework import serializers
 from django.contrib.auth import password_validation
 from django.contrib.auth import get_user_model
@@ -59,13 +60,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
             })
 
         user = User(
-            email=self.validated_data['email'],
-            username=self.validated_data['username'],
-            first_name=self.validated_data.get('first_name'),
-            last_name=self.validated_data.get('last_name'),
-            affiliation=self.validated_data.get('affiliation'),
-            check_interval=check_interval,
-            continuous_alert=self.validated_data.get('continuous_alert'),
+            email=escape(self.validated_data['email']),
+            username=escape(self.validated_data['username']),
+            first_name=escape(self.validated_data.get('first_name')),
+            last_name=escape(self.validated_data.get('last_name')),
+            affiliation=escape(self.validated_data.get('affiliation')),
+            check_interval=escape(check_interval),
+            continuous_alert=escape(self.validated_data.get('continuous_alert')),
         )
         password = self.validated_data['password']
         password2 = self.validated_data['password2']
@@ -109,12 +110,12 @@ class CustomUserSerializer(serializers.ModelSerializer):
         if User.objects.filter(email=user.email).count() > 1:
             raise serializers.ValidationError({'email': 'Email already in use by another user'})
 
-        user.email = self.validated_data.get('email')
-        user.first_name = self.validated_data.get('first_name')
-        user.last_name = self.validated_data.get('last_name')
-        user.affiliation = self.validated_data.get('affiliation')
-        user.check_interval = self.validated_data.get('check_interval')
-        user.continuous_alert = self.validated_data.get('continuous_alert')
+        user.email = escape(self.validated_data.get('email'))
+        user.first_name = escape(self.validated_data.get('first_name'))
+        user.last_name = escape(self.validated_data.get('last_name'))
+        user.affiliation = escape(self.validated_data.get('affiliation'))
+        user.check_interval = escape(self.validated_data.get('check_interval'))
+        user.continuous_alert = escape(self.validated_data.get('continuous_alert'))
         user.save()
         return user
 
