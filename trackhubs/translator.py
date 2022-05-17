@@ -15,6 +15,7 @@
 import json
 import logging
 import time
+from django.utils.html import escape
 
 import django
 from django.contrib.auth import get_user_model
@@ -284,7 +285,7 @@ def save_species(genome_assembly_name):
     assembly_info_from_dump = get_assembly_info_from_dump(genome_assembly_name)
 
     if assembly_info_from_dump is None:
-        return {"error": "Assembly '{}' doesn't exist".format(genome_assembly_name)}
+        return {"error": "Assembly '{}' doesn't exist".format(escape(genome_assembly_name))}
 
     try:
         existing_species_obj = trackhubs.models.Species.objects.filter(taxon_id=assembly_info_from_dump.tax_id).first()
@@ -328,7 +329,7 @@ def save_and_update_document(hub_url, data_type, current_user):
         original_owner_email = User.objects.filter(id=original_owner_id).first().email
         return {
             "error": "This hub is already submitted by a different user (the original submitter's email: {})".format(
-                original_owner_email)}
+                escape(original_owner_email))}
 
     # run the USCS hubCheck tool found in kent tools on the submitted hub
     hub_check_result = hub_check(hub_url)
@@ -345,7 +346,7 @@ def save_and_update_document(hub_url, data_type, current_user):
         if data_type:
             data_type = data_type.lower()
             if data_type not in DATA_TYPES:
-                return {"Error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(data_type,
+                return {"error": "'{}' isn't a valid data type, the valid ones are: '{}'".format(escape(data_type),
                                                                                                  ", ".join(DATA_TYPES))}
         else:
             data_type = 'genomics'
