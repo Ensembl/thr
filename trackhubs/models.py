@@ -27,6 +27,8 @@ from django_elasticsearch_dsl_drf.wrappers import dict_to_obj
 from django_mysql.models import JSONField
 import elasticsearch
 from elasticsearch_dsl import connections
+
+from thr.settings import ELASTICSEARCH_DSL
 from users.models import CustomUser as User
 import trackhubs
 from trackhubs.utils import str2obj
@@ -458,7 +460,13 @@ class Trackdb(models.Model):
         try:
             # Connect to ES and prevent Read timed out error
             # https://stackoverflow.com/a/35302158/4488332
-            es_conn = connections.Elasticsearch(timeout=600, max_retries=10, retry_on_timeout=True)
+            es_conn = connections.Elasticsearch(
+                [ELASTICSEARCH_DSL['default']['hosts']],
+                verify_certs=True,
+                timeout=600,
+                max_retries=10,
+                retry_on_timeout=True
+            )
 
             es_conn.update(
                 index=index,

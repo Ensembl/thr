@@ -20,6 +20,7 @@ from rest_framework import status, authentication, permissions
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from thr.settings import ELASTICSEARCH_DSL
 from trackhubs.serializers import CustomOneHubSerializer, CustomHubListSerializer
 from trackhubs.models import Hub
 import trackhubs.translator
@@ -102,7 +103,10 @@ class TrackHubDetail(APIView):
         hub_original_owner_id = hub.owner_id
         if current_user_id == hub_original_owner_id:
             try:
-                es = connections.Elasticsearch()
+                es = connections.Elasticsearch(
+                    [ELASTICSEARCH_DSL['default']['hosts']],
+                    verify_certs=True
+                )
                 for trackdb_id in trackdbs_ids_list:
                     es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
             except elasticsearch.exceptions.NotFoundError:
