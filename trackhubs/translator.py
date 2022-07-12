@@ -377,8 +377,6 @@ def save_and_update_document(hub_url, data_type, current_user):
             trackdbs_info = parse_file_from_url(trackdb_url)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
 
-            tracks_status = fetch_tracks_status(trackdbs_info, trackdb_url)
-
             trackdb_data = []
             trackdb_configuration = {}
             for track in trackdbs_info:
@@ -450,6 +448,12 @@ def save_and_update_document(hub_url, data_type, current_user):
                                     'members'].update({
                                     track['track']: track
                                 })
+
+            # Handle track status
+            # Get all tracks belonging to the current trackdb_obj
+            all_tracks = trackhubs.models.Track.objects.filter(trackdb_id=trackdb_obj.trackdb_id)
+            # Fetch tracks status and get the status dict that will be loaded to MySQL and Elasticsearch below
+            tracks_status = fetch_tracks_status(all_tracks, trackdb_url)
 
             # update MySQL
             current_trackdb = Trackdb.objects.get(trackdb_id=trackdb_obj.trackdb_id)
