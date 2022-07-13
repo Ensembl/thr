@@ -164,11 +164,11 @@ Export the DB Configuration and turn on Debugging if necessary
 
 ```shell script
 # MySQL
-export THR_DB_NAME=thr_db  # The DB should already be created
-export THR_DB_USER=user
-export THR_DB_PASSWORD=password
-export THR_HOST=localhost
-export THR_PORT=3306
+export DB_DATABASE=thr_db  # The DB should already be created
+export DB_USER=user
+export DB_PASSWORD=password
+export DB_HOST=localhost
+export DB_PORT=3306
 # Elasticsearch
 export ES_HOST=localhost:9200
 ```
@@ -183,7 +183,7 @@ python manage.py migrate
 python manage.py search_index --rebuild -f
 ```
 
-The last command will create an index called `trackhubs` (the index schema is still WIP), we can get the list of indices using the command
+The last command will create an index called `trackhubs`, we can get the list of indices using the command
 
 ```shell script
 curl -XGET "http://localhost:9200/_cat/indices"
@@ -196,7 +196,7 @@ If it's your first time importing genome assembly information/dump from `ENA` us
 python manage.py import_assemblies --fetch ena
 ```
 
-It will fetch assembly info from ENA and dump it in a JSON file the use the latter to populate the database
+It will fetch assembly info from ENA and dump it in a JSON file then use it to populate the database
 
 If the JSON is already there, you can simply run 
 ```shell script
@@ -225,9 +225,17 @@ In case we want to rebuild the ES index with data existing in MySQL, you need to
 
 1. Rebuild ES index
 ```shell script
-python manage.py enrich 
+python manage.py search_index --rebuild 
 ```
-This will rebuild the ES index (`python manage.py search_index --rebuild -f`) and extract `configuration`, `data` and `file type` objects from MySQL DB and store it back in Elasticsearch by updating the documents.
+
+2. Enrich ES docs
+```shell script
+python manage.py enrich all
+```
+
+This will rebuild the ES index and extract `configuration`, `data`, `file type` and `status` objects from MySQL DB and store it back in Elasticsearch by updating the documents.
+
+> You can enrich one specific trackdb (e.g. `python manage.py enrich 1`) or exclude a trackdb (e.g. `python manage.py enrich all --exclude 1`). See `python manage.py enrich -h` for more details
 
 ##### Setting up Cron job
 

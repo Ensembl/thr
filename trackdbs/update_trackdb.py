@@ -24,8 +24,7 @@ def update_all_trackdbs(excluded_trackdb=None):
     It checks and updates all trackdb (bigDataUrl) status
     both in ES and MySQL
     """
-    # all_trackdbs = trackhubs.models.Trackdb.objects.all()
-    all_trackdbs = trackhubs.models.Trackdb.objects.exclude(trackdb_id=excluded_trackdb)  # .order_by('trackdb_id')[:10]
+    all_trackdbs = trackhubs.models.Trackdb.objects.exclude(trackdb_id=excluded_trackdb)
     trackdbs_counter = 0
     total_trackdbs = len(all_trackdbs)
     for trackdb in all_trackdbs:
