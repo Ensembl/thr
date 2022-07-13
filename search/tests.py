@@ -58,7 +58,7 @@ def test_get_one_trackdb_success(api_client, create_track_resource):
 
 def test_get_one_trackdb_fail(api_client):
     expected_result = {'error': 'TrackDB document not found.'}
-    response = api_client.get('/api/search/trackdb/144/')
+    response = api_client.get('/api/search/trackdb/1234567/')
     actual_result = response.json()
     assert response.status_code == 404
     assert actual_result == expected_result

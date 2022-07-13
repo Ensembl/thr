@@ -221,7 +221,7 @@ SIMPLE_JWT = {
 
 # cron job scheduled to be run at 00:00 every Sunday
 CRONJOBS = [
-    ('0 0 * * SUN', 'thr.trackdbs.update_status.update_trackdb_status', '>> ../../thr.log')
+    ('0 0 * * SUN', 'thr.trackdbs.update_status.update_all_trackdbs', '>> ../../thr.log')
 ]
 
 # redirect errors to stdout
