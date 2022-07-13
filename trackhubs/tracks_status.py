@@ -90,6 +90,9 @@ def fetch_tracks_status(tracks, trackdb_url):
             big_data_full_url = fix_big_data_url(track.big_data_url, trackdb_url)
             # make sure it's working
             big_data_exists = check_response(big_data_full_url)
+            # TODO: to avoid timeout issues when running `enrich all` command
+            #  comment the line above and replace it with the one below
+            # big_data_exists = 200  # skip check big_data_url
             logger.debug("Response of {}: {} ".format(big_data_full_url, big_data_exists))
             # if it's not the case
             if big_data_exists != 200 and big_data_exists is not None:

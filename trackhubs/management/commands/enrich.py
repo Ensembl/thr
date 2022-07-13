@@ -38,8 +38,8 @@ class Command(BaseCommand):
             $ python manage.py enrich 10001
             # Update status of all trackdbs
             $ python manage.py enrich all
-            # Update status of all trackdbs excluding 
-            $ python manage.py enrich all --exclude
+            # Update status of all trackdbs excluding ID 10001
+            $ python manage.py enrich all --exclude 10001
         
         Trackdb Examples:
             LNCipedia 3.1: Remote Data Unavailable
