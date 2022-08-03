@@ -140,7 +140,8 @@ class CustomPageNumberPagination(PageNumberPagination):
 class CustomTermsFacet(TermsFacet):
     """
     Override get_aggregation in Facet to increase
-    the bucket size from 10 to 9999
+    the bucket size from 10 to FACETS_LENGHT
+    specified in base.py config file
     """
     def get_aggregation(self):
         agg = A(self.agg_type, **self._params, size=FACETS_LENGHT)
@@ -189,7 +190,7 @@ class TrackdbDocumentListView(DocumentViewSet):
         # 'hub': 'hub.name.raw',  # By default, TermsFacet is used
         'hub': {
             'field': 'hub.name.raw',
-            'facet': CustomTermsFacet,  # But we defined our own CustomTermsFacet
+            'facet': CustomTermsFacet,  # But here we defined our own CustomTermsFacet
             'enabled': True,
         },
         'species': {
