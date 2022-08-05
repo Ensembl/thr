@@ -31,9 +31,11 @@ from django_elasticsearch_dsl_drf.filter_backends import (
 from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet, PageNumberPagination
 
 from elasticsearch_dsl import (
-    RangeFacet,
+    A,
     TermsFacet
 )
+
+from thr.settings import FACETS_LENGHT
 
 
 # We're overriding some methods since we need to stick with POST /search/
@@ -135,6 +137,19 @@ class CustomPageNumberPagination(PageNumberPagination):
         return Response(paginated_data)
 
 
+class CustomTermsFacet(TermsFacet):
+    """
+    Override get_aggregation in Facet to increase
+    the bucket size from 10 to FACETS_LENGHT
+    specified in base.py config file
+    """
+    def get_aggregation(self):
+        agg = A(self.agg_type, **self._params, size=FACETS_LENGHT)
+        if self._metric:
+            agg.metric('metric', self._metric, size=FACETS_LENGHT)
+        return agg
+
+
 class TrackdbDocumentListView(DocumentViewSet):
     """The TrackdbDocument view."""
 
@@ -175,22 +190,22 @@ class TrackdbDocumentListView(DocumentViewSet):
         # 'hub': 'hub.name.raw',  # By default, TermsFacet is used
         'hub': {
             'field': 'hub.name.raw',
-            'facet': TermsFacet,  # But we can define it explicitly
+            'facet': CustomTermsFacet,  # But here we defined our own CustomTermsFacet
             'enabled': True,
         },
         'species': {
             'field': 'species.scientific_name.raw',
-            'facet': TermsFacet,
+            'facet': CustomTermsFacet,
             'enabled': True,
         },
         'assembly': {
             'field': 'assembly.name.raw',
-            'facet': TermsFacet,
+            'facet': CustomTermsFacet,
             'enabled': True,
         },
         'type': {
             'field': 'type.raw',
-            'facet': TermsFacet,
+            'facet': CustomTermsFacet,
             'enabled': True,
         },
     }
