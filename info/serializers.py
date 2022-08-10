@@ -13,6 +13,8 @@
 """
 
 from rest_framework import serializers
+
+from thr import settings
 from trackhubs import models
 
 
@@ -61,7 +63,7 @@ class TrackhubInfoSerializer(serializers.ModelSerializer):
         for trackdb in trackdbs:
             trackdbs_short_info.append({
                 'species': trackdb.get('species').get('tax_id'),
-                'uri': 'https://www.trackhubregistry.org/api/search/trackdb/' + str(trackdb.get('trackdb_id')),
+                'uri': 'http://' + settings.BACKEND_URL + '/api/search/trackdb/' + str(trackdb.get('trackdb_id')),
                 'assembly': trackdb.get('assembly').get('accession')
             })
         return trackdbs_short_info
