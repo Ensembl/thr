@@ -326,11 +326,10 @@ def save_and_update_document(hub_url, data_type, current_user):
         original_owner_id = trackhubs.models.Hub.objects.filter(url=hub_url).first().owner_id
         if original_owner_id == current_user.id:
             return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
-        original_owner_email = User.objects.filter(id=original_owner_id).first().email
-        return {
-            "error": "This hub is already submitted by a different user (the original submitter's email: {})".format(
-                escape(original_owner_email))}
 
+        return {"error": "This hub is already submitted by a different user!"}
+
+    # TODO: add the possibility for the user to disable/enable hubCheck when submitting new Hub(s)
     # run the USCS hubCheck tool found in kent tools on the submitted hub
     # hub_check_result = hub_check(hub_url)
     # if 'error' in hub_check_result.keys():
