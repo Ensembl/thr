@@ -39,6 +39,7 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
+    id = models.AutoField(primary_key=True)
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)

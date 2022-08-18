@@ -184,7 +184,7 @@ class TrackdbDocumentListView(DocumentViewSet):
         'hub': 'hub.name.raw',
     }
     # Order by `_score` first.
-    ordering = ('_score', '_id', 'hub.name.raw',)
+    ordering = ('_score',)
 
     faceted_search_fields = {
         # 'hub': 'hub.name.raw',  # By default, TermsFacet is used

@@ -20,6 +20,7 @@ class CustomUser(AbstractUser):
     """
     Custom User Model from AbstractUser
     """
+    id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=50, blank=True, null=True)
     last_name = models.CharField(max_length=50, blank=True, null=True)
     affiliation = models.CharField(max_length=250, blank=True, null=True)

@@ -28,7 +28,7 @@ services:
   react:
       build:
         # Build from GitHub repo: https://docs.docker.com/engine/reference/commandline/build/#git-repositories
-        context: https://github.com/Ensembl/thr_frontend.git#feat/docker_and_ci
+        context: https://github.com/Ensembl/thr_frontend.git#chore/upgrade_react_and_mui
         dockerfile: Dockerfile
         args:
           - API_SERVER=${ENV_API_SERVER}
@@ -45,7 +45,7 @@ services:
         - webnet
 
   mysql:
-    image: mysql:$MYSQL_VERSION
+    image: mysql:${MYSQL_VERSION}
     command:
       # Set max_allowed_packet to 256M
       # Fix Aborted connection 11 to db: 'DB' user: 'USER' host: 'HOST' (Got an error reading communication packets)
@@ -71,7 +71,7 @@ services:
 
   elasticsearch:
     container_name: elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:$ELASTIC_VERSION
+    image: docker.elastic.co/elasticsearch/elasticsearch:${ELASTIC_VERSION}
     ports:
       - "9200:9200"
       - "9300:9300"
@@ -96,7 +96,7 @@ services:
       - django_static_volume:/usr/src/app/django_files/static
       - react_static_volume:/usr/src/app/react_files/static
     ports:
-      - 80:80
+      - "80:80"
     depends_on:
       - react
       - django
