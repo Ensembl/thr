@@ -31,7 +31,7 @@ from elasticsearch_dsl import connections
 from thr.settings import ELASTICSEARCH_DSL
 from users.models import CustomUser as User
 import trackhubs
-from trackhubs.utils import str2obj
+from trackhubs.utils import str2obj, remove_html_tags
 logger = logging.getLogger(__name__)
 
 
@@ -256,8 +256,18 @@ class Trackdb(models.Model):
         For a giving trackdb return the file type + count
         e.g file_type_counts_dict = {'bigBed': 20, 'bigWig': 1, 'bed': 1}
         """
-        file_type_counts = trackhubs.models.Track.objects.filter(trackdb=self).values('file_type__name').annotate(
-            count=Count('file_type'))
+        file_type_counts = (
+            trackhubs.models
+                # where trackdb_id is self
+                .Track.objects.filter(trackdb=self)
+                # get file_type name
+                .values('file_type__name')
+                # and count(file_type_id) as count
+                .annotate(count=Count('file_type'))
+                # excluding big_data_url null values and empty strings
+                .exclude(big_data_url__isnull=True)
+                .exclude(big_data_url__exact='')
+        )
         file_type_counts_dict = {}
         for ft_count in file_type_counts:
             file_type_counts_dict.update({ft_count['file_type__name']: ft_count['count']})
@@ -275,6 +285,7 @@ class Trackdb(models.Model):
         hub_url_and_short_label = Hub.objects.filter(hub_id=self.hub_id).values('url', 'short_label').first()
         hub_url = hub_url_and_short_label['url']
         hub_short_label = hub_url_and_short_label['short_label']
+        short_label_stripped = remove_html_tags(hub_short_label).strip()  # .replace(' ', '%20')
 
         # Get the assembly name and ucsc synonym using assembly id in trackdb object
         assembly_name_synonym_accession = Assembly.objects.filter(assembly_id=self.assembly_id).values('name',
@@ -386,15 +397,26 @@ class Trackdb(models.Model):
 
             # Look up division using Ensembl Rest API by using providing the assembly accession
             assembly_info_url = 'https://rest.ensembl.org/info/genomes/assembly/' + assembly_accession + ''
-            response = requests.get(assembly_info_url, headers={'Accept': 'application/json'}, verify=True)
+            assembly_info_response = requests.get(assembly_info_url, headers={'Accept': 'application/json'}, verify=True)
 
             # genome_division can be: 'EnsemblVertebrates', 'EnsemblProtists', 'EnsemblMetazoa',
             # 'EnsemblPlants', 'EnsemblFungi' or 'EnsemblBacteria'
             # See: https://rest.ensembl.org/documentation/info/info_divisions
             try:
-                genome_division = response.json().get('division')
+                genome_division = assembly_info_response.json().get('division')
             except json.decoder.JSONDecodeError:
                 genome_division = None
+
+            if genome_division is None:
+                # another way to get division is using species_scientific_name with /info/genomes API
+                # TODO: Ask if you we can get rid of division look up using assembly above
+                #  is fetching using info/genomes sufficient?
+                genomes_info_url = 'https://rest.ensembl.org/info/genomes/' + species_scientific_name + ''
+                genomes_info_response = requests.get(genomes_info_url, headers={'Accept': 'application/json'}, verify=True)
+                try:
+                    genome_division = genomes_info_response.json().get('division')
+                except json.decoder.JSONDecodeError:
+                    genome_division = None
 
             if genome_division is not None:
                 genome_division = genome_division.lower()
@@ -406,18 +428,18 @@ class Trackdb(models.Model):
                 else:
                     raise Exception("Genome division: '{}' isn't recognized".format(genome_division))
 
-                # EnsEMBL browser link
-                domain = f'http://{division}.ensembl.org'
+        # EnsEMBL browser link
+        domain = f'http://{division}.ensembl.org'
 
-                # if division contains the string 'archive' but not followed by '.plants'
-                if re.search("archive(?!\.plants)", division):
-                    # link to plant archive site should be the current one
-                    browser_links['ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
-                        domain, species_scientific_name, hub_url, hub_short_label.strip().replace(' ', '%20'))
-                else:
-                    browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
-                                                                                                        species_scientific_name,
-                                                                                                        hub_short_label.strip().replace(' ', '%20'))
+        # if division contains the string 'archive' but not followed by '.plants'
+        if re.search("archive(?!\.plants)", division):
+            # link to plant archive site should be the current one
+            browser_links['ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
+                domain, species_scientific_name, hub_url, short_label_stripped)
+        else:
+            browser_links['ensembl'] = "{}/TrackHub?url={};species={};name={};registry=1".format(domain, hub_url,
+                                                                                                species_scientific_name,
+                                                                                                short_label_stripped)
 
         # VectorBase browser links
         vectorbase_domain = "https://www.vectorbase.org"
@@ -441,7 +463,7 @@ class Trackdb(models.Model):
         browser_links['vectorbase'] = "{}/TrackHub?url={};species={};name={};registry=1".format(vectorbase_domain,
                                                                                                 hub_url,
                                                                                                 species_scientific_name,
-                                                                                                hub_short_label.strip().replace(' ', '%20'))
+                                                                                                short_label_stripped)
         return browser_links
 
     def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):

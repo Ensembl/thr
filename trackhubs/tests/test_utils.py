@@ -54,3 +54,19 @@ def test_str2obj(the_string, expected_output, expected_type):
 def test_escape_ansi(string_line, expected_result):
     actual_result = escape_ansi(string_line)
     assert actual_result == expected_result
+
+
+@pytest.mark.parametrize(
+    'html_text, expected_result',
+    [
+        ("<h1 class='foo'>Lorem ipsum</h1>", "Lorem ipsum"),
+        ("<h1 class='foo'>Lorem ipsum</h1> dolor sit amet", "Lorem ipsum dolor sit amet"),
+        ("Lorem ipsum</h1>", "Lorem ipsum"),
+        ("<h1 class='foo'>Lorem ipsum", "Lorem ipsum"),
+        ("Lorem ipsum", "Lorem ipsum"),
+        ("<br/>", ""),
+    ]
+)
+def test_remove_html_tags(html_text, expected_result):
+    actual_result = trackhubs.utils.remove_html_tags(html_text)
+    assert actual_result == expected_result

@@ -265,4 +265,8 @@ EMAIL_PORT = os.environ.get('EMAIL_PORT', 1025)
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'localhost:3000')
 BACKEND_URL = os.environ.get('BACKEND_URL', 'localhost:8000')
 
+# The number of elements shown in Species, Assembly
+# and Hub facets can be controlled using FACETS_LENGHT
+FACETS_LENGHT = 30
+
 THR_VERSION = "0.8"
