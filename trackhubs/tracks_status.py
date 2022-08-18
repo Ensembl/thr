@@ -12,6 +12,7 @@
    limitations under the License.
 """
 
+import sys
 import logging
 import time
 import urllib.request
@@ -21,6 +22,8 @@ from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+# Make Python loggers output all messages to stdout
+# logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 def fix_big_data_url(big_data_url, trackdb_url):
@@ -68,10 +71,10 @@ def check_response(url):
         return "{}".format(exp.reason)
 
 
-def fetch_tracks_status(trackdb_dict, trackdb_url):
+def fetch_tracks_status(tracks, trackdb_url):
     """
     Create the tracks status dictionary
-    :param trackdb_dict: the trackdb dictionary containing all tracks
+    :param tracks: all tracks belonging to one trackdb
     :param trackdb_url: the trackdb url (e.g http://lncipedia.org/trackhub/hg38/trackDb.txt),
     it's used by fix_big_data_url() function
     :returns: status dictionary
@@ -80,24 +83,27 @@ def fetch_tracks_status(trackdb_dict, trackdb_url):
     total_tracks_with_data_ko = 0
     broken_tracks_info = {}
 
-    for track in trackdb_dict:
-        if 'bigDataUrl' in track:
+    for track in tracks:
+        if track.big_data_url is not None:
             total_tracks_with_data += 1
             # get the full url for the bigDataUrl
-            big_data_full_url = fix_big_data_url(track['bigDataUrl'], trackdb_url)
+            big_data_full_url = fix_big_data_url(track.big_data_url, trackdb_url)
             # make sure it's working
             big_data_exists = check_response(big_data_full_url)
-            logger.error("Response of {}: {} ".format(big_data_full_url, big_data_exists))
+            # TODO: to avoid timeout issues when running `enrich all` command
+            #  comment the line above and replace it with the one below
+            # big_data_exists = 200  # skip check big_data_url
+            logger.debug("Response of {}: {} ".format(big_data_full_url, big_data_exists))
             # if it's not the case
             if big_data_exists != 200 and big_data_exists is not None:
                 total_tracks_with_data_ko += 1
                 # fill broken tracks info with the required data
-                broken_tracks_info[track['track']] = [big_data_full_url, big_data_exists]
+                broken_tracks_info[track.name] = [big_data_full_url, big_data_exists]
 
     tracks_status_dict = {
         'last_update': int(time.time()),
         'tracks': {
-            'total': len(trackdb_dict),
+            'total': len(tracks),
             'with_data': {
                 'total': total_tracks_with_data,
                 'total_ko': total_tracks_with_data_ko

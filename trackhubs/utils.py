@@ -1,6 +1,7 @@
 import ast
 import json
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,15 @@ def str2obj(var):
     string_var_double_quote = json.dumps(var)
     return json.loads(string_var_double_quote)
 
+
+def escape_ansi(line):
+    """
+    Remove the ANSI escape sequences from a string
+    https://stackoverflow.com/q/14693701/4488332
+    """
+    ansi_escape = re.compile(r'(?:\x1B[@-_]|[\x80-\x9F])[0-?]*[ -/]*[@-~]')
+    return ansi_escape.sub('', line)
+    
 
 def remove_html_tags(text):
     """Remove html tags from a string"""

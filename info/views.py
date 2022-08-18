@@ -13,6 +13,7 @@
 """
 import django
 import elasticsearch
+from rest_framework.pagination import LimitOffsetPagination
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -167,7 +168,7 @@ class TracksPerAssemblyInfoView(APIView):
             )
 
 
-class TrackhubsInfoView(APIView):
+class TrackhubsInfoView(APIView, LimitOffsetPagination):
     def get(self, request):
         """
         GET method for /api/info/trackhubs
@@ -196,14 +197,11 @@ class TrackhubsInfoView(APIView):
             ]
         }
         """
-        trackhubs_info = {}
         try:
             all_trackhubs = Hub.objects.all()
-            for trackhub in all_trackhubs:
-                serializer = TrackhubInfoSerializer(trackhub)
-                trackhubs_info.update(serializer.data)
-
-            return Response(trackhubs_info, status=status.HTTP_200_OK)
+            paginate_result = self.paginate_queryset(all_trackhubs, request, view=self)
+            serializer = TrackhubInfoSerializer(paginate_result, many=True)
+            return self.get_paginated_response(serializer.data)
 
         except django.db.OperationalError:
             return Response(

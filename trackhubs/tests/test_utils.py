@@ -13,7 +13,8 @@
 """
 
 import pytest
-import trackhubs.utils
+from trackhubs.utils import str2obj, escape_ansi
+
 
 
 @pytest.mark.parametrize(
@@ -38,9 +39,21 @@ import trackhubs.utils
     ]
 )
 def test_str2obj(the_string, expected_output, expected_type):
-    actual_output = trackhubs.utils.str2obj(the_string)
+    actual_output = str2obj(the_string)
     assert actual_output == expected_output
     assert isinstance(actual_output, expected_type)
+
+
+@pytest.mark.parametrize(
+    'string_line, expected_result',
+    [
+        ('\x1b[32;1mAll TrackDB are updated successfully!\x1b[0m\n', 'All TrackDB are updated successfully!\n'),
+        ('\t\x1b[00m\x1b[01;31manother_example\x1b[00m\x1b[01;31m', '\tanother_example'),
+    ]
+)
+def test_escape_ansi(string_line, expected_result):
+    actual_result = escape_ansi(string_line)
+    assert actual_result == expected_result
 
 
 @pytest.mark.parametrize(

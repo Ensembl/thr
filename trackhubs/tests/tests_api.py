@@ -129,7 +129,7 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
                     'accession': 'GCA_000001405.1',
                     'synonyms': 'hg19'
                 },
-                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/1'
+                'uri': 'https://beta-test.trackhubregistry.org/user/view_trackhub_status/1'
             },
             {
                 'trackdb_id': 2,
@@ -142,7 +142,7 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
                     'accession': 'GCA_000001405.15',
                     'synonyms': 'hg38'
                 },
-                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/2'
+                'uri': 'https://beta-test.trackhubregistry.org/user/view_trackhub_status/2'
             }
         ]
     }
