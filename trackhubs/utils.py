@@ -32,3 +32,10 @@ def str2obj(var):
 
     string_var_double_quote = json.dumps(var)
     return json.loads(string_var_double_quote)
+
+
+def remove_html_tags(text):
+    """Remove html tags from a string"""
+    import re
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)

@@ -41,3 +41,19 @@ def test_str2obj(the_string, expected_output, expected_type):
     actual_output = trackhubs.utils.str2obj(the_string)
     assert actual_output == expected_output
     assert isinstance(actual_output, expected_type)
+
+
+@pytest.mark.parametrize(
+    'html_text, expected_result',
+    [
+        ("<h1 class='foo'>Lorem ipsum</h1>", "Lorem ipsum"),
+        ("<h1 class='foo'>Lorem ipsum</h1> dolor sit amet", "Lorem ipsum dolor sit amet"),
+        ("Lorem ipsum</h1>", "Lorem ipsum"),
+        ("<h1 class='foo'>Lorem ipsum", "Lorem ipsum"),
+        ("Lorem ipsum", "Lorem ipsum"),
+        ("<br/>", ""),
+    ]
+)
+def test_remove_html_tags(html_text, expected_result):
+    actual_result = trackhubs.utils.remove_html_tags(html_text)
+    assert actual_result == expected_result
