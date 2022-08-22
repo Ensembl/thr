@@ -161,5 +161,4 @@ class TrackdbDocument(Document):
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.3/mapping.html#mapping-limit-settings
     class Meta:
         model = Trackdb
-        # all = MetaField(enabled=False)
         dynamic = MetaField('false')

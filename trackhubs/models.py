@@ -493,7 +493,6 @@ class Trackdb(models.Model):
         :param trackdb_configuration: configuration object that will be added to the trackdb document
         :param tracks_status: status dictionary that will be added to the trackdb document
         :param index: index name (default: 'trackhubs')
-        :param doc_type: document type (default: 'doc')
         """
         try:
             # Connect to ES and prevent Read timed out error
