@@ -31,7 +31,7 @@ from elasticsearch_dsl import connections
 from thr.settings import ELASTICSEARCH_DSL
 from users.models import CustomUser as User
 import trackhubs
-from trackhubs.utils import str2obj, remove_html_tags
+from trackhubs.utils import remove_html_tags
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +39,7 @@ class Species(models.Model):
     class Meta:
         db_table = "species"
 
+    id = models.AutoField(primary_key=True)
     taxon_id = models.IntegerField()
     scientific_name = models.CharField(max_length=255, null=True)
     common_name = models.CharField(max_length=255, null=True)
@@ -58,7 +59,7 @@ class FileType(models.Model):
 
     file_type_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
-    settings = models.TextField(null=True, default='')  # JSONField()
+    settings = models.JSONField(null=True)
 
 
 class Visibility(models.Model):
@@ -109,7 +110,7 @@ class Hub(models.Model):
                     'schema': trackdb.version,
                     'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
                     'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
-                    'status': str2obj(trackdb.status),
+                    'status': trackdb.status,
                 }
             )
         return trackdbs_list
@@ -176,15 +177,18 @@ class Trackdb(models.Model):
     version = models.CharField(default="v1.0", max_length=10)
     created = models.IntegerField(default=int(time.time()))
     updated = models.IntegerField(null=True)
-    configuration = models.TextField(null=True, default='')  # JSONField()
-    data = models.TextField(null=True, default='')  # JSONField()
-    status = models.TextField(null=True, default='')  # JSONField()
-    browser_links = models.TextField(null=True, default='')  # JSONField()
+    configuration = models.JSONField(null=True)
+    data = models.JSONField(null=True)
+    status = models.JSONField(null=True)
+    browser_links = models.JSONField(null=True)
     source_url = models.CharField(max_length=255, null=True)
     source_checksum = models.CharField(max_length=255, null=True)
     assembly = models.ForeignKey(Assembly, on_delete=models.CASCADE)
     hub = models.ForeignKey(Hub, on_delete=models.CASCADE)
     species = models.ForeignKey(Species, on_delete=models.CASCADE)
+    # is_archived may be needed in the future
+    is_archived = models.BooleanField(default=False)
+
 
     @property
     def data_type_indexing(self):
@@ -418,6 +422,16 @@ class Trackdb(models.Model):
                 except json.decoder.JSONDecodeError:
                     genome_division = None
 
+            if genome_division is None:
+                # if genome_division is still None get it using taxonomy endpoint, e.g:
+                # https://rest.ensembl.org/info/genomes/taxonomy/physcomitrella_patens?content-type=application/json
+                genomes_info_url = 'https://rest.ensembl.org/info/genomes/taxonomy/' + species_scientific_name
+                genomes_info_response = requests.get(genomes_info_url, headers={'Accept': 'application/json'}, verify=True)
+                try:
+                    genome_division = genomes_info_response.json()[0].get('division')
+                except json.decoder.JSONDecodeError:
+                    genome_division = None
+
             if genome_division is not None:
                 genome_division = genome_division.lower()
                 if genome_division == 'ensemblvertebrates':
@@ -431,8 +445,10 @@ class Trackdb(models.Model):
         # EnsEMBL browser link
         domain = f'http://{division}.ensembl.org'
 
+        if division is None:
+            logger.warning("[WARNING] Couldn't fetch division for trackdb ID: {}!".format(self.trackdb_id))
         # if division contains the string 'archive' but not followed by '.plants'
-        if re.search("archive(?!\.plants)", division):
+        elif re.search("archive(?!\.plants)", division):
             # link to plant archive site should be the current one
             browser_links['ensembl'] = "{}/{}/Location/View?contigviewbottom=url:{};name={};format=TRACKHUB;#modal_user_data".format(
                 domain, species_scientific_name, hub_url, short_label_stripped)
@@ -466,18 +482,17 @@ class Trackdb(models.Model):
                                                                                                 short_label_stripped)
         return browser_links
 
-    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs', doc_type='doc'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs'):
         # pylint: disable=too-many-arguments
         """
         TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track
-        :param trackdb_data: data object that will be added to the trackdb document
-        :param trackdb_configuration: configuration string that will be added to the trackdb document
+        :param trackdb_data: data array that will be added to the trackdb document
+        :param trackdb_configuration: configuration object that will be added to the trackdb document
         :param tracks_status: status dictionary that will be added to the trackdb document
         :param index: index name (default: 'trackhubs')
-        :param doc_type: document type (default: 'doc')
         """
         try:
             # Connect to ES and prevent Read timed out error
@@ -492,15 +507,14 @@ class Trackdb(models.Model):
 
             es_conn.update(
                 index=index,
-                doc_type=doc_type,
                 id=self.trackdb_id,
                 # refresh=True,
                 body={
                     'doc': {
                         'owner': hub.get_owner(),
                         'file_type': self.get_trackdb_file_type_count(),
-                        'data': str2obj(trackdb_data),
-                        'browser_links': str2obj(self.generate_browser_links()),
+                        'data': trackdb_data,
+                        'browser_links': self.generate_browser_links(),
                         'updated': int(time.time()),
                         'source': {
                             'url': self.source_url,
@@ -511,8 +525,8 @@ class Trackdb(models.Model):
                         'type': trackhubs.models.Hub.objects.filter(data_type_id=hub.data_type_id)
                             .values('data_type__name').first()
                             .get('data_type__name'),
-                        'configuration': str2obj(trackdb_configuration),
-                        'status': str2obj(tracks_status)
+                        'configuration': trackdb_configuration,
+                        'status': tracks_status
                     }
                 }
             )
@@ -535,7 +549,7 @@ class Track(models.Model):
     big_data_url = models.TextField(blank=True, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
-    additional_properties = models.TextField(null=True)  # JSONField()
+    additional_properties = models.JSONField(null=True)
     # TODO: make sure composite_parent is not used
     # Check if it's replaced with super_track, composite_track and is_multiwig_track
     # composite_parent = models.CharField(max_length=2, null=True)
