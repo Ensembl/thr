@@ -43,7 +43,6 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
     :param create_hub_resource: Fixture that creates the hub object
     """
     index = 'test_trackhubs'
-    doc_type = 'doc'
 
     trackdb_configuration = {
         "SAMN08391522": {
@@ -92,7 +91,7 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
         }
     }
 
-    indexed_trackdb_document = es_instance.index(index=index, doc_type=doc_type, id=1, body=expected_trackdb_document)
+    indexed_trackdb_document = es_instance.index(index=index, id=1, body=expected_trackdb_document)
     # assert that either the document is created or updated
     assert indexed_trackdb_document['result'] in ('created', 'updated')
     assert create_trackdb_resource.source_url == expected_trackdb_document['source_url']
@@ -104,13 +103,11 @@ def test_update_trackdb_document(es_instance, create_trackdb_resource, create_hu
         trackdb_configuration=expected_trackdb_document['configuration'],
         tracks_status=track_status,
         index=index,
-        doc_type=doc_type
     )
 
     # get the actual trackdb document to compare it with expected data
     actual_trackdb_document = es_instance.get(
         index=index,
-        doc_type=doc_type,
         id=create_trackdb_resource.trackdb_id
     )['_source']
 

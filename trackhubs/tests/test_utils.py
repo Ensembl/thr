@@ -13,6 +13,8 @@
 """
 
 import pytest
+
+import trackhubs
 from trackhubs.utils import str2obj, escape_ansi
 
 
