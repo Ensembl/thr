@@ -38,8 +38,6 @@ class Command(BaseCommand):
             $ python manage.py enrich 10001
             # Update status of all trackdbs
             $ python manage.py enrich all
-            # Update status of all trackdbs excluding ID 10001
-            $ python manage.py enrich all --exclude 10001
         
         Trackdb Examples:
             LNCipedia 3.1: Remote Data Unavailable
@@ -62,12 +60,6 @@ class Command(BaseCommand):
             type=str,
             help="Update trackdb status by providing the <id> or 'all' \nif you want to update all trackdbs status",
         )
-        # This is an optional argument
-        parser.add_argument(
-            '--exclude',
-            type=str,
-            help="Trackdb ID that will be excluded (e.g Blueprint Hub), works only with 'all'",
-        )
 
     def handle(self, *args, **options):
         # uncomment the line below if you want to rebuild and enrich the index at the same time
@@ -77,14 +69,8 @@ class Command(BaseCommand):
         # Get the trackdb ID if provided
         trackdb_id = options['trackdbid'] if options['trackdbid'] is not None else None
         if options['trackdbid'].lower() == 'all':
-            # if 'all' check if a trackdb ID is/is not excluded
-            excluded_trackdb_id = options['exclude']
-            if excluded_trackdb_id is not None and excluded_trackdb_id.isnumeric():
-                update_all_trackdbs(excluded_trackdb=excluded_trackdb_id)
-                self.stdout.write(self.style.SUCCESS(f"All TrackDB are updated successfully (Except Trackdb with ID: {excluded_trackdb_id})!"))
-            else:
-                update_all_trackdbs()
-                self.stdout.write(self.style.SUCCESS('All TrackDB are updated successfully!'))
+            update_all_trackdbs()
+            self.stdout.write(self.style.SUCCESS('All TrackDB are updated successfully!'))
         else:
             # Update one specific trackdb
             update_one_trackdb(trackdb_id)
