@@ -73,5 +73,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('All TrackDB are updated successfully!'))
         else:
             # Update one specific trackdb
-            update_one_trackdb(trackdb_id)
-            self.stdout.write(self.style.SUCCESS(f"TrackDB with ID '{trackdb_id}' updated successfully!"))
+            enriched_trackdb_id = update_one_trackdb(trackdb_id)
+            if enriched_trackdb_id:
+                self.stdout.write(self.style.SUCCESS(f"TrackDB with ID '{trackdb_id}' updated successfully!"))
+            else:
+                self.stdout.write(self.style.ERROR(f"No TrackDB with ID '{trackdb_id}'!"))
+

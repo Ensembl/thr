@@ -51,3 +51,5 @@ def update_one_trackdb(trackdb_id):
         # Update ES document
         one_trackdb.update_trackdb_document(one_trackdb.hub, one_trackdb.data, one_trackdb.configuration, tracks_status)
         logger.info('Status updated successfully: ', tracks_status)
+
+    return one_trackdb
