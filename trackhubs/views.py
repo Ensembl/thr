@@ -108,7 +108,7 @@ class TrackHubDetail(APIView):
                     verify_certs=True
                 )
                 for trackdb_id in trackdbs_ids_list:
-                    es.delete(index='trackhubs', doc_type='doc', id=trackdb_id)
+                    es.delete(index='trackhubs', id=trackdb_id)
             except elasticsearch.exceptions.NotFoundError:
                 return Response(
                     {"error": "The hub doesn't exist, please check using 'GET api/trackhub/{}' endpoint".format(pk)},
