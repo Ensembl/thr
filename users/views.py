@@ -14,10 +14,6 @@
 import django
 import jwt
 from django.contrib.auth import logout
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
-from django.urls import reverse
-# from django.conf import settings
 from thr import settings
 from rest_framework import status, authentication, permissions
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -47,15 +43,38 @@ from django.utils.html import escape
 User = get_user_model()
 
 
-# extend the ObtainAuthToken class to add is_account_activated status to API response
 class LoginViewAPI(ObtainAuthToken):
+    """
+    To keep everyone happy we have both GET and POST for login
+    GET: same as THR legacy docs
+    POST: best practices + used by the frontend
+    """
     def post(self, request, *args, **kwargs):
+        """
+        POST is overrided/extended to add is_account_activated status and user email to the API response
+        This is the API call using by the frontend
+        """
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({
-            'token': token.key,
+            'auth_token': token.key,
+            'email': user.email,
+            'is_account_activated': user.is_account_activated
+        })
+
+    def get(self, request):
+        """
+        Login by default uses POST, however, for consistencies reasons with THR legacy
+        GET request is added below
+        """
+        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'auth_token': token.key,
             'email': user.email,
             'is_account_activated': user.is_account_activated
         })
@@ -136,6 +155,14 @@ class LogoutViewAPI(APIView):
     def post(self, request):
         """
         Returns the response message 200 or 401 (Invalid token)
+        """
+        request.user.auth_token.delete()
+        logout(request)
+        return Response({"success": "Successfully logged out."}, status.HTTP_200_OK)
+
+    def get(self, request):
+        """
+        Same as the Login API above, GET is added for consistencies reasons with THR legacy
         """
         request.user.auth_token.delete()
         logout(request)
