@@ -67,17 +67,9 @@ class LoginViewAPI(ObtainAuthToken):
     def get(self, request):
         """
         Login by default uses POST, however, for consistencies reasons with THR legacy
-        GET request is added below
+        GET request is added below which is a POST in disguise ¯\_(ツ)_/¯
         """
-        serializer = self.serializer_class(data=request.data, context={'request': request})
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'auth_token': token.key,
-            'email': user.email,
-            'is_account_activated': user.is_account_activated
-        })
+        return self.post(request)
 
 
 class RegistrationViewAPI(APIView):
@@ -164,9 +156,7 @@ class LogoutViewAPI(APIView):
         """
         Same as the Login API above, GET is added for consistencies reasons with THR legacy
         """
-        request.user.auth_token.delete()
-        logout(request)
-        return Response({"success": "Successfully logged out."}, status.HTTP_200_OK)
+        return self.post(request)
 
 
 class UserDetailsView(APIView):
