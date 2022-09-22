@@ -66,10 +66,13 @@ class LoginViewAPI(ObtainAuthToken):
 
     def get(self, request):
         """
-        Login by default uses POST, however, for consistencies reasons with THR legacy
-        GET request is added below which is a POST in disguise ¯\_(ツ)_/¯
+        Let the user know that GET endpoint is replaced with POST
         """
-        return self.post(request)
+        return Response(
+            {"Error": "GET API endpoint is being removed, please use POST instead "
+                      "(See the documentation for more details)"},
+            status.HTTP_301_MOVED_PERMANENTLY
+        )
 
 
 class RegistrationViewAPI(APIView):
@@ -154,9 +157,13 @@ class LogoutViewAPI(APIView):
 
     def get(self, request):
         """
-        Same as the Login API above, GET is added for consistencies reasons with THR legacy
+        Let the user know that GET endpoint is replaced with POST
         """
-        return self.post(request)
+        return Response(
+            {"Error": "GET API endpoint is being removed, please use POST instead "
+                      "(See the documentation for more details)"},
+            status.HTTP_301_MOVED_PERMANENTLY
+        )
 
 
 class UserDetailsView(APIView):
