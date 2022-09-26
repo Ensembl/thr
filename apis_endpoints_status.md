@@ -5,9 +5,9 @@
 | Endpoint name                   | Description                                                | Status      |
 | ------------------------------- | ---------------------------------------------------------- | ----------- |
 | POST /api/user                  | Get information about the current user                     | Done        |
-| POST /api/user/register         | Register a new user and obtain the access token            | Done        |
-| POST /api/user/login            | Login and get the authentication token                     | Done        |
-| POST /api/user/logout           | Logout and invalidate the current access token             | Done        |
+| POST /api/register              | Register a new user and obtain the access token            | Done        |
+| POST /api/login                 | Login and get the authentication token                     | Done        |
+| POST /api/logout                | Logout and invalidate the current access token             | Done        |
 | GET /api/trackhub               | Returns the set of registered track data hubs for the given user| Done   |
 | GET /api/trackhub/:id           | Return a track hub with the given name in the Registry     | Done        |
 | DELETE /api/trackhub/:id        | Delete trackDBs assigned to a given track hub              | Done        |

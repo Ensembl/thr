@@ -65,7 +65,7 @@ class TrackdbDetail(APIView):
                     [ELASTICSEARCH_DSL['default']['hosts']],
                     verify_certs=True
                 )
-                es_conn.delete(index='trackhubs', doc_type='doc', id=trackdb.trackdb_id)
+                es_conn.delete(index='trackhubs', id=trackdb.trackdb_id)
             except elasticsearch.exceptions.NotFoundError:
                 return Response(
                     {"error": "The trackdb doesn't exist, please check using 'GET api/trackdb/{}' endpoint".format(pk)},

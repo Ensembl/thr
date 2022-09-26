@@ -14,10 +14,6 @@
 import django
 import jwt
 from django.contrib.auth import logout
-from django.contrib.sites.shortcuts import get_current_site
-from django.core.mail import send_mail
-from django.urls import reverse
-# from django.conf import settings
 from thr import settings
 from rest_framework import status, authentication, permissions
 from rest_framework.authtoken.views import ObtainAuthToken
@@ -47,18 +43,36 @@ from django.utils.html import escape
 User = get_user_model()
 
 
-# extend the ObtainAuthToken class to add is_account_activated status to API response
 class LoginViewAPI(ObtainAuthToken):
+    """
+    We have both GET and POST for login
+    GET: Returns a message letting the user know this endpoint is replace with POST
+    POST: Returns the authentication token along with the user's email and whether their account is activated or not
+    """
     def post(self, request, *args, **kwargs):
+        """
+        POST is overrided/extended to add is_account_activated status and user email to the API response
+        This is the API call using by the frontend
+        """
         serializer = self.serializer_class(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({
-            'token': token.key,
+            'auth_token': token.key,
             'email': user.email,
             'is_account_activated': user.is_account_activated
         })
+
+    def get(self, request):
+        """
+        Let the user know that GET endpoint is replaced with POST
+        """
+        return Response(
+            {"Error": "GET API endpoint is being removed, please use POST instead "
+                      "(See the documentation for more details)"},
+            status.HTTP_301_MOVED_PERMANENTLY
+        )
 
 
 class RegistrationViewAPI(APIView):
@@ -140,6 +154,16 @@ class LogoutViewAPI(APIView):
         request.user.auth_token.delete()
         logout(request)
         return Response({"success": "Successfully logged out."}, status.HTTP_200_OK)
+
+    def get(self, request):
+        """
+        Let the user know that GET endpoint is replaced with POST
+        """
+        return Response(
+            {"Error": "GET API endpoint is being removed, please use POST instead "
+                      "(See the documentation for more details)"},
+            status.HTTP_301_MOVED_PERMANENTLY
+        )
 
 
 class UserDetailsView(APIView):

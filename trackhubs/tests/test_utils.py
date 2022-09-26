@@ -13,10 +13,7 @@
 """
 
 import pytest
-
-import trackhubs
-from trackhubs.utils import str2obj, escape_ansi
-
+from trackhubs.utils import str2obj, escape_ansi, remove_html_tags
 
 
 @pytest.mark.parametrize(
@@ -70,5 +67,5 @@ def test_escape_ansi(string_line, expected_result):
     ]
 )
 def test_remove_html_tags(html_text, expected_result):
-    actual_result = trackhubs.utils.remove_html_tags(html_text)
+    actual_result = remove_html_tags(html_text)
     assert actual_result == expected_result

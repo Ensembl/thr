@@ -109,7 +109,7 @@ class Hub(models.Model):
                         trackdb.trackdb_id),
                     'schema': trackdb.version,
                     'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
-                    'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S'),
+                    'updated': datetime.utcfromtimestamp(trackdb.updated).strftime('%Y-%m-%d %H:%M:%S') if trackdb.updated else None,
                     'status': trackdb.status,
                 }
             )

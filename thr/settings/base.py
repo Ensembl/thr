@@ -269,4 +269,7 @@ BACKEND_URL = os.environ.get('BACKEND_URL', 'localhost:8000')
 # and Hub facets can be controlled using FACETS_LENGHT
 FACETS_LENGHT = 30
 
+# The hub check API is in a separate VM
+HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hubcheck')
+
 THR_VERSION = "0.8"
