@@ -14,6 +14,7 @@
 
 import sys
 import requests
+from thr import settings
 
 
 def hub_check(hub_url):
@@ -23,7 +24,7 @@ def hub_check(hub_url):
     :returns: the hub information if the submission was successful otherwise it returns an error
     TODO: group 'translator.py', 'hub_check.py', 'constants' and 'parser.py' in 'utils' directory
     """
-    url = "http://wp-p1m-b9:8000/hubcheck"
+    url = settings.HUBCHECK_API_URL
     payload = {"hub_url": hub_url}
 
     print("[INFO] Checking " + hub_url + "...")

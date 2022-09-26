@@ -45,9 +45,9 @@ User = get_user_model()
 
 class LoginViewAPI(ObtainAuthToken):
     """
-    To keep everyone happy we have both GET and POST for login
-    GET: same as THR legacy docs
-    POST: best practices + used by the frontend
+    We have both GET and POST for login
+    GET: Returns a message letting the user know this endpoint is replace with POST
+    POST: Returns the authentication token along with the user's email and whether their account is activated or not
     """
     def post(self, request, *args, **kwargs):
         """
