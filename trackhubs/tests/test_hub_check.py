@@ -25,9 +25,9 @@ def project_dir():
 @pytest.mark.parametrize(
     'test_hub_url, expected_key_in_result',
     [
-        ('local:' + str(BASE_DIR.parent) + '/' + 'samples/JASPAR_TFBS/hub.txt', 'success'),
-        ('local:' + str(BASE_DIR.parent) + '/' + 'samples/SRP066358/hub.txt', 'warning'),
-        ('local:' + str(BASE_DIR.parent) + '/' + 'samples/not/here/hub.txt', 'error'),
+        ('ftp://ftp.ebi.ac.uk/pub/databases/Rfam/12.0/genome_browser_hub/hub.txt', 'success'),
+        ('ftp://ftp.ensemblgenomes.org/pub/misc_data/Track_Hubs/SRP090583/hub.txt', 'warning'),
+        ('ftp://ftp.ebi.ac.uk/pub/databases/not/here/hub.txt', 'error'),
     ]
 )
 def test_hub_check_all_cases(test_hub_url, expected_key_in_result):
