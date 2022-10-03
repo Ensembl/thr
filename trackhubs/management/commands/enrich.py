@@ -56,7 +56,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         # This is mandatory argument
         parser.add_argument(
-            'trackdbid',
+            'trackdb_id',
             type=str,
             help="Update trackdb status by providing the <id> or 'all' \nif you want to update all trackdbs status",
         )
@@ -67,8 +67,8 @@ class Command(BaseCommand):
         # management.call_command("search_index", "--rebuild", "-f")
         # Updating process:
         # Get the trackdb ID if provided
-        trackdb_id = options['trackdbid'] if options['trackdbid'] is not None else None
-        if options['trackdbid'].lower() == 'all':
+        trackdb_id = options['trackdb_id'] if options['trackdb_id'] is not None else None
+        if options['trackdb_id'].lower() == 'all':
             update_all_trackdbs()
             self.stdout.write(self.style.SUCCESS('All TrackDB are updated successfully!'))
         else:
