@@ -67,7 +67,7 @@ class Command(BaseCommand):
         # management.call_command("search_index", "--rebuild", "-f")
         # Updating process:
         # Get the trackdb ID if provided
-        trackdb_id = options['trackdb_id'] if options['trackdb_id'] is not None else None
+        trackdb_id = options['trackdb_id']
         if options['trackdb_id'].lower() == 'all':
             update_all_trackdbs()
             self.stdout.write(self.style.SUCCESS('All TrackDB are updated successfully!'))
