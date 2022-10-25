@@ -16,7 +16,6 @@ import pytest
 from trackhubs.utils import str2obj, escape_ansi, remove_html_tags
 
 
-
 @pytest.mark.parametrize(
     'the_string, expected_output, expected_type',
     [

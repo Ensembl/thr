@@ -20,22 +20,21 @@ from trackhubs.utils import escape_ansi
 
 
 @pytest.mark.django_db
-def test_enrich_all_success():
+def test_enrich_all_success(create_trackdb_resource):
     out = StringIO()
     call_command('enrich', 'all', stdout=out)
-    # assert 'All TrackDB are updated successfully!\n' == out.getvalue()
     assert 'All TrackDB are updated successfully!\n' == escape_ansi(out.getvalue())
 
 
 @pytest.mark.django_db
-def test_enrich_exclude_success():
-    out = StringIO()
-    call_command('enrich', 'all', '--exclude', '1', stdout=out)
-    assert 'All TrackDB are updated successfully (Except Trackdb with ID: 1)!\n' == escape_ansi(out.getvalue())
-
-
-@pytest.mark.django_db
-def test_enrich_one_success():
+def test_enrich_one_success(create_trackdb_resource):
     out = StringIO()
     call_command('enrich', '1', stdout=out)
     assert "TrackDB with ID '1' updated successfully!\n" == escape_ansi(out.getvalue())
+
+
+@pytest.mark.django_db
+def test_enrich_one_fail():
+    out = StringIO()
+    call_command('enrich', '1', stdout=out)
+    assert "No TrackDB with ID '1'!\n" == escape_ansi(out.getvalue())

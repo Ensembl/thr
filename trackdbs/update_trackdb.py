@@ -18,13 +18,13 @@ from trackhubs.tracks_status import fetch_tracks_status
 logger = logging.getLogger(__name__)
 
 
-def update_all_trackdbs(excluded_trackdb=None):
+def update_all_trackdbs():
     """
     This function will be executed automatically via cron.
     It checks and updates all trackdb (bigDataUrl) status
     both in ES and MySQL
     """
-    all_trackdbs = trackhubs.models.Trackdb.objects.exclude(trackdb_id=excluded_trackdb)
+    all_trackdbs = trackhubs.models.Trackdb.objects.all()
     trackdbs_counter = 0
     total_trackdbs = len(all_trackdbs)
     for trackdb in all_trackdbs:
@@ -51,3 +51,5 @@ def update_one_trackdb(trackdb_id):
         # Update ES document
         one_trackdb.update_trackdb_document(one_trackdb.hub, one_trackdb.data, one_trackdb.configuration, tracks_status)
         logger.info('Status updated successfully: ', tracks_status)
+
+    return one_trackdb
