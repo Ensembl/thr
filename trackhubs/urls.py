@@ -18,5 +18,5 @@ from trackhubs import views
 
 urlpatterns = [
     path('', views.TrackHubList.as_view()),
-    path('<int:pk>/', views.TrackHubDetail.as_view()),
+    path('/<int:pk>', views.TrackHubDetail.as_view()),
 ]

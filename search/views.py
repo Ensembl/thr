@@ -128,6 +128,11 @@ class CustomPageNumberPagination(PageNumberPagination):
     'results' becomes 'items' and
     'count' becomes 'total_entries'
     """
+    # override page_size_query_param attribute
+    # http://localhost:8000/api/search?page=1&entries_per_page=3
+    # will return 3 items per page. If we don't provide 'entries_per_page'
+    # argument in the URL, DRF will use settings.PAGE_SIZE
+    page_size_query_param = 'entries_per_page'
 
     def get_paginated_response(self, data):
         # we catch the data and rename the fields on the fly before passing the response

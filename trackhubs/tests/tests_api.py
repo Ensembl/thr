@@ -27,7 +27,7 @@ def test_post_trackhub_success(project_dir, api_client, create_user_resource, cr
         },
         'type': 'genomics'
     }
-    response = api_client.post('/api/trackhub/', submitted_hub, format='json')
+    response = api_client.post('/api/trackhub', submitted_hub, format='json')
     # print("## Response message: {}".format(response.content.decode()))
     assert response.status_code == 201
 
@@ -38,7 +38,7 @@ def test_post_trackhub_bad_url(api_client, create_user_resource):
     submitted_hub = {
         'url': 'https://some.random/bad/url/hub.txt'
     }
-    response = api_client.post('/api/trackhub/', submitted_hub, format='json')
+    response = api_client.post('/api/trackhub', submitted_hub, format='json')
     assert response.status_code == 400
 
 
@@ -49,7 +49,7 @@ def test_post_trackhub_no_url_field(project_dir, api_client, create_user_resourc
         # 'wrong_field_name': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
         'wrong_field_name': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
-    response = api_client.post('/api/trackhub/', submitted_hub, format='json')
+    response = api_client.post('/api/trackhub', submitted_hub, format='json')
     assert response.status_code == 400
 
 
@@ -58,12 +58,12 @@ def test_post_trackhub_without_login(project_dir, api_client):
         # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
         'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
-    response = api_client.post('/api/trackhub/', submitted_hub, format='json')
+    response = api_client.post('/api/trackhub', submitted_hub, format='json')
     assert response.status_code == 401
 
 
 def test_get_trackhub_without_login(api_client):
-    response = api_client.get('/api/trackhub/')
+    response = api_client.get('/api/trackhub')
     assert response.status_code == 401
 
 
@@ -98,7 +98,7 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
             }]
     }]
 
-    response = api_client.get('/api/trackhub/')
+    response = api_client.get('/api/trackhub')
     actual_result = response.json()
     assert response.status_code == 200
     assert actual_result[0]['hub_id'] == expected_result[0]['hub_id']
@@ -147,7 +147,7 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
         ]
     }
 
-    response = api_client.get('/api/trackhub/1/')
+    response = api_client.get('/api/trackhub/1')
     actual_result = response.json()
     assert response.status_code == 200
     # assert actual_result['hub_id'] == expected_result['hub_id']
@@ -158,7 +158,7 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
 
 def test_get_one_trackhub_fail(api_client, create_trackhub_resource):
     expected_result = {'detail': 'Not found.'}
-    response = api_client.get('/api/trackhub/144/')
+    response = api_client.get('/api/trackhub/144')
     actual_result = response.json()
     assert response.status_code == 404
     assert actual_result == expected_result
@@ -172,5 +172,5 @@ def test_get_one_trackhub_fail(api_client, create_trackhub_resource):
     ]
 )
 def test_delete_trackhub(api_client, create_trackhub_resource, hub_id, expected_status_code):
-    response = api_client.delete('/api/trackhub/{}/'.format(hub_id))
+    response = api_client.delete('/api/trackhub/{}'.format(hub_id))
     assert response.status_code == expected_status_code
