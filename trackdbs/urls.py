@@ -17,5 +17,5 @@ from .views import TrackdbDetail
 
 
 urlpatterns = [
-    path('<int:pk>/', TrackdbDetail.as_view()),
+    path('/<int:pk>', TrackdbDetail.as_view()),
 ]

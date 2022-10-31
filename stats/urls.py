@@ -17,6 +17,6 @@ from django.urls import path
 from stats import views
 
 urlpatterns = [
-    path('summary', views.SummaryStatsView.as_view()),
-    path('complete', views.CompleteStatsView.as_view()),
+    path('/summary', views.SummaryStatsView.as_view()),
+    path('/complete', views.CompleteStatsView.as_view()),
 ]

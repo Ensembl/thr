@@ -18,7 +18,7 @@ from users.views import RegistrationViewAPI, LogoutViewAPI, UserDetailsView, Cha
     LoginViewAPI, ValidateResetPasswordAPI, ResetPasswordEmailView, SetNewPasswordAPI
 
 urlpatterns = [
-    path('user/', UserDetailsView.as_view(), name='user_api'),
+    path('user', UserDetailsView.as_view(), name='user_api'),
     path('register', RegistrationViewAPI.as_view(), name='register_api'),
     path('login', LoginViewAPI.as_view(), name='login_api'),
     path('logout', LogoutViewAPI.as_view(), name='logout_api'),

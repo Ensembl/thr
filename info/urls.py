@@ -17,11 +17,11 @@ from django.urls import path
 from info import views
 
 urlpatterns = [
-    path('version', views.VersionInfoView.as_view()),
-    path('ping', views.PingInfoView.as_view()),
-    path('species', views.SpeciesInfoView.as_view()),
-    path('assemblies', views.AssembliesInfoView.as_view()),
-    path('hubs_per_assembly/<str:assembly>', views.HubPerAssemblyInfoView.as_view()),
-    path('tracks_per_assembly/<str:assembly>', views.TracksPerAssemblyInfoView.as_view()),
-    path('trackhubs', views.TrackhubsInfoView.as_view()),
+    path('/version', views.VersionInfoView.as_view()),
+    path('/ping', views.PingInfoView.as_view()),
+    path('/species', views.SpeciesInfoView.as_view()),
+    path('/assemblies', views.AssembliesInfoView.as_view()),
+    path('/hubs_per_assembly/<str:assembly>', views.HubPerAssemblyInfoView.as_view()),
+    path('/tracks_per_assembly/<str:assembly>', views.TracksPerAssemblyInfoView.as_view()),
+    path('/trackhubs', views.TrackhubsInfoView.as_view()),
 ]

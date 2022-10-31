@@ -38,9 +38,9 @@ urlpatterns = [
     # REST Framework URLs
     # path('api-auth/', include('rest_framework.urls')),
     path('api/', include('users.urls')),
-    path('api/trackhub/', include('trackhubs.urls')),
+    path('api/trackhub', include('trackhubs.urls')),
     path('api/search', include('search.urls')),
-    path('api/trackdb/', include('trackdbs.urls')),
-    path('api/info/', include('info.urls')),
-    path('api/stats/', include('stats.urls')),
+    path('api/trackdb', include('trackdbs.urls')),
+    path('api/info', include('info.urls')),
+    path('api/stats', include('stats.urls')),
 ]

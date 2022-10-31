@@ -107,7 +107,7 @@ def create_trackhub_resource(project_dir, api_client, create_user_resource, crea
         # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
         'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     }
-    response = api_client.post('/api/trackhub/', submitted_hub, format='json')
+    response = api_client.post('/api/trackhub', submitted_hub, format='json')
     return response
 
 

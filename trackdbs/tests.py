@@ -16,12 +16,12 @@ import pytest
 
 
 def test_get_trackdb_without_login(api_client, create_trackhub_resource):
-    response = api_client.get('/api/trackdb/1/')
+    response = api_client.get('/api/trackdb/1')
     assert response.status_code == 200
 
 
 def test_get_trackdb_success(project_dir, api_client, create_trackhub_resource):
-    response = api_client.get('/api/trackdb/1/')
+    response = api_client.get('/api/trackdb/1')
     actual_result = response.json()
     assert response.status_code == 200
     # assert that 'owner', 'created', 'hub'.. fields are in actual_result
@@ -30,7 +30,7 @@ def test_get_trackdb_success(project_dir, api_client, create_trackhub_resource):
 
 def test_get_one_trackdb_fail(api_client, create_trackhub_resource):
     expected_result = {'detail': 'Not found.'}
-    response = api_client.get('/api/trackdb/144/')
+    response = api_client.get('/api/trackdb/144')
     actual_result = response.json()
     assert response.status_code == 404
     assert actual_result == expected_result
