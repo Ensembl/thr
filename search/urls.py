@@ -18,5 +18,5 @@ from search.views import TrackdbDocumentDetailView, TrackdbDocumentListView
 
 urlpatterns = [
     path('', TrackdbDocumentListView.as_view({'post': 'list'})),
-    path('trackdb/<int:pk>/', TrackdbDocumentDetailView.as_view()),
+    path('/trackdb/<int:pk>', TrackdbDocumentDetailView.as_view()),
 ]
