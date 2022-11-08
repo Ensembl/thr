@@ -43,9 +43,6 @@ class TrackhubInfoSerializer(serializers.ModelSerializer):
     """
 
     trackdbs = serializers.SerializerMethodField()
-    # we rename 'short_label' and 'long_label' to 'shortLabel' and 'longLabel'
-    shortLabel = serializers.CharField(source='short_label')
-    longLabel = serializers.CharField(source='long_label')
 
     class Meta:
         model = models.Hub

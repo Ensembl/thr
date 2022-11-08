@@ -98,8 +98,8 @@ def save_hub(hub_dict, data_type, current_user):
     # TODO: Add try expect if the 'hub' or 'url' is empty
     new_hub_obj = trackhubs.models.Hub(
         name=hub_dict['hub'],
-        short_label=hub_dict.get('shortLabel'),
-        long_label=hub_dict.get('longLabel'),
+        shortLabel=hub_dict.get('shortLabel'),
+        longLabel=hub_dict.get('longLabel'),
         url=hub_dict['url'],
         description_url=hub_dict.get('descriptionUrl'),
         email=hub_dict.get('email'),
@@ -162,8 +162,8 @@ def save_track(track_dict, trackdb, file_type, visibility):
     new_track_obj = trackhubs.models.Track(
         # save name only without 'on' or 'off' settings
         name=get_first_word(track_dict['track']),
-        short_label=track_dict.get('shortLabel'),
-        long_label=track_dict.get('longLabel'),
+        shortLabel=track_dict.get('shortLabel'),
+        longLabel=track_dict.get('longLabel'),
         big_data_url=track_dict.get('bigDataUrl'),
         html=track_dict.get('html'),
         parent=None,  # track id will go here later on using add_parent_id() function

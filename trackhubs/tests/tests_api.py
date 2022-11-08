@@ -71,8 +71,8 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
     expected_result = [{
         'hub_id': 1,
         'name': 'JASPAR_TFBS',
-        'short_label': 'JASPAR TFBS',
-        'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
+        'shortLabel': 'JASPAR TFBS',
+        'longLabel': 'TFBS predictions for profiles in the JASPAR CORE collections',
         # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
         'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',
@@ -111,8 +111,8 @@ def test_get_one_trackhub_success(project_dir, api_client, create_trackhub_resou
     expected_result = {
         'hub_id': 1,
         'name': 'JASPAR_TFBS',
-        'short_label': 'JASPAR TFBS',
-        'long_label': 'TFBS predictions for profiles in the JASPAR CORE collections',
+        'shortLabel': 'JASPAR TFBS',
+        'longLabel': 'TFBS predictions for profiles in the JASPAR CORE collections',
         # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
         'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/trackDb.txt',
         'description_url': 'http://jaspar.genereg.net/genome-tracks/',

@@ -119,8 +119,8 @@ def create_hub_resource(create_user_resource, create_datatype_resource):
     user, _ = create_user_resource
     actual_hub_obj = trackhubs.models.Hub.objects.create(
         name='JASPAR_TFBS',
-        short_label='JASPAR TFBS',
-        long_label='TFBS predictions for profiles in the JASPAR CORE collections',
+        shortLabel='JASPAR TFBS',
+        longLabel='TFBS predictions for profiles in the JASPAR CORE collections',
         url='https://url/to/the/hub.txt',
         description_url='http://jaspar.genereg.net/genome-tracks/',
         email='wyeth@cmmt.ubc.ca',
@@ -172,8 +172,8 @@ def create_track_resource(create_trackdb_resource, create_filetype_resource, cre
     actual_track_obj = trackhubs.models.Track.objects.create(
         # save name only without 'on' or 'off' settings
         name='JASPAR2020_TFBS_hg19',
-        short_label='JASPAR2020 TFBS hg19',
-        long_label='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
+        shortLabel='JASPAR2020 TFBS hg19',
+        longLabel='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
         big_data_url='http://path.to/the/track/bigbed/file/JASPAR2020_hg19.bb',
         parent=None,
         trackdb=create_trackdb_resource,
@@ -193,8 +193,8 @@ def create_child_track_resource(create_trackdb_resource, create_filetype_resourc
     actual_track_obj = trackhubs.models.Track.objects.create(
         # save name only without 'on' or 'off' settings
         name='Child track name',
-        short_label='child of JASPAR2020',
-        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+        shortLabel='child of JASPAR2020',
+        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
                    'JASPAR CORE vertebrates collection (2020)',
         big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
         parent=None,
@@ -215,8 +215,8 @@ def create_child_track_with_parent_resource(create_trackdb_resource, create_file
     actual_track_obj = trackhubs.models.Track.objects.create(
         # save name only without 'on' or 'off' settings
         name='Child track name',
-        short_label='child of JASPAR2020',
-        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+        shortLabel='child of JASPAR2020',
+        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
                    'JASPAR CORE vertebrates collection (2020)',
         big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
         parent=create_track_resource,
