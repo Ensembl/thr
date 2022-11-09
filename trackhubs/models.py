@@ -482,10 +482,9 @@ class Trackdb(models.Model):
                                                                                                 short_label_stripped)
         return browser_links
 
-    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index):
         # pylint: disable=too-many-arguments
         """
-        TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track
@@ -504,7 +503,6 @@ class Trackdb(models.Model):
                 max_retries=10,
                 retry_on_timeout=True
             )
-
             es_conn.update(
                 index=index,
                 id=self.trackdb_id,

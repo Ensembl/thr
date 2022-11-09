@@ -14,6 +14,7 @@
 import logging
 import trackhubs
 from trackhubs.tracks_status import fetch_tracks_status
+from thr.settings.base import ELASTICSEARCH_INDEX_NAMES
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,8 @@ def update_one_trackdb(trackdb_id):
     """
     Update the status of one specific trackdb and enrich ES docs
     """
+    # Get es_index_name from settings
+    es_index_name = ELASTICSEARCH_INDEX_NAMES['search.documents']
     # Get the current trackdb object
     one_trackdb = trackhubs.models.Trackdb.objects.filter(trackdb_id=trackdb_id).first()
     # Get all tracks belonging to the current trackdb object
@@ -49,7 +52,11 @@ def update_one_trackdb(trackdb_id):
         one_trackdb.status = tracks_status
         one_trackdb.save()
         # Update ES document
-        one_trackdb.update_trackdb_document(one_trackdb.hub, one_trackdb.data, one_trackdb.configuration, tracks_status)
+        one_trackdb.update_trackdb_document(
+            one_trackdb.hub, one_trackdb.data,
+            one_trackdb.configuration, tracks_status,
+            es_index_name
+        )
         logger.info('Status updated successfully: ', tracks_status)
 
     return one_trackdb
