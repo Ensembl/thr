@@ -51,11 +51,8 @@ class TrackdbDocumentSerializer(DocumentSerializer):
     def get_status(self, obj):
         """Represent status value."""
         try:
-            minimal_status_info = {
-                "last_update": obj.status.last_update,
-                "message": obj.status.message
-            }
-            return minimal_status_info
+            # Convert elasticsearch_dsl.utils.AttrDict to Dictionary and return it
+            return obj.status.to_dict()
         except Exception:
             return None
 
