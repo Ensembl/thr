@@ -62,8 +62,8 @@ def test_save_hub(create_hub_resource):
     }
 
     assert expected_hub_info['hub'] == create_hub_resource.name
-    assert expected_hub_info['shortLabel'] == create_hub_resource.short_label
-    assert expected_hub_info['longLabel'] == create_hub_resource.long_label
+    assert expected_hub_info['shortLabel'] == create_hub_resource.shortLabel
+    assert expected_hub_info['longLabel'] == create_hub_resource.longLabel
     assert expected_hub_info['email'] == create_hub_resource.email
     assert expected_hub_info['descriptionUrl'] == create_hub_resource.description_url
     assert expected_hub_info['url'] == create_hub_resource.url
@@ -102,8 +102,8 @@ def test_save_track(create_track_resource):
     }
 
     assert expected_track_info['track'] == create_track_resource.name
-    assert expected_track_info['shortLabel'] == create_track_resource.short_label
-    assert expected_track_info['longLabel'] == create_track_resource.long_label
+    assert expected_track_info['shortLabel'] == create_track_resource.shortLabel
+    assert expected_track_info['longLabel'] == create_track_resource.longLabel
     assert expected_track_info['bigDataUrl'] == create_track_resource.big_data_url
 
 

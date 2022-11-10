@@ -26,8 +26,8 @@ class TrackdbHubSerializer(serializers.ModelSerializer):
         model = models.Hub
         fields = [
             'name',
-            'short_label',
-            'long_label',
+            'shortLabel',
+            'longLabel',
             'url',
         ]
 

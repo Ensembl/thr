@@ -173,7 +173,7 @@ class TrackdbDocumentListView(DocumentViewSet):
     ]
     # Define search fields
     search_fields = (
-        'hub.short_label', 'hub.long_label', 'hub.name',
+        'hub.shortLabel', 'hub.longLabel', 'hub.name',
         'type', 'species.common_name', 'species.scientific_name',
         'assembly.name', 'assembly.ucsc_synonym', 'assembly.accession'
     )

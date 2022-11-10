@@ -26,6 +26,7 @@ from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
 from trackhubs.tracks_status import fetch_tracks_status, fix_big_data_url
+from thr.settings.base import ELASTICSEARCH_INDEX_NAMES
 
 User = get_user_model()
 
@@ -98,8 +99,8 @@ def save_hub(hub_dict, data_type, current_user):
     # TODO: Add try expect if the 'hub' or 'url' is empty
     new_hub_obj = trackhubs.models.Hub(
         name=hub_dict['hub'],
-        short_label=hub_dict.get('shortLabel'),
-        long_label=hub_dict.get('longLabel'),
+        shortLabel=hub_dict.get('shortLabel'),
+        longLabel=hub_dict.get('longLabel'),
         url=hub_dict['url'],
         description_url=hub_dict.get('descriptionUrl'),
         email=hub_dict.get('email'),
@@ -162,8 +163,8 @@ def save_track(track_dict, trackdb, file_type, visibility):
     new_track_obj = trackhubs.models.Track(
         # save name only without 'on' or 'off' settings
         name=get_first_word(track_dict['track']),
-        short_label=track_dict.get('shortLabel'),
-        long_label=track_dict.get('longLabel'),
+        shortLabel=track_dict.get('shortLabel'),
+        longLabel=track_dict.get('longLabel'),
         big_data_url=track_dict.get('bigDataUrl'),
         html=track_dict.get('html'),
         parent=None,  # track id will go here later on using add_parent_id() function
@@ -312,6 +313,9 @@ def save_and_update_document(hub_url, data_type, current_user):
     :param current_user: the submitter (current user) id
     :returns: the hub information if the submission was successful otherwise it returns an error
     """
+    # Get es_index_name from settings
+    es_index_name = ELASTICSEARCH_INDEX_NAMES['search.documents']
+
     base_url = hub_url[:hub_url.rfind('/')]
 
     # TODO: this three lines should be moved somewhere else where they are executed only once
@@ -461,7 +465,11 @@ def save_and_update_document(hub_url, data_type, current_user):
             current_trackdb.data = trackdb_data
             current_trackdb.save()
             # Update Elasticsearch trackdb document
-            trackdb_obj.update_trackdb_document(hub_obj, trackdb_data, trackdb_configuration, tracks_status)
+            trackdb_obj.update_trackdb_document(
+                hub_obj, trackdb_data,
+                trackdb_configuration, tracks_status,
+                es_index_name
+            )
 
         return {'success': 'The hub is submitted successfully'}
 

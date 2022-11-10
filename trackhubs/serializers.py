@@ -25,8 +25,8 @@ class HubSerializer(serializers.ModelSerializer):
         fields = [
             'hub_id',
             'name',
-            'short_label',
-            'long_label',
+            'shortLabel',
+            'longLabel',
             'url',
             'description_url',
             'email'
@@ -57,8 +57,8 @@ class CustomOneHubSerializer(serializers.ModelSerializer):
         model = models.Hub
         fields = [
             'name',
-            'short_label',
-            'long_label',
+            'shortLabel',
+            'longLabel',
             'url',
             'trackdbs'
         ]

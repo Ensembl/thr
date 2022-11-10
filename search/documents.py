@@ -59,13 +59,13 @@ class TrackdbDocument(Document):
                 'raw': fields.KeywordField(),
             }
         ),
-        'short_label': fields.TextField(
+        'shortLabel': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),
             }
         ),
-        'long_label': fields.TextField(
+        'longLabel': fields.TextField(
             analyzer=html_strip,
             fields={
                 'raw': fields.KeywordField(),

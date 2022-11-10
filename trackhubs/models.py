@@ -76,8 +76,8 @@ class Hub(models.Model):
 
     hub_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    short_label = models.TextField(blank=True, null=True)
-    long_label = models.TextField(blank=True, null=True)
+    shortLabel = models.TextField(blank=True, null=True)
+    longLabel = models.TextField(blank=True, null=True)
     url = models.CharField(max_length=255)
     description_url = models.URLField(null=True)
     email = models.EmailField(null=True)
@@ -286,9 +286,9 @@ class Trackdb(models.Model):
         division = None
 
         # Get the hub url and short label using hub id in trackdb object
-        hub_url_and_short_label = Hub.objects.filter(hub_id=self.hub_id).values('url', 'short_label').first()
+        hub_url_and_short_label = Hub.objects.filter(hub_id=self.hub_id).values('url', 'shortLabel').first()
         hub_url = hub_url_and_short_label['url']
-        hub_short_label = hub_url_and_short_label['short_label']
+        hub_short_label = hub_url_and_short_label['shortLabel']
         short_label_stripped = remove_html_tags(hub_short_label).strip()  # .replace(' ', '%20')
 
         # Get the assembly name and ucsc synonym using assembly id in trackdb object
@@ -482,10 +482,9 @@ class Trackdb(models.Model):
                                                                                                 short_label_stripped)
         return browser_links
 
-    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index='trackhubs'):
+    def update_trackdb_document(self, hub, trackdb_data, trackdb_configuration, tracks_status, index):
         # pylint: disable=too-many-arguments
         """
-        TODO: find a way to switch between index='trackhubs' and index='test_trackhubs' indices
         Update trackdb document in Elascticsearch with the additional data provided
         :param trackdb: trackdb object to be updated
         :param file_type: file type associated with this track
@@ -504,7 +503,6 @@ class Trackdb(models.Model):
                 max_retries=10,
                 retry_on_timeout=True
             )
-
             es_conn.update(
                 index=index,
                 id=self.trackdb_id,
@@ -544,8 +542,8 @@ class Track(models.Model):
 
     track_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    short_label = models.TextField(blank=True, null=True)
-    long_label = models.TextField(blank=True, null=True)
+    shortLabel = models.TextField(blank=True, null=True)
+    longLabel = models.TextField(blank=True, null=True)
     big_data_url = models.TextField(blank=True, null=True)
     html = models.CharField(max_length=255, null=True)
     meta = models.CharField(max_length=255, null=True)
