@@ -43,7 +43,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS('Updating all trackdbs status...'))
-        # print("[Testing] Hello from update_status.py")
+        # update_all_trackdbs is SLOW, TODO: find a way to speed it up
         update_all_trackdbs()
         self.stdout.write(self.style.SUCCESS('All TrackDB status are updated successfully!'))
 
