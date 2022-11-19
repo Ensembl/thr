@@ -237,30 +237,6 @@ This will rebuild the ES index and extract `configuration`, `data`, `file type` 
 
 > You can enrich one specific trackdb (e.g. `python manage.py enrich 1`) or exclude a trackdb (e.g. `python manage.py enrich all --exclude 1`). See `python manage.py enrich -h` for more details
 
-##### Setting up Cron job
-
-The command below will set up a cron job to update trackdb status every Sunday at 00:00
-
-```shell script
-python manage.py crontab add 
-```
-
-Make sure to run this command every time CRONJOBS is changed in any way. 
-
-> Cron jobs are defined in `thr/settings/base.py`
-
-To get all the active CRONJOBS, run the following command 
-```shell script
-python manage.py crontab show
-```
-
-To remove all the defined CRONJOBS from crontab, run the following command
-```shell script
-python manage.py crontab remove
-```
-
-> You need to restart the server for changes to take effect 
-
 ## APIs Endpoints
 
 See [APIs Endpoints status](apis_endpoints_status.md)
