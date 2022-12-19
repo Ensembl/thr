@@ -404,7 +404,7 @@ def save_and_update_document(hub_url, data_type, current_user):
                     trackdb_data.append(
                         {
                             'id': track_obj.name,
-                            'name': track_obj.long_label
+                            'name': track_obj.longLabel
                         }
                     )
 
