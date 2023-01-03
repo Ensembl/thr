@@ -56,6 +56,23 @@ class TrackHubList(APIView):
             assemblies = data.get('assemblies')
             data_type = data.get('type')
             current_user = request.user
+
+            # Verification steps
+            # Before we submit the hub we make sure that the hub doesn't exist already
+            hub_obj = trackhubs.translator.is_hub_exists(hub_url)
+            if hub_obj:
+                original_owner_id = hub_obj.owner_id
+                if original_owner_id == current_user.id:
+                    return Response(
+                        {'error': f"This hub is already submitted, please use PUT /api/trackhubs/<hub_id> "
+                                              f"endpoint to update it, the hub ID is '{hub_obj.hub_id}'"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+                return Response(
+                    {"error": "This hub is already submitted by a different user!"},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
             result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
             if not result:
                 return Response(
@@ -73,7 +90,7 @@ class TrackHubList(APIView):
 
 class TrackHubDetail(APIView):
     """
-    Retrieve or delete a hub instance.
+    Retrieve, update or delete a hub instance.
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
@@ -90,6 +107,47 @@ class TrackHubDetail(APIView):
         hub = self.get_hub(pk)
         serializer = CustomOneHubSerializer(hub)
         return Response(serializer.data)
+
+    def put(self, request, pk):
+        """
+        This function used to update a hub
+        """
+        hub = self.get_hub(pk)
+        # if hub exist
+        if hub:
+            # check if the current user is the actual owner
+            current_user = request.user
+            original_owner_id = trackhubs.models.Hub.objects.filter(url=hub.url).first().owner_id
+            # True => proceed
+            if original_owner_id == current_user.id:
+                data = request.data
+                if 'url' in data:
+                    hub_url = data['url']
+                    assemblies = data.get('assemblies')
+                    data_type = data.get('type')
+
+                    result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
+                    if not result:
+                        return Response(
+                            {
+                                'error': 'Something went wrong with the hub submission, please make sure that url is correct and working'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                    if 'error' in result:
+                        return Response(result, status=status.HTTP_400_BAD_REQUEST)
+                    return Response(result, status=status.HTTP_201_CREATED)
+
+                return Response(
+                    {"error": "Something went wrong with the hub submission, please make sure that 'url' field exists"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # False
+            return Response(
+                {"error": "The hub you're trying to update is submitted by a different user!"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        else:
+            return Response({"error": "hub doesn't exist"}, status=status.HTTP_200_OK)
 
     @transaction.atomic
     def delete(self, request, pk):
