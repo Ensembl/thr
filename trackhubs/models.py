@@ -105,7 +105,7 @@ class Hub(models.Model):
                     'trackdb_id': trackdb.trackdb_id,
                     'species': str(Species.objects.get(taxon_id=trackdb.species.taxon_id).taxon_id),
                     'assembly': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).name,
-                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                    'uri': 'https://www.trackhubregistry.org/user/view_trackhub_status/{}'.format(
                         trackdb.trackdb_id),
                     'schema': trackdb.version,
                     'created': datetime.utcfromtimestamp(trackdb.created).strftime('%Y-%m-%d %H:%M:%S'),
@@ -139,7 +139,7 @@ class Hub(models.Model):
                         'accession': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).accession,
                         'synonyms': Assembly.objects.get(assembly_id=trackdb.assembly.assembly_id).ucsc_synonym
                     },
-                    'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/{}'.format(
+                    'uri': 'https://www.trackhubregistry.org/user/view_trackhub_status/{}'.format(
                         trackdb.trackdb_id),
                 }
             )

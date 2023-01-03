@@ -82,7 +82,7 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
                 'trackdb_id': 1,
                 'species': 'TODO: Link species to Trackdb instead of Hub',
                 'assembly': 'GRCh37',
-                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/1',
+                'uri': 'https://www.trackhubregistry.org/user/view_trackhub_status/1',
                 'schema': 'v1.0',
                 'created': 'the date changes',
                 'updated': 'the date changes'
@@ -91,7 +91,7 @@ def test_get_trackhub_success(project_dir, api_client, create_trackhub_resource)
                 'trackdb_id': 2,
                 'species': 'TODO: Link species to Trackdb instead of Hub',
                 'assembly': 'GRCh38',
-                'uri': 'https://www.new-trackhubregistry-url.org/user/view_trackhub_status/2',
+                'uri': 'https://www.trackhubregistry.org/user/view_trackhub_status/2',
                 'schema': 'v1.0',
                 'created': 'the date changes',
                 'updated': 'the date changes'

@@ -140,14 +140,14 @@ def test_get_parents(create_child_track_with_parent_resource):
 @pytest.mark.parametrize(
     'hub_url, expected_result',
     [
-        ('https://url/to/the/hub.txt', True),
-        ('https://url/to/non/existing/hub.txt', False),
+        ('https://url/to/the/hub.txt', models.Hub()),
+        ('https://url/to/non/existing/hub.txt', None),
     ]
 )
 @pytest.mark.django_db
 def test_is_hub_exists(hub_url, expected_result, create_hub_resource):
     actual_result = translator.is_hub_exists(hub_url)
-    assert actual_result == expected_result
+    assert isinstance(actual_result, type(expected_result))
 
 
 @pytest.mark.django_db
@@ -157,7 +157,7 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
     # fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     fake_hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
     actual_result = translator.save_and_update_document(fake_hub_url, data_type='genomics', current_user=user)
-    expected_result = {'success': 'The hub is submitted successfully'}
+    expected_result = {'success': 'The hub is submitted/updated successfully'}
     assert actual_result == expected_result
 
 
