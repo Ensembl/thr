@@ -147,7 +147,7 @@ class TrackHubDetail(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
         else:
-            return Response({"error": "hub doesn't exist"}, status=status.HTTP_200_OK)
+            return Response({"error": "Hub doesn't exist"}, status=status.HTTP_401_UNAUTHORIZED)
 
     @transaction.atomic
     def delete(self, request, pk):
