@@ -33,6 +33,13 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
+def is_hub_exists(hub_url):
+    existing_hub_obj = trackhubs.models.Hub.objects.filter(url=hub_url).first()
+    if existing_hub_obj:
+        return existing_hub_obj
+    return None
+
+
 def get_datatype_filetype_visibility(unique_col, object_name, file_type=False):
     """
     Get object (can be DataType, FileType or Visibility) by name
@@ -87,9 +94,10 @@ def save_datatype_filetype_visibility(name_list, object_name):
     object_name.objects.bulk_create(name_list_obj)
 
 
-def save_hub(hub_dict, data_type, current_user):
+def update_or_create_hub(hub_dict, data_type, current_user):
     """
     Save the hub in MySQL DB if it doesn't exist already
+    update it otherwise
     :param hub_dict: hub dictionary containing all the parsed info
     :param data_type: either specified by the user in the POST request
     or the default one ('genomics')
@@ -97,83 +105,82 @@ def save_hub(hub_dict, data_type, current_user):
     :returns: the new created hub
     """
     # TODO: Add try expect if the 'hub' or 'url' is empty
-    new_hub_obj = trackhubs.models.Hub(
-        name=hub_dict['hub'],
-        shortLabel=hub_dict.get('shortLabel'),
-        longLabel=hub_dict.get('longLabel'),
+    # if the Hub already exists, it gets updated
+    # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#update-or-create
+    hub_obj, created = trackhubs.models.Hub.objects.update_or_create(
         url=hub_dict['url'],
-        description_url=hub_dict.get('descriptionUrl'),
-        email=hub_dict.get('email'),
-        data_type=trackhubs.models.DataType.objects.filter(name=data_type).first(),
-        owner_id=current_user.id
+        defaults={
+            'name': hub_dict['hub'],
+            'shortLabel': hub_dict.get('shortLabel'),
+            'longLabel': hub_dict.get('longLabel'),
+            'url': hub_dict['url'],
+            'description_url': hub_dict.get('descriptionUrl'),
+            'email': hub_dict.get('email'),
+            'data_type': trackhubs.models.DataType.objects.filter(name=data_type).first(),
+            'owner_id': current_user.id
+        }
     )
-    new_hub_obj.save()
-    return new_hub_obj
+    return hub_obj
 
 
-def save_trackdb(url, hub, assembly, species):
+def update_or_create_trackdb(url, hub, assembly, species):
     """
-    Save the genome in MySQL DB  if it doesn't exist already
+    Save the genome in MySQL DB if it doesn't exist already, update it otherwise
     :param url: trackdb url
     :param hub: hub object associated with this trackdb
     :param assembly: assembly object associated with this trackdb
     :param species: the species associated with this trackdb
     :returns: either the existing trackdb or the new created one
     """
-    existing_trackdb_obj = trackhubs.models.Trackdb.objects.filter(source_url=url).first()
-    if existing_trackdb_obj:
-        trackdb_obj = existing_trackdb_obj
-    else:
-        trackdb_obj = trackhubs.models.Trackdb(
-            public=True,
-            created=int(time.time()),
-            updated=int(time.time()),
-            assembly=assembly,
-            hub=hub,
-            species=species,
-            source_url=url
-        )
-        trackdb_obj.save()
-
+    # if the trackdb already exists, it gets updated
+    # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#update-or-create
+    trackdb_obj, created = trackhubs.models.Trackdb.objects.update_or_create(
+        source_url=url,
+        defaults={
+            'public': True,
+            'created': int(time.time()),
+            'updated': int(time.time()),
+            'assembly': assembly,
+            'hub': hub,
+            'species': species,
+            'source_url': url
+        }
+    )
     return trackdb_obj
 
 
-def save_track(track_dict, trackdb, file_type, visibility):
+def update_or_create_track(track_dict, trackdb, file_type, visibility):
     """
-    Save the track in MySQL DB  if it doesn't exist already
+    Save the track in MySQL DB  if it doesn't exist already update it otherwise
     :param track_dict: track dictionary containing all the parsed info
     :param trackdb: trackdb object associated with this track
     :param file_type: file type string associated with this track
     :param visibility: visibility string associated with this track (default: 'hide')
     :returns: either the existing track or the new created one
     """
-    existing_track_obj = None
     big_data_url = track_dict.get('bigDataUrl')
     # fix bigDataUrl if it exists
     if big_data_url:
         big_data_full_url = fix_big_data_url(big_data_url, trackdb.source_url)
-        try:
-            existing_track_obj = trackhubs.models.Track.objects.filter(big_data_url=big_data_full_url).first()
-        except KeyError:
-            logger.info("bigDataUrl doesn't exist for track: {}".format(track_dict['track']))
 
-    if existing_track_obj:
-        return existing_track_obj
-
-    new_track_obj = trackhubs.models.Track(
-        # save name only without 'on' or 'off' settings
-        name=get_first_word(track_dict['track']),
-        shortLabel=track_dict.get('shortLabel'),
-        longLabel=track_dict.get('longLabel'),
-        big_data_url=track_dict.get('bigDataUrl'),
-        html=track_dict.get('html'),
-        parent=None,  # track id will go here later on using add_parent_id() function
-        trackdb=trackdb,
-        file_type=trackhubs.models.FileType.objects.filter(name=file_type).first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name=visibility).first()
+    # if the track already exists, it gets updated
+    # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#update-or-create
+    track_obj, created = trackhubs.models.Track.objects.update_or_create(
+        big_data_url=big_data_full_url,
+        defaults={
+            # save name only without 'on' or 'off' settings
+            'name': get_first_word(track_dict['track']),
+            'shortLabel': track_dict.get('shortLabel'),
+            'longLabel': track_dict.get('longLabel'),
+            'big_data_url': track_dict.get('bigDataUrl'),
+            'html': track_dict.get('html'),
+            'parent': None,  # track id will go here later on using add_parent_id() function
+            'trackdb': trackdb,
+            'file_type': trackhubs.models.FileType.objects.filter(name=file_type).first(),
+            'visibility': trackhubs.models.Visibility.objects.filter(name=visibility).first()
+        }
     )
-    new_track_obj.save()
-    return new_track_obj
+    return track_obj
 
 
 def get_first_word(tabbed_info):
@@ -225,13 +232,6 @@ def get_parents(track):
     return parent_track, grandparent_track
 
 
-def is_hub_exists(hub_url):
-    existing_hub_obj = trackhubs.models.Hub.objects.filter(url=hub_url).first()
-    if existing_hub_obj:
-        return True
-    return False
-
-
 def get_assembly_info_from_dump(genome_assembly_name):
     """
     Get the assembly information from 'genome_assembly_dump' table
@@ -278,7 +278,7 @@ def save_species(genome_assembly_name):
     """
     Save species using the provided genome assembly information from the submitted hub
     along with the data stored in 'genome_assembly_dump' table
-    :param genomes_info: genomes information extracted from genomes.txt file
+    :param genome_assembly_name: genomes information extracted from genomes.txt file
     :returns: either species object or, if it's not found or/and cannot be created it
     returns an error message
     TODO: make sure it loops through all species in genome.txt
@@ -324,15 +324,6 @@ def save_and_update_document(hub_url, data_type, current_user):
     save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
-    # Verification steps
-    # Before we submit the hub we make sure that it doesn't exist already
-    if is_hub_exists(hub_url):
-        original_owner_id = trackhubs.models.Hub.objects.filter(url=hub_url).first().owner_id
-        if original_owner_id == current_user.id:
-            return {'error': 'The Hub is already submitted, please delete it before resubmitting it again'}
-
-        return {"error": "This hub is already submitted by a different user!"}
-
     # TODO: add the possibility for the user to disable/enable hubCheck when submitting new Hub(s)
     # run the USCS hubCheck tool found in kent tools on the submitted hub
     hub_check_result = hub_check(hub_url)
@@ -358,7 +349,7 @@ def save_and_update_document(hub_url, data_type, current_user):
         genomes_trackdbs_info = parse_file_from_url(genome_url)
         logger.debug("genomes_trackdbs_info: {}".format(json.dumps(genomes_trackdbs_info, indent=4)))
 
-        hub_obj = save_hub(hub_info, data_type, current_user)
+        hub_obj = update_or_create_hub(hub_info, data_type, current_user)
 
         for genome_trackdb in genomes_trackdbs_info:
             logger.debug("genomes_trackdb: {}".format(json.dumps(genome_trackdb, indent=4)))
@@ -375,7 +366,7 @@ def save_and_update_document(hub_url, data_type, current_user):
 
             # Save the initial data
             trackdb_url = base_url + '/' + genome_trackdb['trackDb']
-            trackdb_obj = save_trackdb(trackdb_url, hub_obj, assembly_obj, error_or_species_obj)
+            trackdb_obj = update_or_create_trackdb(trackdb_url, hub_obj, assembly_obj, error_or_species_obj)
 
             trackdbs_info = parse_file_from_url(trackdb_url)
             # logger.debug("trackdbs_info: {}".format(json.dumps(trackdbs_info, indent=4)))
@@ -383,7 +374,7 @@ def save_and_update_document(hub_url, data_type, current_user):
             trackdb_data = []
             trackdb_configuration = {}
             for track in trackdbs_info:
-                # logger.debug("track: {}".format(json.dumps(track, indent=4)))
+                # print("track: {}".format(json.dumps(track, indent=4)))
 
                 if 'track' in track:
                     # default value
@@ -397,10 +388,7 @@ def save_and_update_document(hub_url, data_type, current_user):
                         visibility = get_datatype_filetype_visibility(track['visibility'],
                                                                       trackhubs.models.Visibility).name
 
-                    track_obj = get_obj_if_exist(track['track'], trackhubs.models.Track)
-                    if not track_obj:
-                        track_obj = save_track(track, trackdb_obj, file_type, visibility)
-
+                    track_obj = update_or_create_track(track, trackdb_obj, file_type, visibility)
                     trackdb_data.append(
                         {
                             'id': track_obj.name,
@@ -471,6 +459,6 @@ def save_and_update_document(hub_url, data_type, current_user):
                 es_index_name
             )
 
-        return {'success': 'The hub is submitted successfully'}
+        return {'success': 'The hub is submitted/updated successfully'}
 
     return None
