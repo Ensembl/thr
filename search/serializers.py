@@ -45,7 +45,6 @@ class TrackdbDocumentSerializer(DocumentSerializer):
             'assembly',
             'created',
             'type',
-            'configuration',
         ]
 
     def get_status(self, obj):
