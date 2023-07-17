@@ -41,7 +41,7 @@ pytz==2020.1
 requests==2.25.1
 responses==0.12.1
 six==1.15.0
-sqlparse==0.3.1
+sqlparse==0.4.4
 toml==0.10.1
 urllib3==1.26.5
 uWSGI==2.0.19.1
