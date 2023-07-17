@@ -266,4 +266,4 @@ HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hub
 # Whether to append trailing slashes to URLs.
 APPEND_SLASH = False
 
-THR_VERSION = "0.8.1"
+THR_VERSION = "0.8.2"
