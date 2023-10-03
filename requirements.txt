@@ -43,6 +43,6 @@ responses==0.12.1
 six==1.15.0
 sqlparse==0.3.1
 toml==0.10.1
-urllib3==1.26.5
+urllib3==1.26.17
 uWSGI==2.0.19.1
 wrapt==1.12.1
