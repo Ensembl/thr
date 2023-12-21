@@ -14,6 +14,7 @@
 
 import json
 import logging
+import sys
 import time
 from django.utils.html import escape
 
@@ -304,7 +305,7 @@ def save_species(genome_assembly_name):
         logger.exception('Error trying to connect to the database')
 
 
-def save_and_update_document(hub_url, data_type, current_user):
+def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True):
     """
     Save everything in MySQL DB then Elasticsearch and
     update both after constructing the required objects
@@ -326,9 +327,12 @@ def save_and_update_document(hub_url, data_type, current_user):
 
     # TODO: add the possibility for the user to disable/enable hubCheck when submitting new Hub(s)
     # run the USCS hubCheck tool found in kent tools on the submitted hub
-    hub_check_result = hub_check(hub_url)
-    if 'error' in hub_check_result.keys():
-        return hub_check_result
+    # print(f"run_hubcheck ====> {run_hubcheck}")
+    # sys.exit(0)
+    if run_hubcheck:
+        hub_check_result = hub_check(hub_url)
+        if 'error' in hub_check_result.keys():
+            return hub_check_result
 
     hub_info_array = parse_file_from_url(hub_url)
 
