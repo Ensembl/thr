@@ -22,7 +22,7 @@ import django
 from django.contrib.auth import get_user_model
 
 import trackhubs
-from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY
+from trackhubs.constants import DATA_TYPES, FILE_TYPES, VISIBILITY, UCSC_TO_INSDC
 from trackhubs.hub_check import hub_check
 from trackhubs.models import Trackdb, GenomeAssemblyDump
 from trackhubs.parser import parse_file_from_url
@@ -160,6 +160,7 @@ def update_or_create_track(track_dict, trackdb, file_type, visibility):
     :returns: either the existing track or the new created one
     """
     big_data_url = track_dict.get('bigDataUrl')
+    big_data_full_url = None
     # fix bigDataUrl if it exists
     if big_data_url:
         big_data_full_url = fix_big_data_url(big_data_url, trackdb.source_url)
@@ -168,6 +169,7 @@ def update_or_create_track(track_dict, trackdb, file_type, visibility):
     # https://docs.djangoproject.com/en/4.1/ref/models/querysets/#update-or-create
     track_obj, created = trackhubs.models.Track.objects.update_or_create(
         big_data_url=big_data_full_url,
+        name=get_first_word(track_dict['track']),
         defaults={
             # save name only without 'on' or 'off' settings
             'name': get_first_word(track_dict['track']),
@@ -188,11 +190,15 @@ def get_first_word(tabbed_info):
     """
     Get the first word in a sentence, this is useful when
     we want to get file type, for instance,
-    >> get_first_word('bigBed 6 +') will return 'bigBed'
+    >> get_first_word('bigBed  6 +') will return 'bigBed'
     :param tabbed_info: the string (e.g. 'bigBed 6 +')
     :returns: the first word in the string
     """
-    return tabbed_info.rstrip('\n').split(' ')[0]  # e.g ['bigBed', '6', '+']
+    # 1. Remove any newline characters from the end of 'tabbed_info'
+    # 2. Split the string into a list of substrings using a space (' ') as the delimiter.
+    #   e.g ['bigBed ', '6', '+']
+    # 3. Select the first element and strip any leading and trailing whitespace from it
+    return tabbed_info.rstrip('\n').split(' ')[0].strip()
 
 
 def add_parent_id(parent_name, current_track):
@@ -243,12 +249,22 @@ def get_assembly_info_from_dump(genome_assembly_name):
     assembly_info_from_dump = GenomeAssemblyDump.objects.filter(assembly_name=genome_assembly_name).first()
     assembly_info_from_dump_ucsc_synonym = GenomeAssemblyDump.objects.filter(ucsc_synonym=genome_assembly_name).first()
     assembly_info_from_dump_accession = GenomeAssemblyDump.objects.filter(accession_with_version=genome_assembly_name).first()
+
+    # if assembly doesn't have a UCSC synonym we grab assembly_info by using the accession ID present in constants.py
+    # which is mapped to genome_assembly_name fetched from genomes.txt file
+    # e.g: "amel5" maps to "GCA_000002195.1"
+    assembly_info_from_dump_mapped_accession = GenomeAssemblyDump.objects.filter(
+        accession_with_version=UCSC_TO_INSDC.get(genome_assembly_name)
+    ).first()
+
     if assembly_info_from_dump:
         return assembly_info_from_dump
     if assembly_info_from_dump_ucsc_synonym:
         return assembly_info_from_dump_ucsc_synonym
     elif assembly_info_from_dump_accession:
         return assembly_info_from_dump_accession
+    elif assembly_info_from_dump_mapped_accession:
+        return assembly_info_from_dump_mapped_accession
     return None
 
 
@@ -312,6 +328,7 @@ def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True
     :param hub_url: the hub url provided by the submitter
     :param data_type: the data type provided by the user (if any, default is 'genomics')
     :param current_user: the submitter (current user) id
+    :param run_hubcheck: run hubCheck utility or not (default is True)
     :returns: the hub information if the submission was successful otherwise it returns an error
     """
     # Get es_index_name from settings
@@ -325,10 +342,7 @@ def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True
     save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
-    # TODO: add the possibility for the user to disable/enable hubCheck when submitting new Hub(s)
     # run the USCS hubCheck tool found in kent tools on the submitted hub
-    # print(f"run_hubcheck ====> {run_hubcheck}")
-    # sys.exit(0)
     if run_hubcheck:
         hub_check_result = hub_check(hub_url)
         if 'error' in hub_check_result.keys():

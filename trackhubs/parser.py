@@ -48,7 +48,7 @@ def parse_file_from_url(url):
             if line not in ['\n', '\r\n', ''] and not line.startswith('#'):
                 split_line = line.rstrip('\n').split(' ', 1)
                 key = split_line[0].strip()
-                dict_info[key] = split_line[1]
+                dict_info[key] = split_line[1].strip()  # strip any space left in the value
 
             # there are tracks with hashtag symbol! => ignore them!
             # e.g http://ftp.ebi.ac.uk/pub/databases/ensembl/encode/integration_data_jan2011/hg19/trackDb.txt
