@@ -156,7 +156,9 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
 
     # fake_hub_url = 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
     fake_hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
-    actual_result = translator.save_and_update_document(fake_hub_url, data_type='genomics', current_user=user)
+    actual_result = translator.save_and_update_document(
+        hub_url=fake_hub_url, data_type='genomics', current_user=user, run_hubcheck=False
+    )
     expected_result = {'success': 'The hub is submitted/updated successfully'}
     assert actual_result == expected_result
 
@@ -171,5 +173,7 @@ def test_save_and_update_document_success(project_dir, create_user_resource, cre
 def test_save_and_update_document_fail(hub_url, expected_error_key_result, create_user_resource, create_hub_resource):
     user, _ = create_user_resource
 
-    actual_result = translator.save_and_update_document(hub_url, data_type='genomics', current_user=user)
+    actual_result = translator.save_and_update_document(
+        hub_url=hub_url, data_type='genomics', current_user=user, run_hubcheck=False
+    )
     assert expected_error_key_result in actual_result
