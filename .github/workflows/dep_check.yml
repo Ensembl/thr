@@ -20,6 +20,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11" ]
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out our repository under $GITHUB_WORKSPACE, so our job can access it
@@ -27,10 +31,10 @@ jobs:
         uses: actions/checkout@v3
 
       # Set up Python version
-      - name: Set up Python 3.7
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: ${{ matrix.python-version }}
 
       # Runs a set of commands installing Python dependencies using the runners shell (Run a multi-line script)
       - name: Install Python dependencies
