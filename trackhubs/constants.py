@@ -62,9 +62,9 @@ UCSC_TO_INSDC = {
     # 'bostau2': 'Btau_2.0', # no Btau_2.0 entry in NCBI
     # 'bostau1': 'Btau_1.0', # no Btau_1.0 entry in NCBI
     # dog
-    'canfam3': 'GCA_000002285.2',  # 'CanFam3.1',
-    'canfam2': 'GCA_000002285.1',  # 'CanFam2.0',
-    # 'canfam1': '', # not found on NCBI
+    'canFam3': 'GCA_000002285.2',  # 'CanFam3.1',
+    'canFam2': 'GCA_000002285.1',  # 'CanFam2.0',
+    # 'canFam1': '', # not found on NCBI
     # dolphin
     'turtru2': 'GCA_000151865.2',  # 'Ttru_1.4'
     # elephant
@@ -143,9 +143,10 @@ UCSC_TO_INSDC = {
     # rn2': ''RGSC_v2.1', # not found
     # rn1': ''RGSC_v1.0', # not found
     # rhesus (Macaca mulatta)
-    'rhemac3': 'GCA_000230795.1',  # 'CR_1.0',
-    'rhemac2': 'GCA_000002255.1',  # 'Mmul_051212',
-    # 'rhemac1': 'Mmul_0.1', # not found
+    'rheMac3': 'GCA_000230795.1',  # 'CR_1.0',
+    'rheMac2': 'GCA_000002255.1',  # 'Mmul_051212',
+    # 'rheMac1': 'Mmul_0.1', # not found
+    'rheMac8': 'GCA_000772875.3',  # 'Mmul_8.0.1',
     # rock hyrax
     'procap1': 'GCA_000152225.1',  # 'Procap1.0',
     # sheep
@@ -186,6 +187,7 @@ UCSC_TO_INSDC = {
     'galgal4': 'GCA_000002315.2',  # 'Gallus_gallus-4.0',
     'galgal3': 'GCA_000002315.1',  # 'Gallus_gallus-2.1',
     # 'galgal2': 'Gallus-gallus-1.0', # no Gallus-gallus-1.0 on NCBI
+    'galGal5': 'GCA_000002315.3',  # 'Gallus_gallus-5.0',
     # coelacanth
     'latcha1': 'GCA_000225785.1',  # 'LatCha1',
     # elephant shark
@@ -249,6 +251,7 @@ UCSC_TO_INSDC = {
     # Apis mellifera
     'apimel2': 'GCF_000002195.1',  # 'Amel_2.0', # no syn on NCBI
     # 'apimel1': 'v.Amel_1.2', # no v.Amel_1.2 entry on NCBI
+    'amel5': 'GCA_000002195.1',  # 'Amel_4.5' , # no syn on NCBI
     # Anopheles gambiae
     # 'anogam1': 'v.MOZ2', # not found
     # Drosophila ananassae
@@ -297,7 +300,11 @@ UCSC_TO_INSDC = {
     # 'cb1': '', # not found
     # Caenorhabditis elegans
     'ce10': 'GCA_000002985.2',  # 'WBcel215',
-    # ce6 ': '', # not found
+    # ce6/WS190 doesn't have GenBank Assembly Accession
+    # 'WS190' has RefSeq Assembly Accession 'GCF_000002985.1'
+    # we decided to assign 'GCA_000002985.1' to it
+    # See History section here: https://www.ncbi.nlm.nih.gov/assembly/GCF_000002985.1
+    'ce6': 'GCA_000002985.1',
     # ce4 ': '',
     # ce2 ': '',
     # ce1 ': '',
@@ -314,9 +321,20 @@ UCSC_TO_INSDC = {
     # sea hare
     'aplcal1': 'GCA_000002075.1',  # 'Aplcal2.0',
     # Yeast
-    'saccer3': 'GCA_000146045.2',  # 'R64-1-1',
-    # 'saccer2': '', # not found
-    # 'saccer1': '', # not found
+    'sacCer3': 'GCA_000146045.2',  # 'R64-1-1',
+    # 'sacCer2': '', # not found
+    # 'sacCer1': '', # not found
+    # https://epd.expasy.org/epd/ucsc/epdHub/spo2/description.html
+    'spo2': 'GCA_000002945.2',  # ASM294v2
+    # malaria (plasmodium)
+    # https://epd.expasy.org/epd/ucsc/epdHub/pfa2/description.html
+    'pfa2': 'GCA_000002765.2',  # ASM276v2
+    # maize
+    # https://epd.expasy.org/epd/ucsc/epdHub/zm3/description.html
+    'zm3': 'GCA_000005005.5',
+    # common water flea (daphnia pulex)
+    # https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_021134715.1
+    'dpu2': 'GCA_021134715.1',  # ASM2113471v1
     # ebola virus
     # 'ebovir3': '', # not found
     #
@@ -333,7 +351,7 @@ UCSC_TO_INSDC = {
     # http://genome-test.gi.ucsc.edu/~hiram/hubs/Plants/hub.txt
     #
     # Arabidopsis thaliana
-    'aratha1': 'GCA_000001735.1',  # TAIR10
+    'araTha1': 'GCA_000001735.1',  # TAIR10
     # Ricinus communis
     'riccom1': 'GCA_000151685.2',  # JCVI_RCG_1.1
     # brassica rapa

@@ -56,6 +56,7 @@ class TrackHubList(APIView):
             assemblies = data.get('assemblies')
             data_type = data.get('type')
             current_user = request.user
+            run_hubcheck = data.get('run_hubcheck', True)
 
             # Verification steps
             # Before we submit the hub we make sure that the hub doesn't exist already
@@ -73,7 +74,7 @@ class TrackHubList(APIView):
                     status=status.HTTP_403_FORBIDDEN
                 )
 
-            result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
+            result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user, run_hubcheck)
             if not result:
                 return Response(
                     {'error': 'Something went wrong with the hub submission, please make sure that url is correct and working'},
@@ -125,8 +126,9 @@ class TrackHubDetail(APIView):
                     hub_url = data['url']
                     assemblies = data.get('assemblies')
                     data_type = data.get('type')
+                    run_hubcheck = data.get('run_hubcheck', True)
 
-                    result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user)
+                    result = trackhubs.translator.save_and_update_document(hub_url, data_type, current_user, run_hubcheck)
                     if not result:
                         return Response(
                             {
