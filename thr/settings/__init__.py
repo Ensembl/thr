@@ -12,4 +12,9 @@
    limitations under the License.
 """
 
+import pymysql
+# This line makes Django think "I'm using MySQLdb/mysqlclient",
+# but under the hood it uses PyMySQL (pure Python).
+pymysql.install_as_MySQLdb()
+
 from .dev import *
