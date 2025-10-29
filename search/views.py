@@ -35,7 +35,7 @@ from elasticsearch_dsl import (
     TermsFacet
 )
 
-from thr.settings import FACETS_LENGHT
+from thr.settings import FACETS_LENGTH
 
 
 # We're overriding some methods since we need to stick with POST /search/
@@ -145,13 +145,13 @@ class CustomPageNumberPagination(PageNumberPagination):
 class CustomTermsFacet(TermsFacet):
     """
     Override get_aggregation in Facet to increase
-    the bucket size from 10 to FACETS_LENGHT
-    specified in base.py config file
+    the bucket size from 10 to FACETS_LENGTH
+    specified in the base.py config file
     """
     def get_aggregation(self):
-        agg = A(self.agg_type, **self._params, size=FACETS_LENGHT)
+        agg = A(self.agg_type, **self._params, size=FACETS_LENGTH)
         if self._metric:
-            agg.metric('metric', self._metric, size=FACETS_LENGHT)
+            agg.metric('metric', self._metric, size=FACETS_LENGTH)
         return agg
 
 

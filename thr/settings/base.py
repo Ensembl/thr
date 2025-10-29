@@ -257,8 +257,8 @@ FRONTEND_URL = os.environ.get('FRONTEND_URL', 'localhost:3000')
 BACKEND_URL = os.environ.get('BACKEND_URL', 'localhost:8000')
 
 # The number of elements shown in Species, Assembly
-# and Hub facets can be controlled using FACETS_LENGHT
-FACETS_LENGHT = 30
+# and Hub facets can be controlled using FACETS_LENGTH
+FACETS_LENGTH = 30
 
 # The hub check API is in a separate VM
 HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hubcheck')
@@ -266,4 +266,4 @@ HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hub
 # Whether to append trailing slashes to URLs.
 APPEND_SLASH = False
 
-THR_VERSION = "0.8.2"
+THR_VERSION = "0.9.0"
