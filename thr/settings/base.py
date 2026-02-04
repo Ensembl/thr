@@ -56,7 +56,7 @@ if DJANGO_ENV == 'development':
     ALLOWED_HOSTS = ['127.0.0.1', '0.0.0.0', 'localhost']
 
 elif DJANGO_ENV == 'production':
-    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
+    ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS", "").split()
 
 # Application definition
 

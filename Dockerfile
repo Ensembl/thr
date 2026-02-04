@@ -29,7 +29,7 @@ RUN pip install -r /usr/src/app/requirements.txt
 # bake static assets into the image
 ENV DJANGO_ENV=production
 ENV DEBUG=0
-RUN python manage.py collectstatic --noinput
+RUN python manage.py collectstatic --noinput --settings=thr.settings.prod
 
 # run entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
