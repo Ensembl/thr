@@ -26,6 +26,11 @@ COPY . .
 # install dependencies
 RUN pip install -r /usr/src/app/requirements.txt
 
+# bake static assets into the image
+ENV DJANGO_ENV=production
+ENV DEBUG=0
+RUN python manage.py collectstatic --noinput
+
 # run entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
 # NOTE: Uncomment the line below when running docker compose
