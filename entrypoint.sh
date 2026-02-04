@@ -10,8 +10,6 @@ then
     echo "MySQL started"
 fi
 
-# create the static files to be used by the Django admin portal
-python manage.py collectstatic --noinput
 # find and delete any remaining migration files before creating new ones
 find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
 find . -path "*/migrations/*.pyc"  -delete
