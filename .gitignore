@@ -70,3 +70,9 @@ users/management/commands/users_dump
 
 /venv
 /.venv
+
+# ignore artifact generated when running tests
+assemblies_dump/fake_assembly.json
+
+# exclude hubcheck binary
+tools/hubCheck
