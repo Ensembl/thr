@@ -23,10 +23,71 @@ from contextlib import ExitStack
 
 import trackhubs
 from thr.settings import BASE_DIR
-from types import SimpleNamespace
 import elasticsearch
 from trackhubs.models import Trackdb
 import elasticmock.fake_elasticsearch
+
+
+def _create_hub(*, user, data_type, url, name="JASPAR_TFBS", short_label="JASPAR TFBS",
+                long_label="TFBS predictions for profiles in the JASPAR CORE collections",
+                description_url="http://jaspar.genereg.net/genome-tracks/", email="wyeth@cmmt.ubc.ca"):
+    """
+    Helper to create a Hub with consistent defaults.
+    We centralize this to avoid repeating the same object setup across fixtures.
+    """
+    return trackhubs.models.Hub.objects.create(
+        name=name,
+        shortLabel=short_label,
+        longLabel=long_label,
+        url=url,
+        description_url=description_url,
+        email=email,
+        data_type=data_type,
+        owner=user
+    )
+
+
+def _create_assembly(*, accession, name, long_name="", ucsc_synonym=""):
+    """
+    Helper to create an Assembly with explicit defaults.
+    """
+    return trackhubs.models.Assembly.objects.create(
+        accession=accession,
+        name=name,
+        long_name=long_name,
+        ucsc_synonym=ucsc_synonym
+    )
+
+
+def _create_trackdb(*, hub, assembly, species, source_url):
+    """
+    Helper to create a Trackdb with consistent timestamps.
+    """
+    return trackhubs.models.Trackdb.objects.create(
+        public=True,
+        created=int(time.time()),
+        updated=int(time.time()),
+        assembly=assembly,
+        hub=hub,
+        species=species,
+        source_url=source_url
+    )
+
+
+def _create_track(*, trackdb, file_type, visibility, name, short_label, long_label, big_data_url, parent=None):
+    """
+    Helper to create a Track with consistent defaults.
+    """
+    return trackhubs.models.Track.objects.create(
+        name=name,
+        shortLabel=short_label,
+        longLabel=long_label,
+        big_data_url=big_data_url,
+        parent=parent,
+        trackdb=trackdb,
+        file_type=file_type,
+        visibility=visibility
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -387,24 +448,15 @@ def create_trackhub_resource(
     data_type = create_datatype_resource
 
     hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
-    hub = trackhubs.models.Hub.objects.create(
-        name='JASPAR_TFBS',
-        shortLabel='JASPAR TFBS',
-        longLabel='TFBS predictions for profiles in the JASPAR CORE collections',
-        url=hub_url,
-        description_url='http://jaspar.genereg.net/genome-tracks/',
-        email='wyeth@cmmt.ubc.ca',
-        data_type=data_type,
-        owner=user
-    )
+    hub = _create_hub(user=user, data_type=data_type, url=hub_url)
 
-    assembly_37 = trackhubs.models.Assembly.objects.create(
+    assembly_37 = _create_assembly(
         accession='GCA_000001405.1',
         name='GRCh37',
         long_name='GRCh37',
         ucsc_synonym='hg19'
     )
-    assembly_38 = trackhubs.models.Assembly.objects.create(
+    assembly_38 = _create_assembly(
         accession='GCA_000001405.15',
         name='GRCh38',
         long_name='GRCh38',
@@ -414,45 +466,27 @@ def create_trackhub_resource(
     species = create_species_resource
 
     trackdb_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/trackDb.txt'
-    trackhubs.models.Trackdb.objects.create(
-        public=True,
-        created=int(time.time()),
-        updated=int(time.time()),
-        assembly=assembly_37,
-        hub=hub,
-        species=species,
-        source_url=trackdb_url
-    )
-    trackdb_38 = trackhubs.models.Trackdb.objects.create(
-        public=True,
-        created=int(time.time()),
-        updated=int(time.time()),
-        assembly=assembly_38,
-        hub=hub,
-        species=species,
-        source_url=trackdb_url
-    )
+    _create_trackdb(hub=hub, assembly=assembly_37, species=species, source_url=trackdb_url)
+    trackdb_38 = _create_trackdb(hub=hub, assembly=assembly_38, species=species, source_url=trackdb_url)
 
     # Create two tracks for assembly_38 to satisfy tracks_per_assembly tests.
-    trackhubs.models.Track.objects.create(
+    _create_track(
+        trackdb=trackdb_38,
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
         name='track_one',
-        shortLabel='Track One',
-        longLabel='Track One Long',
-        big_data_url='http://example.org/track_one.bb',
-        parent=None,
-        trackdb=trackdb_38,
-        file_type=create_filetype_resource,
-        visibility=create_visibility_resource
+        short_label='Track One',
+        long_label='Track One Long',
+        big_data_url='http://example.org/track_one.bb'
     )
-    trackhubs.models.Track.objects.create(
-        name='track_two',
-        shortLabel='Track Two',
-        longLabel='Track Two Long',
-        big_data_url='http://example.org/track_two.bb',
-        parent=None,
+    _create_track(
         trackdb=trackdb_38,
         file_type=create_filetype_resource,
-        visibility=create_visibility_resource
+        visibility=create_visibility_resource,
+        name='track_two',
+        short_label='Track Two',
+        long_label='Track Two Long',
+        big_data_url='http://example.org/track_two.bb'
     )
 
     return hub
@@ -464,17 +498,11 @@ def create_hub_resource(create_user_resource, create_datatype_resource):
     Create a temporary hub object
     """
     user, _ = create_user_resource
-    actual_hub_obj = trackhubs.models.Hub.objects.create(
-        name='JASPAR_TFBS',
-        shortLabel='JASPAR TFBS',
-        longLabel='TFBS predictions for profiles in the JASPAR CORE collections',
-        url='https://url/to/the/hub.txt',
-        description_url='http://jaspar.genereg.net/genome-tracks/',
-        email='wyeth@cmmt.ubc.ca',
+    return _create_hub(
+        user=user,
         data_type=trackhubs.models.DataType.objects.filter(name=create_datatype_resource.name).first(),
-        owner=user
+        url='https://url/to/the/hub.txt'
     )
-    return actual_hub_obj
 
 
 @pytest.fixture()
@@ -482,14 +510,7 @@ def create_assembly_resource():
     """
     Create a temporary assembly object
     """
-    actual_assembly_obj = trackhubs.models.Assembly.objects.create(
-        accession='GCA_000001405.1',
-        name='GRCh37',
-        long_name='',
-        ucsc_synonym=''
-    )
-
-    return actual_assembly_obj
+    return _create_assembly(accession='GCA_000001405.1', name='GRCh37', long_name='', ucsc_synonym='')
 
 
 @pytest.fixture()
@@ -499,16 +520,12 @@ def create_trackdb_resource(create_hub_resource, create_assembly_resource, creat
     """
     trackdb_url = 'http://some.random/url/for/trackDb.txt'
 
-    actual_trackdb_obj = trackhubs.models.Trackdb.objects.create(
-        public=True,
-        created=int(time.time()),
-        updated=int(time.time()),
-        assembly=create_assembly_resource,
+    return _create_trackdb(
         hub=create_hub_resource,
+        assembly=create_assembly_resource,
         species=create_species_resource,
         source_url=trackdb_url
     )
-    return actual_trackdb_obj
 
 
 @pytest.fixture()
@@ -516,18 +533,15 @@ def create_track_resource(create_trackdb_resource, create_filetype_resource, cre
     """
     Create a temporary track object
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
-        name='JASPAR2020_TFBS_hg19',
-        shortLabel='JASPAR2020 TFBS hg19',
-        longLabel='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
-        big_data_url='http://path.to/the/track/bigbed/file/JASPAR2020_hg19.bb',
-        parent=None,
+    return _create_track(
         trackdb=create_trackdb_resource,
         file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        name='JASPAR2020_TFBS_hg19',
+        short_label='JASPAR2020 TFBS hg19',
+        long_label='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
+        big_data_url='http://path.to/the/track/bigbed/file/JASPAR2020_hg19.bb'
     )
-    return actual_track_obj
 
 
 @pytest.fixture()
@@ -537,19 +551,16 @@ def create_child_track_resource(create_trackdb_resource, create_filetype_resourc
     Create a temporary track object which is the child of another track
     this parent track is empty, it is used to test add_parent_id() function
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
-        name='Child track name',
-        shortLabel='child of JASPAR2020',
-        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
-                   'JASPAR CORE vertebrates collection (2020)',
-        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
-        parent=None,
+    return _create_track(
         trackdb=create_trackdb_resource,
         file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        name='Child track name',
+        short_label='child of JASPAR2020',
+        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+                   'JASPAR CORE vertebrates collection (2020)',
+        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb'
     )
-    return actual_track_obj
 
 
 @pytest.fixture()
@@ -559,16 +570,14 @@ def create_child_track_with_parent_resource(create_trackdb_resource, create_file
     Create a temporary track object which is the child of another track
     this parent track is provided, it is used to test get_parents() function
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
-        name='Child track name',
-        shortLabel='child of JASPAR2020',
-        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
-                   'JASPAR CORE vertebrates collection (2020)',
-        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
-        parent=create_track_resource,
+    return _create_track(
         trackdb=create_trackdb_resource,
         file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        name='Child track name',
+        short_label='child of JASPAR2020',
+        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+                   'JASPAR CORE vertebrates collection (2020)',
+        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
+        parent=create_track_resource
     )
-    return actual_track_obj
