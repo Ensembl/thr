@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     # Django REST framework Elasticsearch integration
     'django_elasticsearch_dsl_drf',
     'django_mysql',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -92,6 +93,7 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
     'ORDERING_PARAM': 'ordering',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 MIDDLEWARE = [
@@ -244,7 +246,10 @@ CORS_ORIGIN_ALLOW_ALL = True
 # otherwise this command would not run.
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'thr_home'
