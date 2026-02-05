@@ -13,16 +13,14 @@
 """
 import django
 import elasticsearch
+from django.conf import settings
+from rest_framework import status
 from rest_framework.pagination import LimitOffsetPagination
-
-from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from info.serializers import AssemblyInfoSerializer, TrackhubInfoSerializer
 from thr.settings import ELASTICSEARCH_DSL
-from rest_framework import status
-from django.conf import settings
-
 from trackhubs.models import Species, Assembly, Trackdb, Track, Hub
 
 

@@ -11,8 +11,6 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
-import pytest
-
 
 # TODO: figure out why each time a new test is executed the count result changes
 # @pytest.mark.parametrize(
@@ -32,22 +30,20 @@ import pytest
 #     assert response.status_code == 200
 
 # TODO: please get back to this later
-"""
-@pytest.mark.parametrize(
-    'query_body, expected_error_message',
-    [
-        ({"query": ""}, {'error': 'Missing query field'}),
-        ({"random_name": "Homo sapiens"}, {'error': 'Missing query field'}),
-        ({"random_name": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS"}, {'error': 'Missing query field'}),
-        ({}, {'error': 'Missing message body in request'}),
-    ]
-)
-def test_post_search_fail(api_client, query_body, expected_error_message, create_hub_resource):
-    response = api_client.post('/api/search/', query_body, format='json')
-    actual_error_message = response.json()
-    assert actual_error_message == expected_error_message
-    assert response.status_code == 400
-"""
+# @pytest.mark.parametrize(
+#     'query_body, expected_error_message',
+#     [
+#         ({"query": ""}, {'error': 'Missing query field'}),
+#         ({"random_name": "Homo sapiens"}, {'error': 'Missing query field'}),
+#         ({"random_name": "Homo sapiens", "accession": "GCA_000001405.1", "species": "Homo sapiens", "hub": "JASPAR_TFBS"}, {'error': 'Missing query field'}),
+#         ({}, {'error': 'Missing message body in request'}),
+#     ]
+# )
+# def test_post_search_fail(api_client, query_body, expected_error_message, create_hub_resource):
+#     response = api_client.post('/api/search/', query_body, format='json')
+#     actual_error_message = response.json()
+#     assert actual_error_message == expected_error_message
+#     assert response.status_code == 400
 
 def test_get_one_trackdb_success(api_client, create_track_resource):
     response = api_client.get('/api/search/trackdb/1')

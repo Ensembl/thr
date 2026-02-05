@@ -14,13 +14,6 @@
 from collections import OrderedDict
 
 import elasticsearch
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.views import APIView
-
-from search.documents import TrackdbDocument
-from search.serializers import TrackdbDocumentSerializer
-
 from django_elasticsearch_dsl_drf.filter_backends import (
     FilteringFilterBackend,
     OrderingFilterBackend,
@@ -29,11 +22,16 @@ from django_elasticsearch_dsl_drf.filter_backends import (
     FacetedSearchFilterBackend,
 )
 from django_elasticsearch_dsl_drf.viewsets import DocumentViewSet, PageNumberPagination
-
 from elasticsearch_dsl import (
     A,
     TermsFacet
 )
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from search.documents import TrackdbDocument
+from search.serializers import TrackdbDocumentSerializer
 
 from thr.settings import FACETS_LENGHT
 

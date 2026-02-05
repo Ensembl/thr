@@ -11,24 +11,26 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from contextlib import ExitStack
 import time
 import urllib.error
 from types import SimpleNamespace
+from unittest.mock import patch
 
+import elasticsearch
+import elasticmock.fake_elasticsearch
+from elasticmock import _get_elasticmock, ELASTIC_INSTANCES
 import pytest
 from rest_framework.authtoken.models import Token
-from elasticmock import _get_elasticmock, ELASTIC_INSTANCES
-from unittest.mock import patch
-from contextlib import ExitStack
+from rest_framework.test import APIClient
 
 import trackhubs
 from thr.settings import BASE_DIR
-import elasticsearch
 from trackhubs.models import Trackdb
-import elasticmock.fake_elasticsearch
 
 
-def _create_hub(*, user, data_type, url, name="JASPAR_TFBS", short_label="JASPAR TFBS",
+def _create_hub(  # pylint: disable=too-many-arguments
+    *, user, data_type, url, name="JASPAR_TFBS", short_label="JASPAR TFBS",
                 long_label="TFBS predictions for profiles in the JASPAR CORE collections",
                 description_url="http://jaspar.genereg.net/genome-tracks/", email="wyeth@cmmt.ubc.ca"):
     """
@@ -74,7 +76,9 @@ def _create_trackdb(*, hub, assembly, species, source_url):
     )
 
 
-def _create_track(*, trackdb, file_type, visibility, name, short_label, long_label, big_data_url, parent=None):
+def _create_track(  # pylint: disable=too-many-arguments
+    *, trackdb, file_type, visibility, name, short_label, long_label, big_data_url, parent=None
+):
     """
     Helper to create a Track with consistent defaults.
     """
@@ -102,7 +106,7 @@ def elasticsearch_mock():
         stack.enter_context(patch("elasticsearch.client.Elasticsearch", _get_elasticmock))
         try:
             stack.enter_context(patch("elasticsearch_dsl.connections.Elasticsearch", _get_elasticmock))
-        except Exception:
+        except (ImportError, ModuleNotFoundError):
             # elasticsearch_dsl may not be importable outside the test environment
             pass
         yield
@@ -218,7 +222,7 @@ def urlopen_mock(monkeypatch):
         "",
     ]).encode("utf-8")
 
-    def _fake_urlopen(url, *args, **kwargs):
+    def _fake_urlopen(url, *args, **kwargs):  # pylint: disable=too-many-return-statements
         if not isinstance(url, str):
             raise TypeError("url must be a string")
         if url == "":
@@ -261,14 +265,23 @@ def search_trackdb_document_mock(monkeypatch):
     """
     Mock TrackdbDocument.get to fetch from the DB instead of Elasticsearch.
     """
-    def _fake_get(cls, id=None, **kwargs):
+    def _fake_get(_cls, doc_id=None, **kwargs):
+        if doc_id is None and "id" in kwargs:
+            doc_id = kwargs["id"]
         try:
-            trackdb = Trackdb.objects.filter(trackdb_id=id).select_related(
+            if doc_id is None:
+                raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+            try:
+                doc_id_int = int(doc_id)
+            except (TypeError, ValueError):
+                raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+
+            trackdb = Trackdb.objects.filter(trackdb_id=doc_id_int).select_related(
                 "hub", "species", "assembly"
             ).first()
-        except RuntimeError:
+        except RuntimeError as exc:
             # DB access not allowed in this test; behave like ES not found.
-            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {}) from exc
         if not trackdb:
             raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
 
@@ -326,27 +339,27 @@ def elasticmock_behavior_patch(monkeypatch):
         if not hasattr(self, "_store"):
             self._store = {}
 
-    def _index(self, index=None, id=None, body=None, **kwargs):
+    def _index(self, index=None, doc_id=None, body=None, **kwargs):
         _ensure_store(self)
         idx = self._store.setdefault(index, {})
-        result = "updated" if id in idx else "created"
-        idx[id] = body
+        result = "updated" if doc_id in idx else "created"
+        idx[doc_id] = body
         return {"result": result}
 
-    def _get(self, index=None, id=None, **kwargs):
+    def _get(self, index=None, doc_id=None, **kwargs):
         _ensure_store(self)
         try:
-            return {"_source": self._store[index][id]}
-        except Exception:
-            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+            return {"_source": self._store[index][doc_id]}
+        except Exception as exc:
+            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {}) from exc
 
-    def _update(self, index=None, id=None, body=None, **kwargs):
+    def _update(self, index=None, doc_id=None, body=None, **kwargs):
         _ensure_store(self)
         idx = self._store.setdefault(index, {})
-        doc = idx.get(id, {})
+        doc = idx.get(doc_id, {})
         if body and "doc" in body:
             doc.update(body["doc"])
-        idx[id] = doc
+        idx[doc_id] = doc
         return {"result": "updated"}
 
     monkeypatch.setattr(elasticmock.fake_elasticsearch.FakeElasticsearch, "index", _index, raising=False)
@@ -364,7 +377,6 @@ def project_dir():
 
 @pytest.fixture
 def api_client():
-    from rest_framework.test import APIClient
     return APIClient()
 
 
@@ -430,7 +442,7 @@ def create_genome_assembly_dump_resource():
 
 
 @pytest.fixture()
-def create_trackhub_resource(
+def create_trackhub_resource(  # pylint: disable=too-many-arguments,too-many-locals,redefined-outer-name
     api_client,
     create_user_resource,
     create_datatype_resource,
@@ -493,7 +505,9 @@ def create_trackhub_resource(
 
 
 @pytest.fixture()
-def create_hub_resource(create_user_resource, create_datatype_resource):
+def create_hub_resource(  # pylint: disable=redefined-outer-name
+    create_user_resource, create_datatype_resource
+):
     """
     Create a temporary hub object
     """
@@ -514,7 +528,9 @@ def create_assembly_resource():
 
 
 @pytest.fixture()
-def create_trackdb_resource(create_hub_resource, create_assembly_resource, create_species_resource):
+def create_trackdb_resource(  # pylint: disable=redefined-outer-name
+    create_hub_resource, create_assembly_resource, create_species_resource
+):
     """
     Create a temporary trackdb object
     """
@@ -529,14 +545,17 @@ def create_trackdb_resource(create_hub_resource, create_assembly_resource, creat
 
 
 @pytest.fixture()
-def create_track_resource(create_trackdb_resource, create_filetype_resource, create_visibility_resource):
+def create_track_resource(  # pylint: disable=redefined-outer-name
+    db, create_trackdb_resource, create_filetype_resource, create_visibility_resource
+):
     """
     Create a temporary track object
     """
+    _ = db
     return _create_track(
         trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
         name='JASPAR2020_TFBS_hg19',
         short_label='JASPAR2020 TFBS hg19',
         long_label='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
@@ -545,16 +564,17 @@ def create_track_resource(create_trackdb_resource, create_filetype_resource, cre
 
 
 @pytest.fixture()
-def create_child_track_resource(create_trackdb_resource, create_filetype_resource, create_visibility_resource,
-                                create_track_resource):
+def create_child_track_resource(  # pylint: disable=redefined-outer-name
+    create_trackdb_resource, create_filetype_resource, create_visibility_resource
+):
     """
     Create a temporary track object which is the child of another track
     this parent track is empty, it is used to test add_parent_id() function
     """
     return _create_track(
         trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
         name='Child track name',
         short_label='child of JASPAR2020',
         long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
@@ -564,16 +584,17 @@ def create_child_track_resource(create_trackdb_resource, create_filetype_resourc
 
 
 @pytest.fixture()
-def create_child_track_with_parent_resource(create_trackdb_resource, create_filetype_resource,
-                                            create_visibility_resource, create_track_resource):
+def create_child_track_with_parent_resource(  # pylint: disable=redefined-outer-name
+    create_trackdb_resource, create_filetype_resource, create_visibility_resource, create_track_resource
+):
     """
     Create a temporary track object which is the child of another track
     this parent track is provided, it is used to test get_parents() function
     """
     return _create_track(
         trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first(),
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
         name='Child track name',
         short_label='child of JASPAR2020',
         long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '

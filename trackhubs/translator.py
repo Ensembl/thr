@@ -401,6 +401,7 @@ def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True
                 if 'track' in track:
                     # default value
                     visibility = 'hide'
+                    file_type = None
                     # get the file type and visibility
                     # TODO: if file_type in FILE_TYPES Good, Else Error
                     if 'type' in track:

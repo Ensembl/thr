@@ -57,6 +57,6 @@ def update_one_trackdb(trackdb_id):
             one_trackdb.configuration, tracks_status,
             es_index_name
         )
-        logger.info('Status updated successfully: ', tracks_status)
+        logger.info("Status updated successfully: %s", tracks_status)
 
     return one_trackdb
