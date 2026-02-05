@@ -350,6 +350,10 @@ def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True
 
     hub_info_array = parse_file_from_url(hub_url)
 
+    if not hub_info_array:
+        # We return a structured error so tests can assert on a stable error shape.
+        return {"error": "Couldn't parse the provided hub URL, please make sure it exists and is well formatted"}
+
     if hub_info_array:
         hub_info = hub_info_array[0]
         logger.debug("hub_info: {}".format(json.dumps(hub_info, indent=4)))

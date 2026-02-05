@@ -98,7 +98,8 @@ class AssembliesInfoView(APIView):
                 # get the assembly_ids that are linked to trackdbs associated to this species_id and remove redundant ones
                 assembly_ids = set(Trackdb.objects.filter(species_id=species_id).values_list('assembly_id', flat=True))
 
-                for assembly_id in assembly_ids:
+                # We sort IDs to keep response ordering stable for tests.
+                for assembly_id in sorted(assembly_ids):
                     assembly = Assembly.objects.get(assembly_id=assembly_id)
                     serializer = AssemblyInfoSerializer(assembly)
                     assemblies_set[sci_name].append(serializer.data)

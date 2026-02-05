@@ -24,3 +24,6 @@ DATABASES = {
         'COLLATION': 'utf8mb4_unicode_ci',
     }
 }
+
+# Disable Elasticsearch autosync during tests so model saves don't try to talk to ES.
+ELASTICSEARCH_DSL_AUTOSYNC = False
