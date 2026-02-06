@@ -216,6 +216,7 @@ class TrackdbDocumentListView(DocumentViewSet):
 
 class TrackdbDocumentDetailView(APIView):
     """The TrackhubDocumentDetail view."""
+    serializer_class = TrackdbDocumentSerializer
 
     def get(self, request, pk):
         # pylint: disable=invalid-name

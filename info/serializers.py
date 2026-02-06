@@ -24,7 +24,7 @@ class AssemblyInfoSerializer(serializers.ModelSerializer):
     """
     synonyms = serializers.SerializerMethodField()
 
-    def get_synonyms(self, obj):
+    def get_synonyms(self, obj) -> list[str]:
         # this gives us the possibility to add other synonyms in the future
         return [obj.ucsc_synonym]
 
@@ -54,7 +54,7 @@ class TrackhubInfoSerializer(serializers.ModelSerializer):
             'trackdbs'
         ]
 
-    def get_trackdbs(self, obj):
+    def get_trackdbs(self, obj) -> list[dict]:
         trackdbs_short_info = []
         trackdbs = obj.get_trackdbs_full_list_from_hub()
         for trackdb in trackdbs:
@@ -64,3 +64,23 @@ class TrackhubInfoSerializer(serializers.ModelSerializer):
                 'assembly': trackdb.get('assembly').get('accession')
             })
         return trackdbs_short_info
+
+
+class VersionInfoResponseSerializer(serializers.Serializer):
+    version = serializers.CharField()
+
+
+class PingInfoResponseSerializer(serializers.Serializer):
+    ping = serializers.IntegerField()
+
+
+class SpeciesListResponseSerializer(serializers.Serializer):
+    species = serializers.ListField(child=serializers.CharField())
+
+
+class AssembliesInfoResponseSerializer(serializers.Serializer):
+    assemblies = serializers.DictField(child=AssemblyInfoSerializer(many=True))
+
+
+class CountResponseSerializer(serializers.Serializer):
+    tot = serializers.IntegerField()

@@ -156,6 +156,30 @@ class ResetPasswordEmailSerializer(serializers.Serializer):
         return super().validate(attrs)
 
 
+class EmailVerificationSerializer(serializers.Serializer):
+    token = serializers.CharField()
+
+
+class LogoutResponseSerializer(serializers.Serializer):
+    success = serializers.CharField()
+
+
+class ValidateResetPasswordSerializer(serializers.Serializer):
+    uidb64 = serializers.CharField()
+    token = serializers.CharField()
+
+
+class LoginRequestSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+
+class LoginResponseSerializer(serializers.Serializer):
+    auth_token = serializers.CharField()
+    email = serializers.EmailField()
+    is_account_activated = serializers.BooleanField()
+
+
 class SetNewPasswordSerializer(serializers.Serializer):
     new_password = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)
     new_password_confirm = serializers.CharField(min_length=6, max_length=128, write_only=True, required=True)

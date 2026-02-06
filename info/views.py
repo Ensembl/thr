@@ -19,12 +19,21 @@ from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from info.serializers import AssemblyInfoSerializer, TrackhubInfoSerializer
+from info.serializers import (
+    AssemblyInfoSerializer,
+    TrackhubInfoSerializer,
+    VersionInfoResponseSerializer,
+    PingInfoResponseSerializer,
+    SpeciesListResponseSerializer,
+    AssembliesInfoResponseSerializer,
+    CountResponseSerializer,
+)
 from thr.settings import ELASTICSEARCH_DSL
 from trackhubs.models import Species, Assembly, Trackdb, Track, Hub
 
 
 class VersionInfoView(APIView):
+    serializer_class = VersionInfoResponseSerializer
 
     def get(self, request):
         """
@@ -37,6 +46,7 @@ class VersionInfoView(APIView):
 
 
 class PingInfoView(APIView):
+    serializer_class = PingInfoResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/ping
@@ -55,6 +65,7 @@ class PingInfoView(APIView):
 
 
 class SpeciesInfoView(APIView):
+    serializer_class = SpeciesListResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/species
@@ -72,6 +83,7 @@ class SpeciesInfoView(APIView):
 
 
 class AssembliesInfoView(APIView):
+    serializer_class = AssembliesInfoResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/assemblies
@@ -112,6 +124,7 @@ class AssembliesInfoView(APIView):
 
 
 class HubPerAssemblyInfoView(APIView):
+    serializer_class = CountResponseSerializer
     def get(self, request, assembly):
         """
         GET method for /api/info/hubs_per_assembly/:assembly
@@ -136,6 +149,7 @@ class HubPerAssemblyInfoView(APIView):
 
 
 class TracksPerAssemblyInfoView(APIView):
+    serializer_class = CountResponseSerializer
     def get(self, request, assembly):
         """
         GET method for /api/info/tracks_per_assembly/:assembly
@@ -168,6 +182,7 @@ class TracksPerAssemblyInfoView(APIView):
 
 
 class TrackhubsInfoView(APIView, LimitOffsetPagination):
+    serializer_class = TrackhubInfoSerializer
     def get(self, request):
         """
         GET method for /api/info/trackhubs

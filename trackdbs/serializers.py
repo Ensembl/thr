@@ -94,49 +94,49 @@ class TrackdbSerializer(serializers.ModelSerializer):
         ]
 
     @staticmethod
-    def get_owner(obj):
+    def get_owner(obj) -> str:
         hub = models.Hub.objects.filter(hub_id=obj.hub.hub_id).first()
         return hub.get_owner()
 
     @staticmethod
-    def get_created(obj):
+    def get_created(obj) -> str:
         return datetime.utcfromtimestamp(obj.created).strftime('%Y-%m-%d %H:%M:%S')
 
     @staticmethod
-    def get_updated(obj):
+    def get_updated(obj) -> str:
         if obj.updated is None:
             obj.updated = int(time.time())
         return datetime.utcfromtimestamp(obj.updated).strftime('%Y-%m-%d %H:%M:%S')
 
     @staticmethod
-    def get_source(obj):
+    def get_source(obj) -> dict:
         return {
             'checksum': obj.source_checksum,
             'url': obj.source_url
         }
 
     @staticmethod
-    def get_type(obj):
+    def get_type(obj) -> str:
         return models.DataType.objects.values_list('name', flat=True).get(data_type_id=obj.hub.data_type_id)
 
     @staticmethod
-    def get_hub(obj):
+    def get_hub(obj) -> dict:
         hub = models.Hub.objects.filter(hub_id=obj.hub.hub_id).first()
         return TrackdbHubSerializer(hub).data
 
-    def get_browser_links(self, obj):
+    def get_browser_links(self, obj) -> dict:
         return obj.generate_browser_links()
 
     @staticmethod
-    def get_species(obj):
+    def get_species(obj) -> dict:
         species = models.Species.objects.filter(taxon_id=obj.species.taxon_id).first()
         return TrackdbSpeciesSerializer(species).data
 
     @staticmethod
-    def get_assembly(obj):
+    def get_assembly(obj) -> dict:
         assembly = models.Assembly.objects.filter(assembly_id=obj.assembly.assembly_id).first()
         return TrackdbAssemblySerializer(assembly).data
 
     @staticmethod
-    def get_file_type(obj):
+    def get_file_type(obj) -> dict:
         return obj.get_trackdb_file_type_count()

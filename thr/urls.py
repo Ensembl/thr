@@ -14,6 +14,7 @@
 
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 # pylint: disable=pointless-string-statement
 """thr URL Configuration
@@ -43,4 +44,6 @@ urlpatterns = [
     path('api/trackdb', include('trackdbs.urls')),
     path('api/info', include('info.urls')),
     path('api/stats', include('stats.urls')),
+    path('api/schema', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
 ]

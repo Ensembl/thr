@@ -47,7 +47,7 @@ class TrackdbDocumentSerializer(DocumentSerializer):
             'type',
         ]
 
-    def get_status(self, obj):
+    def get_status(self, obj) -> dict | None:
         """Represent status value."""
         try:
             # Convert elasticsearch_dsl.utils.AttrDict to Dictionary and return it
@@ -55,21 +55,21 @@ class TrackdbDocumentSerializer(DocumentSerializer):
         except Exception:
             return None
 
-    def get_source(self, obj):
+    def get_source(self, obj) -> dict:
         """Represent source object."""
         try:
             return obj.source.to_dict()
         except Exception:
             return {}
 
-    def get_owner(self, obj):
+    def get_owner(self, obj) -> str:
         """Represent the owner value."""
         try:
             return obj.owner
         except Exception:
             return ''
 
-    def get_type(self, obj):
+    def get_type(self, obj) -> str:
         """Represent type value."""
         try:
             return obj.type

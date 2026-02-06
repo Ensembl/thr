@@ -213,7 +213,7 @@ def test_email_verification_success(api_client):
     token = match.group(1)
 
     # verify that the token we got is working
-    email_verification_response = api_client.get('/api/email_verification?token=' + token)
+    email_verification_response = api_client.get('/api/user/email_verification?token=' + token)
     actual_result = email_verification_response.json()
     assert email_verification_response.status_code == 200
     assert actual_result == {'success': 'Account activated! Please login to your account'}
@@ -241,7 +241,7 @@ def test_email_verification_fail(api_client):
     token = 'eyJ0eXAiOiJKV1jo.YWNjZXNzIiwiZXhw.oxNjMwOTQ4OTg3LCJqdGkiOiJmY2ZhNzQ3ZjQ1OGJfaWQiOjF9_otTBItQfC7aozK_VgWcY'
 
     # verify that the token we created isn't working
-    email_verification_response = api_client.get('/api/email_verification?token=' + token)
+    email_verification_response = api_client.get('/api/user/email_verification?token=' + token)
     actual_result = email_verification_response.json()
     assert email_verification_response.status_code == 400
     assert actual_result == {'error': 'Invalid token!'}
@@ -456,7 +456,7 @@ def test_validate_reset_password_fail(api_client, create_user_resource):
 
     # validate it using the api (it should fail)
     reset_validation_response = api_client.get(
-        '/api/reset_password?uidb64=' + uidb64 + '?token=' + token
+        '/api/user/reset_password?uidb64=' + uidb64 + '?token=' + token
     )
     actual_result = reset_validation_response.json()
     assert reset_validation_response.status_code == 400
@@ -477,7 +477,7 @@ def test_validate_reset_password_success(api_client, create_user_resource):
 
     # validate it using the api
     reset_validation_response = api_client.get(
-        'http://' + settings.BACKEND_URL + '/api/reset_password?uidb64=' + uidb64 + '&token=' + token
+        'http://' + settings.BACKEND_URL + '/api/user/reset_password?uidb64=' + uidb64 + '&token=' + token
     )
     actual_result = reset_validation_response.json()
     assert reset_validation_response.status_code == 200

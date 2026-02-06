@@ -25,6 +25,7 @@ from trackhubs.models import Trackdb
 
 
 class TrackdbDetail(APIView):
+    serializer_class = TrackdbSerializer
     """
     Retrieve or delete a Trackdb instance.
     """

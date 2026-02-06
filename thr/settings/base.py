@@ -29,9 +29,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-# TODO: take a look at the checklist
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+THR_VERSION = "1.0.0"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR here is 'thr/thr'
@@ -94,6 +92,22 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 5,
     'ORDERING_PARAM': 'ordering',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "THR API",
+    "DESCRIPTION": "Track Hub Registry API",
+    "VERSION": THR_VERSION,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SECURITY": [{"TokenAuth": []}],
+    "AUTHENTICATION_WHITELIST": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "tryItOutEnabled": True,
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+    },
 }
 
 MIDDLEWARE = [
@@ -272,5 +286,3 @@ HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hub
 
 # Whether to append trailing slashes to URLs.
 APPEND_SLASH = False
-
-THR_VERSION = "0.8.2"
