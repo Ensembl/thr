@@ -19,10 +19,13 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+from stats.serializers import SummaryStatsSerializer, CompleteStatsSerializer
+
 from trackhubs.models import Species, Assembly, Trackdb, Track, Hub
 
 
 class SummaryStatsView(APIView):
+    serializer_class = SummaryStatsSerializer
     def get(self, request):
         """
         GET method for /api/stats/summary
@@ -58,6 +61,7 @@ class SummaryStatsView(APIView):
 
 
 class CompleteStatsView(APIView):
+    serializer_class = CompleteStatsSerializer
     def get(self, request):
         """
         Action for /api/stats/complete. Returns complete data with which to build

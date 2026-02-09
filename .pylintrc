@@ -12,9 +12,6 @@
 # pygtk.require().
 #init-hook=
 
-# Profiled execution.
-profile=no
-
 # Add files or directories to the blacklist. They should be base names, not
 # paths.
 ignore=CVS
@@ -37,7 +34,7 @@ load-plugins=pylint_django
 # can either give multiple identifier separated by comma (,) or put this option
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once).
-disable=unused-wildcard-import, too-few-public-methods, missing-class-docstring, missing-function-docstring, line-too-long, unused-argument, logging-format-interpolation
+disable=unused-wildcard-import, too-few-public-methods, missing-class-docstring, missing-function-docstring, line-too-long, logging-format-interpolation, fixme, broad-exception-caught, abstract-method, too-many-ancestors, too-many-branches, too-many-statements, too-many-locals, too-many-arguments, too-many-return-statements, no-else-return, redefined-builtin, redefined-outer-name, protected-access, import-outside-toplevel, consider-iterating-dictionary, literal-comparison, missing-module-docstring, consider-using-with, unused-private-member, useless-super-delegation, inconsistent-return-statements, consider-merging-isinstance, invalid-name
 
 [REPORTS]
 

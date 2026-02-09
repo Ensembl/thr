@@ -13,20 +13,27 @@
 """
 import django
 import elasticsearch
-from rest_framework.pagination import LimitOffsetPagination
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-from info.serializers import AssemblyInfoSerializer, TrackhubInfoSerializer
-from thr.settings import ELASTICSEARCH_DSL
-from rest_framework import status
 from django.conf import settings
+from rest_framework import status
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
+from info.serializers import (
+    AssemblyInfoSerializer,
+    TrackhubInfoSerializer,
+    VersionInfoResponseSerializer,
+    PingInfoResponseSerializer,
+    SpeciesListResponseSerializer,
+    AssembliesInfoResponseSerializer,
+    CountResponseSerializer,
+)
+from thr.settings import ELASTICSEARCH_DSL
 from trackhubs.models import Species, Assembly, Trackdb, Track, Hub
 
 
 class VersionInfoView(APIView):
+    serializer_class = VersionInfoResponseSerializer
 
     def get(self, request):
         """
@@ -39,6 +46,7 @@ class VersionInfoView(APIView):
 
 
 class PingInfoView(APIView):
+    serializer_class = PingInfoResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/ping
@@ -57,6 +65,7 @@ class PingInfoView(APIView):
 
 
 class SpeciesInfoView(APIView):
+    serializer_class = SpeciesListResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/species
@@ -74,6 +83,7 @@ class SpeciesInfoView(APIView):
 
 
 class AssembliesInfoView(APIView):
+    serializer_class = AssembliesInfoResponseSerializer
     def get(self, request):
         """
         GET method for /api/info/assemblies
@@ -98,7 +108,8 @@ class AssembliesInfoView(APIView):
                 # get the assembly_ids that are linked to trackdbs associated to this species_id and remove redundant ones
                 assembly_ids = set(Trackdb.objects.filter(species_id=species_id).values_list('assembly_id', flat=True))
 
-                for assembly_id in assembly_ids:
+                # We sort IDs to keep response ordering stable for tests.
+                for assembly_id in sorted(assembly_ids):
                     assembly = Assembly.objects.get(assembly_id=assembly_id)
                     serializer = AssemblyInfoSerializer(assembly)
                     assemblies_set[sci_name].append(serializer.data)
@@ -113,6 +124,7 @@ class AssembliesInfoView(APIView):
 
 
 class HubPerAssemblyInfoView(APIView):
+    serializer_class = CountResponseSerializer
     def get(self, request, assembly):
         """
         GET method for /api/info/hubs_per_assembly/:assembly
@@ -137,6 +149,7 @@ class HubPerAssemblyInfoView(APIView):
 
 
 class TracksPerAssemblyInfoView(APIView):
+    serializer_class = CountResponseSerializer
     def get(self, request, assembly):
         """
         GET method for /api/info/tracks_per_assembly/:assembly
@@ -169,6 +182,7 @@ class TracksPerAssemblyInfoView(APIView):
 
 
 class TrackhubsInfoView(APIView, LimitOffsetPagination):
+    serializer_class = TrackhubInfoSerializer
     def get(self, request):
         """
         GET method for /api/info/trackhubs

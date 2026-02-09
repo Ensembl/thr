@@ -1,95 +1,61 @@
-# GitLab Dependency Proxy to get rid of Docker hub pull limit issue
-# https://docs.gitlab.com/ee/user/packages/dependency_proxy/#authenticate-within-cicd
-image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:3.10
+image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/python:3.11
 
-# This fixes "error during connect: Post http://docker:2375/v1.40/auth: dial tcp: lookup docker on 192.168.65.5:53: no such host"
 variables:
-  # Adding this fixes: Error response from daemon: client version 1.53 is too new. Maximum supported API version is 1.43
-  DOCKER_API_VERSION: "1.43"
-  # We need to disable TLS (https://about.gitlab.com/blog/2019/07/31/docker-in-docker-with-docker-19-dot-03/#disable-tls)
-  # to fix the error "docker: Cannot connect to the Docker daemon at tcp://docker:2375. Is the docker daemon running?"
-  DOCKER_TLS_CERTDIR: ""
-
+  # Share pip downloads across jobs to reduce install time.
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 stages:
+  - pylint
   - test
   - build
 
-
-# Test
+cache:
+  paths:
+    - .cache/pip
 
 pylint:
-  stage: test
-  # This job doesn't depend on the others
-  needs: []
-  before_script:
-    # Installing mysql and requirements
-    - pip install -r requirements.txt
+  stage: pylint
   script:
     - python -V
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
     - pylint $(git ls-files '*.py') --django-settings-module=thr.settings --fail-under=9
 
-
-# I disabled pytest job for now till I
-# TODO: figure out why it gets stuck until it times out on GitLab CI but running fine locally
-.pytest:
+pytest:
   stage: test
-  before_script:
-    # Installing mysql and requirements
-    - apt-get update && apt-get install -y git curl libmcrypt-dev default-mysql-client
-    - mysql --version
-    - echo "Sleeping for 20 seconds.."; sleep 20;
-    - pip install -r requirements.txt
-    # Executing makemigrations and migrate
-    - python manage.py makemigrations
-    - python manage.py migrate
-    - curl http://elasticsearch:9200
-    # Delete the indices and then recreate and populate them
-    - python manage.py search_index --rebuild -f
-    - curl -X GET "elasticsearch:9200/_cat/indices"
-
   variables:
-    # Configure mysql service (https://hub.docker.com/_/mysql/)
-    MYSQL_HOST: "mysql"
-    MYSQL_DATABASE: "thr_db"
-    MYSQL_USER: "thr_dev"
-    MYSQL_PASSWORD: "password"
-    MYSQL_ROOT_PASSWORD: "password"
-    # Configure Elascticsearch
+    # Keep ES host explicit for code paths reading settings from env.
+    ES_HOST: "elasticsearch:9200"
     ELASTICSEARCH_URL: "http://elasticsearch:9200"
-
+    # Lower heap for CI runners; enough for test startup.
+    ES_JAVA_OPTS: "-Xms512m -Xmx512m"
   services:
-    - name: mysql:5.7
-      alias: mysql
-
-    - name: docker.elastic.co/elasticsearch/elasticsearch:6.3.0
+    # Pin to the currently used Elasticsearch major/minor.
+    - name: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
       alias: elasticsearch
-      command: [ "bin/elasticsearch", "-Expack.security.enabled=false", "-Ediscovery.type=single-node" ]
-
+      # Single-node + no security keeps CI service lightweight and accessible.
+      command: [ "bin/elasticsearch", "-Ediscovery.type=single-node", "-Expack.security.enabled=false", "-Ehttp.host=0.0.0.0" ]
   script:
     - python -V
-    # Command to test our application
-    - pytest -vvv
-
-
-# Build
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    # Tests run with thr.settings.test (sqlite + mocked ES in conftest)
+    - pytest -vv
 
 build:
   image: docker
   stage: build
-#  needs: ["pytest"]
+  needs:
+    - pytest
   services:
-    # The docker:dind image is required because it starts up the docker daemon when it is brought up by a runner.
-    # https://forum.gitlab.com/t/why-services-docker-dind-is-needed-while-already-having-image-docker/43534/2
     - docker:dind
   variables:
+    # Required for docker:dind compatibility on shared runners.
+    DOCKER_API_VERSION: "1.43"
+    DOCKER_TLS_CERTDIR: ""
     IMAGE_TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
   before_script:
     - echo $CI_REGISTRY_TOKEN | docker login -u $CI_REGISTRY_USER $CI_REGISTRY --password-stdin
   script:
     - docker build -t $IMAGE_TAG .
     - docker push $IMAGE_TAG
-
-# Useful resources:
-# https://docs.gitlab.com/ee/user/packages/container_registry/
-# https://www.agiliq.com/blog/2018/07/ci-and-cd-for-django-using-gitlab-ci/

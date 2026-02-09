@@ -29,9 +29,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-# TODO: take a look at the checklist
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+THR_VERSION = "1.0.0"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # BASE_DIR here is 'thr/thr'
@@ -81,6 +79,7 @@ INSTALLED_APPS = [
     # Django REST framework Elasticsearch integration
     'django_elasticsearch_dsl_drf',
     'django_mysql',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -92,6 +91,23 @@ REST_FRAMEWORK = {
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
     'ORDERING_PARAM': 'ordering',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "THR API",
+    "DESCRIPTION": "Track Hub Registry API",
+    "VERSION": THR_VERSION,
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SECURITY": [{"TokenAuth": []}],
+    "AUTHENTICATION_WHITELIST": [
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "SWAGGER_UI_SETTINGS": {
+        "tryItOutEnabled": True,
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+    },
 }
 
 MIDDLEWARE = [
@@ -244,7 +260,10 @@ CORS_ORIGIN_ALLOW_ALL = True
 # otherwise this command would not run.
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGOUT_REDIRECT_URL = 'thr_home'
@@ -267,5 +286,3 @@ HUBCHECK_API_URL = os.environ.get('HUBCHECK_API_URL', 'http://localhost:8888/hub
 
 # Whether to append trailing slashes to URLs.
 APPEND_SLASH = False
-
-THR_VERSION = "0.8.2"

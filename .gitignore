@@ -13,7 +13,7 @@ media
 
 # If your build process includes running collectstatic, then you probably don't need or want to include staticfiles/
 # in your Git repository. Update and uncomment the following line accordingly.
-# <django-project-name>/staticfiles/
+thr/static/
 
 ### Django.Python Stack ###
 # Byte-compiled / optimized / DLL files
@@ -68,4 +68,11 @@ thr_env/
 # users dump
 users/management/commands/users_dump
 
-# End of https://www.toptal.com/developers/gitignore/api/python,django,venv,pycharm
+/venv
+/.venv
+
+# ignore artifact generated when running tests
+assemblies_dump/fake_assembly.json
+
+# exclude hubcheck binary
+tools/hubCheck

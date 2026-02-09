@@ -51,7 +51,7 @@ class TrackdbDocument(Document):
             'raw': fields.KeywordField(),
         }
     )
-    
+
     hub = fields.ObjectField(properties={
         'name': fields.TextField(
             analyzer=html_strip,

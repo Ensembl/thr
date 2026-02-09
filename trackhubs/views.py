@@ -24,6 +24,7 @@ from thr.settings import ELASTICSEARCH_DSL
 from trackhubs.serializers import CustomOneHubSerializer, CustomHubListSerializer
 from trackhubs.models import Hub
 import trackhubs.translator
+from drf_spectacular.utils import extend_schema
 
 
 class TrackHubList(APIView):
@@ -32,7 +33,9 @@ class TrackHubList(APIView):
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomHubListSerializer
 
+    @extend_schema(operation_id="trackhub_list")
     def get(self, request):
         """
         Return the list of available track data hubs for a given user.
@@ -95,6 +98,7 @@ class TrackHubDetail(APIView):
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomOneHubSerializer
 
     @staticmethod
     def get_hub(primary_key):
@@ -103,6 +107,7 @@ class TrackHubDetail(APIView):
         except Hub.DoesNotExist as hub_not_found:
             raise Http404 from hub_not_found
 
+    @extend_schema(operation_id="trackhub_retrieve")
     def get(self, request, pk):
         # pylint: disable=invalid-name
         hub = self.get_hub(pk)

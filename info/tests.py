@@ -99,29 +99,27 @@ def test_tracks_per_assembly_info(api_client, assembly, expected_result, create_
 
 
 # TODO: get back to this test later on please
-"""
-@pytest.mark.django_db
-def test_trackhubs_info(project_dir, api_client, create_trackhub_resource):
-    expected_result = {
-        'name': 'JASPAR_TFBS',
-        'shortLabel': 'JASPAR TFBS',
-        'longLabel': 'TFBS predictions for profiles in the JASPAR CORE collections',
-        'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
-        'trackdbs': [
-            {
-                'species': '9606',
-                'uri': 'https://www.trackhubregistry.org/api/search/trackdb/1',
-                'assembly': 'GCA_000001405.1'
-            },
-            {
-                'species': '9606',
-                'uri': 'https://www.trackhubregistry.org/api/search/trackdb/2',
-                'assembly': 'GCA_000001405.15'
-            }
-        ]
-    }
-    response = api_client.get('/api/info/trackhubs')
-    actual_result = response.json()
-    assert response.status_code == 200
-    assert actual_result == expected_result
-"""
+# @pytest.mark.django_db
+# def test_trackhubs_info(project_dir, api_client, create_trackhub_resource):
+#     expected_result = {
+#         'name': 'JASPAR_TFBS',
+#         'shortLabel': 'JASPAR TFBS',
+#         'longLabel': 'TFBS predictions for profiles in the JASPAR CORE collections',
+#         'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt',
+#         'trackdbs': [
+#             {
+#                 'species': '9606',
+#                 'uri': 'https://www.trackhubregistry.org/api/search/trackdb/1',
+#                 'assembly': 'GCA_000001405.1'
+#             },
+#             {
+#                 'species': '9606',
+#                 'uri': 'https://www.trackhubregistry.org/api/search/trackdb/2',
+#                 'assembly': 'GCA_000001405.15'
+#             }
+#         ]
+#     }
+#     response = api_client.get('/api/info/trackhubs')
+#     actual_result = response.json()
+#     assert response.status_code == 200
+#     assert actual_result == expected_result

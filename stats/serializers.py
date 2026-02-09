@@ -12,18 +12,14 @@
    limitations under the License.
 """
 
-# pylint: disable=wildcard-import
-from .base import *
+from rest_framework import serializers
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': 'thr_test_db',
-        # Tell Django to build the test database with the 'utf8mb4' character set
-        'CHARSET': 'utf8mb4',
-        'COLLATION': 'utf8mb4_unicode_ci',
-    }
-}
 
-# Disable Elasticsearch autosync during tests so model saves don't try to talk to ES.
-ELASTICSEARCH_DSL_AUTOSYNC = False
+class SummaryStatsSerializer(serializers.Serializer):
+    summary = serializers.ListField(child=serializers.ListField())
+
+
+class CompleteStatsSerializer(serializers.Serializer):
+    complete_stats = serializers.DictField(
+        child=serializers.DictField(child=serializers.IntegerField())
+    )

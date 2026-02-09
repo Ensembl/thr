@@ -11,13 +11,360 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 """
+from contextlib import ExitStack
 import time
+import urllib.error
+from types import SimpleNamespace
+from unittest.mock import patch
 
+import elasticsearch
+import elasticmock.fake_elasticsearch
+from elasticmock import _get_elasticmock, ELASTIC_INSTANCES
 import pytest
 from rest_framework.authtoken.models import Token
+from rest_framework.test import APIClient
 
 import trackhubs
 from thr.settings import BASE_DIR
+from trackhubs.models import Trackdb
+
+
+def _create_hub(  # pylint: disable=too-many-arguments
+    *, user, data_type, url, name="JASPAR_TFBS", short_label="JASPAR TFBS",
+                long_label="TFBS predictions for profiles in the JASPAR CORE collections",
+                description_url="http://jaspar.genereg.net/genome-tracks/", email="wyeth@cmmt.ubc.ca"):
+    """
+    Helper to create a Hub with consistent defaults.
+    We centralize this to avoid repeating the same object setup across fixtures.
+    """
+    return trackhubs.models.Hub.objects.create(
+        name=name,
+        shortLabel=short_label,
+        longLabel=long_label,
+        url=url,
+        description_url=description_url,
+        email=email,
+        data_type=data_type,
+        owner=user
+    )
+
+
+def _create_assembly(*, accession, name, long_name="", ucsc_synonym=""):
+    """
+    Helper to create an Assembly with explicit defaults.
+    """
+    return trackhubs.models.Assembly.objects.create(
+        accession=accession,
+        name=name,
+        long_name=long_name,
+        ucsc_synonym=ucsc_synonym
+    )
+
+
+def _create_trackdb(*, hub, assembly, species, source_url):
+    """
+    Helper to create a Trackdb with consistent timestamps.
+    """
+    return trackhubs.models.Trackdb.objects.create(
+        public=True,
+        created=int(time.time()),
+        updated=int(time.time()),
+        assembly=assembly,
+        hub=hub,
+        species=species,
+        source_url=source_url
+    )
+
+
+def _create_track(  # pylint: disable=too-many-arguments
+    *, trackdb, file_type, visibility, name, short_label, long_label, big_data_url, parent=None
+):
+    """
+    Helper to create a Track with consistent defaults.
+    """
+    return trackhubs.models.Track.objects.create(
+        name=name,
+        shortLabel=short_label,
+        longLabel=long_label,
+        big_data_url=big_data_url,
+        parent=parent,
+        trackdb=trackdb,
+        file_type=file_type,
+        visibility=visibility
+    )
+
+
+@pytest.fixture(autouse=True)
+def elasticsearch_mock():
+    """
+    Route all Elasticsearch clients to ElasticMock during tests.
+    This avoids requiring a real ES service for unit tests.
+    """
+    ELASTIC_INSTANCES.clear()
+    with ExitStack() as stack:
+        stack.enter_context(patch("elasticsearch.Elasticsearch", _get_elasticmock))
+        stack.enter_context(patch("elasticsearch.client.Elasticsearch", _get_elasticmock))
+        try:
+            stack.enter_context(patch("elasticsearch_dsl.connections.Elasticsearch", _get_elasticmock))
+        except (ImportError, ModuleNotFoundError):
+            # elasticsearch_dsl may not be importable outside the test environment
+            pass
+        yield
+
+
+@pytest.fixture(scope="session")
+def django_db_use_migrations():
+    """
+    Disable migrations in tests to allow syncdb-style table creation.
+    We do this because this repo doesn't ship migrations.
+    """
+    return False
+
+
+@pytest.fixture(autouse=True)
+def hubcheck_requests_mock(monkeypatch):
+    """
+    Mock requests to the hubCheck service.
+    """
+    class _Resp:
+        def __init__(self, status_code, payload):
+            self.status_code = status_code
+            self._payload = payload
+            self.ok = 200 <= status_code < 300
+            self.text = ""
+
+        def json(self):
+            return self._payload
+
+    def _fake_get(url, params=None, **kwargs):
+        hub_url = (params or {}).get("hub_url", "")
+        if "Rfam/12.0/genome_browser_hub/hub.txt" in hub_url:
+            return _Resp(200, {"success": {"mock": True}})
+        if "Track_Hubs/SRP090583/hub.txt" in hub_url:
+            return _Resp(200, {"warning": {"mock": True}})
+        if "databases/not/here/hub.txt" in hub_url:
+            return _Resp(200, {"error": {"mock": True}})
+        return _Resp(200, {"error": {"mock": True}})
+
+    # Patch the module reference in hub_check without mutating the global requests module.
+    # We keep requests.get intact so libraries like responses continue to work.
+    monkeypatch.setattr("trackhubs.hub_check.requests", SimpleNamespace(get=_fake_get))
+
+
+@pytest.fixture(autouse=True)
+def urlopen_mock(monkeypatch):
+    """
+    Mock urllib.request.urlopen for deterministic tests in trackhubs.tracks_status.
+    """
+    class _Resp:
+        def __init__(self, code=200, body=b""):
+            self._code = code
+            self._body = body
+
+        def getcode(self):
+            return self._code
+
+        def read(self):
+            return self._body
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return False
+
+    hub_txt = "\n".join([
+        "hub JASPAR_TFBS",
+        "shortLabel JASPAR TFBS",
+        "longLabel TFBS predictions for profiles in the JASPAR CORE collections",
+        "genomesFile genomes.txt",
+        "email wyeth@cmmt.ubc.ca",
+        "descriptionUrl http://jaspar.genereg.net/genome-tracks/",
+        "",
+    ]).encode("utf-8")
+
+    genomes_txt = "\n".join([
+        "genome hg19",
+        "trackDb hg19/trackDb.txt",
+        "",
+        "genome hg38",
+        "trackDb hg38/trackDb.txt",
+        "",
+    ]).encode("utf-8")
+
+    trackdb_hg19 = "\n".join([
+        "track JASPAR2020_TFBS_hg19",
+        "shortLabel JASPAR2020 TFBS hg19",
+        "longLabel TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)",
+        "html http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/JASPAR2020_TFBS_help.html",
+        "type bigBed 6 +",
+        "maxItems 100000",
+        "labelFields name",
+        "defaultLabelFields name",
+        "searchIndex name",
+        "visibility pack",
+        "spectrum on",
+        "scoreFilter 400",
+        "scoreFilterRange 0:1000",
+        "bigDataUrl http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg19.bb",
+        "nameFilterText *",
+        "",
+    ]).encode("utf-8")
+
+    trackdb_hg38 = "\n".join([
+        "track JASPAR2020_TFBS_hg38",
+        "shortLabel JASPAR2020 TFBS hg38",
+        "longLabel TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)",
+        "html http://expdata.cmmt.ubc.ca/JASPAR/UCSC_tracks/JASPAR2020_TFBS_help.html",
+        "type bigBed 6 +",
+        "visibility pack",
+        "bigDataUrl http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg38.bb",
+        "",
+    ]).encode("utf-8")
+
+    def _fake_urlopen(url, *args, **kwargs):  # pylint: disable=too-many-return-statements
+        if not isinstance(url, str):
+            raise TypeError("url must be a string")
+        if url == "":
+            raise urllib.error.URLError("Empty URL")
+
+        if url == "https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt":
+            return _Resp(200, hub_txt)
+        if url == "https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/genomes.txt":
+            return _Resp(200, genomes_txt)
+        if url == "https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hg19/trackDb.txt":
+            return _Resp(200, trackdb_hg19)
+        if url == "https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hg38/trackDb.txt":
+            return _Resp(200, trackdb_hg38)
+
+        if url == "https://data.broadinstitute.org/compbio1/PhyloCSFtracks/trackHub/hub.ttxt":
+            raise urllib.error.URLError("Not Found")
+        if url == "https://invalide.url/hub.txt":
+            raise urllib.error.URLError("Name or service not known")
+
+        if url == "http://expdata.cmmt.ubc.ca/JASPAR/downloads/UCSC_tracks/2020/JASPAR2020_hg38.bb":
+            return _Resp(200)
+        if url == "ftp://ftp.sra.ebi.ac.uk/vol1/ERZ113/ERZ1131357/SRR2922672.cram":
+            return _Resp(None)
+        if url == "ftp://ftp.sra.ebi.ac.uk/bar.cram":
+            raise urllib.error.URLError(
+                "ftp error: URLError(\"ftp error: error_perm('550 Failed to change directory.')\")"
+            )
+        if url == "http://some.org/random/url/foo.cram":
+            raise urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)
+
+        return _Resp(200)
+
+    # We route both track status checks and parser downloads through the same stubbed urlopen.
+    monkeypatch.setattr("trackhubs.tracks_status.urllib.request.urlopen", _fake_urlopen)
+    monkeypatch.setattr("trackhubs.parser.urllib.request.urlopen", _fake_urlopen)
+
+
+@pytest.fixture(autouse=True)
+def search_trackdb_document_mock(monkeypatch):
+    """
+    Mock TrackdbDocument.get to fetch from the DB instead of Elasticsearch.
+    """
+    def _fake_get(_cls, doc_id=None, **kwargs):
+        if doc_id is None and "id" in kwargs:
+            doc_id = kwargs["id"]
+        try:
+            if doc_id is None:
+                raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+            try:
+                doc_id_int = int(doc_id)
+            except (TypeError, ValueError):
+                raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+
+            trackdb = Trackdb.objects.filter(trackdb_id=doc_id_int).select_related(
+                "hub", "species", "assembly"
+            ).first()
+        except RuntimeError as exc:
+            # DB access not allowed in this test; behave like ES not found.
+            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {}) from exc
+        if not trackdb:
+            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {})
+
+        data = {
+            "trackdb_id": trackdb.trackdb_id,
+            "version": trackdb.version,
+            "created": trackdb.created,
+            "status": trackdb.status,
+            "owner": trackdb.hub.get_owner(),
+            "type": trackdb.hub.data_type.name if trackdb.hub.data_type else "",
+            "source": {"url": trackdb.source_url},
+            "hub": {
+                "name": trackdb.hub.name,
+                "shortLabel": trackdb.hub.shortLabel,
+                "longLabel": trackdb.hub.longLabel,
+                "url": trackdb.hub.url,
+                "description_url": trackdb.hub.description_url,
+                "email": trackdb.hub.email,
+            },
+            "species": {
+                "taxon_id": trackdb.species.taxon_id,
+                "scientific_name": trackdb.species.scientific_name,
+                "common_name": trackdb.species.common_name,
+            },
+            "assembly": {
+                "accession": trackdb.assembly.accession,
+                "name": trackdb.assembly.name,
+                "long_name": trackdb.assembly.long_name,
+                "ucsc_synonym": trackdb.assembly.ucsc_synonym,
+            },
+        }
+        # SimpleNamespace keeps attribute access without introducing non-serializable wrappers.
+        return SimpleNamespace(**data)
+
+    monkeypatch.setattr("search.documents.TrackdbDocument.get", classmethod(_fake_get))
+
+
+@pytest.fixture(autouse=True)
+def disable_trackdb_es_updates(monkeypatch):
+    """
+    Disable Trackdb.update_trackdb_document ES updates during tests.
+    """
+    def _noop(*args, **kwargs):
+        return None
+
+    monkeypatch.setattr("trackhubs.models.Trackdb.update_trackdb_document", _noop)
+
+
+@pytest.fixture(autouse=True)
+def elasticmock_behavior_patch(monkeypatch):
+    """
+    Provide minimal FakeElasticsearch behavior for index/get/update in tests.
+    """
+    def _ensure_store(self):
+        if not hasattr(self, "_store"):
+            self._store = {}
+
+    def _index(self, index=None, doc_id=None, body=None, **kwargs):
+        _ensure_store(self)
+        idx = self._store.setdefault(index, {})
+        result = "updated" if doc_id in idx else "created"
+        idx[doc_id] = body
+        return {"result": result}
+
+    def _get(self, index=None, doc_id=None, **kwargs):
+        _ensure_store(self)
+        try:
+            return {"_source": self._store[index][doc_id]}
+        except Exception as exc:
+            raise elasticsearch.exceptions.NotFoundError(404, "not_found", {}) from exc
+
+    def _update(self, index=None, doc_id=None, body=None, **kwargs):
+        _ensure_store(self)
+        idx = self._store.setdefault(index, {})
+        doc = idx.get(doc_id, {})
+        if body and "doc" in body:
+            doc.update(body["doc"])
+        idx[doc_id] = doc
+        return {"result": "updated"}
+
+    monkeypatch.setattr(elasticmock.fake_elasticsearch.FakeElasticsearch, "index", _index, raising=False)
+    monkeypatch.setattr(elasticmock.fake_elasticsearch.FakeElasticsearch, "get", _get, raising=False)
+    monkeypatch.setattr(elasticmock.fake_elasticsearch.FakeElasticsearch, "update", _update, raising=False)
 
 
 @pytest.fixture
@@ -30,7 +377,6 @@ def project_dir():
 
 @pytest.fixture
 def api_client():
-    from rest_framework.test import APIClient
     return APIClient()
 
 
@@ -96,38 +442,81 @@ def create_genome_assembly_dump_resource():
 
 
 @pytest.fixture()
-def create_trackhub_resource(project_dir, api_client, create_user_resource, create_genome_assembly_dump_resource):
+def create_trackhub_resource(  # pylint: disable=too-many-arguments,too-many-locals,redefined-outer-name
+    api_client,
+    create_user_resource,
+    create_datatype_resource,
+    create_species_resource,
+    create_filetype_resource,
+    create_visibility_resource
+):
     """
-    This fixture is used to create a temporary trackhub using POST API
-    The created trackhub will be used to test GET API
+    Create a temporary trackhub and related trackdbs directly in DB
+    to avoid external network dependencies during tests.
     """
-    _, token = create_user_resource
+    user, token = create_user_resource
     api_client.credentials(HTTP_AUTHORIZATION='Token ' + str(token))
-    submitted_hub = {
-        # 'url': 'file:///' + str(project_dir) + '/' + 'samples/JASPAR_TFBS/hub.txt'
-        'url': 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
-    }
-    response = api_client.post('/api/trackhub', submitted_hub, format='json')
-    return response
+
+    data_type = create_datatype_resource
+
+    hub_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/hub.txt'
+    hub = _create_hub(user=user, data_type=data_type, url=hub_url)
+
+    assembly_37 = _create_assembly(
+        accession='GCA_000001405.1',
+        name='GRCh37',
+        long_name='GRCh37',
+        ucsc_synonym='hg19'
+    )
+    assembly_38 = _create_assembly(
+        accession='GCA_000001405.15',
+        name='GRCh38',
+        long_name='GRCh38',
+        ucsc_synonym='hg38'
+    )
+
+    species = create_species_resource
+
+    trackdb_url = 'https://raw.githubusercontent.com/Ensembl/thr/master/samples/JASPAR_TFBS/trackDb.txt'
+    _create_trackdb(hub=hub, assembly=assembly_37, species=species, source_url=trackdb_url)
+    trackdb_38 = _create_trackdb(hub=hub, assembly=assembly_38, species=species, source_url=trackdb_url)
+
+    # Create two tracks for assembly_38 to satisfy tracks_per_assembly tests.
+    _create_track(
+        trackdb=trackdb_38,
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
+        name='track_one',
+        short_label='Track One',
+        long_label='Track One Long',
+        big_data_url='http://example.org/track_one.bb'
+    )
+    _create_track(
+        trackdb=trackdb_38,
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
+        name='track_two',
+        short_label='Track Two',
+        long_label='Track Two Long',
+        big_data_url='http://example.org/track_two.bb'
+    )
+
+    return hub
 
 
 @pytest.fixture()
-def create_hub_resource(create_user_resource, create_datatype_resource):
+def create_hub_resource(  # pylint: disable=redefined-outer-name
+    create_user_resource, create_datatype_resource
+):
     """
     Create a temporary hub object
     """
     user, _ = create_user_resource
-    actual_hub_obj = trackhubs.models.Hub.objects.create(
-        name='JASPAR_TFBS',
-        shortLabel='JASPAR TFBS',
-        longLabel='TFBS predictions for profiles in the JASPAR CORE collections',
-        url='https://url/to/the/hub.txt',
-        description_url='http://jaspar.genereg.net/genome-tracks/',
-        email='wyeth@cmmt.ubc.ca',
+    return _create_hub(
+        user=user,
         data_type=trackhubs.models.DataType.objects.filter(name=create_datatype_resource.name).first(),
-        owner=user
+        url='https://url/to/the/hub.txt'
     )
-    return actual_hub_obj
 
 
 @pytest.fixture()
@@ -135,93 +524,81 @@ def create_assembly_resource():
     """
     Create a temporary assembly object
     """
-    actual_assembly_obj = trackhubs.models.Assembly.objects.create(
-        accession='GCA_000001405.1',
-        name='GRCh37',
-        long_name='',
-        ucsc_synonym=''
-    )
-
-    return actual_assembly_obj
+    return _create_assembly(accession='GCA_000001405.1', name='GRCh37', long_name='', ucsc_synonym='')
 
 
 @pytest.fixture()
-def create_trackdb_resource(create_hub_resource, create_assembly_resource, create_species_resource):
+def create_trackdb_resource(  # pylint: disable=redefined-outer-name
+    create_hub_resource, create_assembly_resource, create_species_resource
+):
     """
     Create a temporary trackdb object
     """
     trackdb_url = 'http://some.random/url/for/trackDb.txt'
 
-    actual_trackdb_obj = trackhubs.models.Trackdb.objects.create(
-        public=True,
-        created=int(time.time()),
-        updated=int(time.time()),
-        assembly=create_assembly_resource,
+    return _create_trackdb(
         hub=create_hub_resource,
+        assembly=create_assembly_resource,
         species=create_species_resource,
         source_url=trackdb_url
     )
-    return actual_trackdb_obj
 
 
 @pytest.fixture()
-def create_track_resource(create_trackdb_resource, create_filetype_resource, create_visibility_resource):
+def create_track_resource(  # pylint: disable=redefined-outer-name
+    db, create_trackdb_resource, create_filetype_resource, create_visibility_resource
+):
     """
     Create a temporary track object
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
-        name='JASPAR2020_TFBS_hg19',
-        shortLabel='JASPAR2020 TFBS hg19',
-        longLabel='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
-        big_data_url='http://path.to/the/track/bigbed/file/JASPAR2020_hg19.bb',
-        parent=None,
+    _ = db
+    return _create_track(
         trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
+        name='JASPAR2020_TFBS_hg19',
+        short_label='JASPAR2020 TFBS hg19',
+        long_label='TFBS predictions for all profiles in the JASPAR CORE vertebrates collection (2020)',
+        big_data_url='http://path.to/the/track/bigbed/file/JASPAR2020_hg19.bb'
     )
-    return actual_track_obj
 
 
 @pytest.fixture()
-def create_child_track_resource(create_trackdb_resource, create_filetype_resource, create_visibility_resource,
-                                create_track_resource):
+def create_child_track_resource(  # pylint: disable=redefined-outer-name
+    create_trackdb_resource, create_filetype_resource, create_visibility_resource
+):
     """
     Create a temporary track object which is the child of another track
     this parent track is empty, it is used to test add_parent_id() function
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
-        name='Child track name',
-        shortLabel='child of JASPAR2020',
-        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
-                   'JASPAR CORE vertebrates collection (2020)',
-        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
-        parent=None,
+    return _create_track(
         trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
+        name='Child track name',
+        short_label='child of JASPAR2020',
+        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+                   'JASPAR CORE vertebrates collection (2020)',
+        big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb'
     )
-    return actual_track_obj
 
 
 @pytest.fixture()
-def create_child_track_with_parent_resource(create_trackdb_resource, create_filetype_resource,
-                                            create_visibility_resource, create_track_resource):
+def create_child_track_with_parent_resource(  # pylint: disable=redefined-outer-name
+    create_trackdb_resource, create_filetype_resource, create_visibility_resource, create_track_resource
+):
     """
     Create a temporary track object which is the child of another track
     this parent track is provided, it is used to test get_parents() function
     """
-    actual_track_obj = trackhubs.models.Track.objects.create(
-        # save name only without 'on' or 'off' settings
+    return _create_track(
+        trackdb=create_trackdb_resource,
+        file_type=create_filetype_resource,
+        visibility=create_visibility_resource,
         name='Child track name',
-        shortLabel='child of JASPAR2020',
-        longLabel='This is the child of the track described as follows: TFBS predictions for all profiles in the '
+        short_label='child of JASPAR2020',
+        long_label='This is the child of the track described as follows: TFBS predictions for all profiles in the '
                    'JASPAR CORE vertebrates collection (2020)',
         big_data_url='http://path.to/the/subtrack/bigbed/file/JASPAR2020_hg19_subtrack.bb',
-        parent=create_track_resource,
-        trackdb=create_trackdb_resource,
-        file_type=trackhubs.models.FileType.objects.filter(name='bam').first(),
-        visibility=trackhubs.models.Visibility.objects.filter(name='pack').first()
+        parent=create_track_resource
     )
-    return actual_track_obj

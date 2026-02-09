@@ -30,8 +30,10 @@ from rest_framework_simplejwt.tokens import RefreshToken
 # https://londonappdeveloper.com/json-web-tokens-vs-token-authentication/
 
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from users.serializers import RegistrationSerializer, CustomUserSerializer, ChangePasswordSerializer, \
-    ResetPasswordEmailSerializer, SetNewPasswordSerializer
+    ResetPasswordEmailSerializer, SetNewPasswordSerializer, EmailVerificationSerializer, LogoutResponseSerializer, \
+    ValidateResetPasswordSerializer, LoginRequestSerializer, LoginResponseSerializer
 
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
@@ -49,6 +51,12 @@ class LoginViewAPI(ObtainAuthToken):
     GET: Returns a message letting the user know this endpoint is replace with POST
     POST: Returns the authentication token along with the user's email and whether their account is activated or not
     """
+    serializer_class = ObtainAuthToken.serializer_class
+
+    @extend_schema(
+        request=LoginRequestSerializer,
+        responses={200: LoginResponseSerializer},
+    )
     def post(self, request, *args, **kwargs):
         """
         POST is overrided/extended to add is_account_activated status and user email to the API response
@@ -81,6 +89,7 @@ class RegistrationViewAPI(APIView):
     an HttpResponse is returned and an activation email is sent with the access token
     it returns the success message if the request was successful otherwise it return an error message
     """
+    serializer_class = RegistrationSerializer
     def post(self, request):
 
         serializer = RegistrationSerializer(data=request.data)
@@ -116,6 +125,7 @@ class EmailVerificationView(APIView):
     """
     Email verification endpoint, used to activate the user account
     """
+    serializer_class = EmailVerificationSerializer
     def get(self, request):
         access_token = request.GET.get('token')
 
@@ -146,6 +156,7 @@ class LogoutViewAPI(APIView):
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LogoutResponseSerializer
 
     def post(self, request):
         """
@@ -172,6 +183,7 @@ class UserDetailsView(APIView):
     """
     authentication_classes = [authentication.TokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = CustomUserSerializer
 
     def get(self, request):
         user = request.user
@@ -208,6 +220,7 @@ class ChangePasswordView(UpdateAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     serializer_class = ChangePasswordSerializer
+    http_method_names = ["put"]
 
     def update(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -273,6 +286,7 @@ class ValidateResetPasswordAPI(APIView):
     """
     Validate reset password token
     """
+    serializer_class = ValidateResetPasswordSerializer
 
     def get(self, request):
         uidb64 = request.GET.get('uidb64')
