@@ -5,6 +5,7 @@ variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 stages:
+  - pylint
   - test
   - build
 
@@ -13,8 +14,7 @@ cache:
     - .cache/pip
 
 pylint:
-  stage: test
-  needs: []
+  stage: pylint
   script:
     - python -V
     - pip install --upgrade pip
@@ -23,7 +23,6 @@ pylint:
 
 pytest:
   stage: test
-  needs: []
   variables:
     # Keep ES host explicit for code paths reading settings from env.
     ES_HOST: "elasticsearch:9200"
