@@ -342,7 +342,7 @@ def save_and_update_document(hub_url, data_type, current_user, run_hubcheck=True
     save_datatype_filetype_visibility(FILE_TYPES, trackhubs.models.FileType)
     save_datatype_filetype_visibility(VISIBILITY, trackhubs.models.Visibility)
 
-    # run the USCS hubCheck tool found in kent tools on the submitted hub
+    # run the UCSC hubCheck tool found in kent tools on the submitted hub
     if run_hubcheck:
         hub_check_result = hub_check(hub_url)
         if 'error' in hub_check_result.keys():
