@@ -8,8 +8,8 @@ workflow:
   rules:
     # Allow being triggered from thr_k8s parent pipeline
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
-    # Keep normal behavior for direct pushes / MRs
-    - if: '$CI_PIPELINE_SOURCE == "push"'
+    # Run for all branch pipelines, including mirrored GitHub updates
+    - if: '$CI_COMMIT_BRANCH'
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - when: never
 
