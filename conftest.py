@@ -122,33 +122,11 @@ def django_db_use_migrations():
 
 
 @pytest.fixture(autouse=True)
-def hubcheck_requests_mock(monkeypatch):
+def translator_hubcheck_mock(monkeypatch):
     """
-    Mock requests to the hubCheck service.
+    Mock hubCheck calls made through the translator.
     """
-    class _Resp:
-        def __init__(self, status_code, payload):
-            self.status_code = status_code
-            self._payload = payload
-            self.ok = 200 <= status_code < 300
-            self.text = ""
-
-        def json(self):
-            return self._payload
-
-    def _fake_get(url, params=None, **kwargs):
-        hub_url = (params or {}).get("hub_url", "")
-        if "Rfam/12.0/genome_browser_hub/hub.txt" in hub_url:
-            return _Resp(200, {"success": {"mock": True}})
-        if "Track_Hubs/SRP090583/hub.txt" in hub_url:
-            return _Resp(200, {"warning": {"mock": True}})
-        if "databases/not/here/hub.txt" in hub_url:
-            return _Resp(200, {"error": {"mock": True}})
-        return _Resp(200, {"error": {"mock": True}})
-
-    # Patch the module reference in hub_check without mutating the global requests module.
-    # We keep requests.get intact so libraries like responses continue to work.
-    monkeypatch.setattr("trackhubs.hub_check.requests", SimpleNamespace(get=_fake_get))
+    monkeypatch.setattr("trackhubs.translator.hub_check", lambda hub_url: {"success": {"mock": True}})
 
 
 @pytest.fixture(autouse=True)
